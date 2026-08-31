@@ -66,7 +66,7 @@ export default function TripsPage() {
     ? `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`
     : '';
 
-  const { data, loading } = useApi<any>('/trips', {
+  const { data, loading, refetch } = useApi<any>('/trips', {
     page, limit: 20, sort: '-trip_date',
     ...(dateParam ? { date: dateParam } : {}),
     ...(!dateParam && month ? { month } : {}),
