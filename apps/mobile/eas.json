@@ -1,0 +1,26 @@
+{
+  "cli": {
+    "version": ">= 16.0.0"
+  },
+  "build": {
+    "preview": {
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease"
+      },
+      "env": {
+        "API_URL": "https://namthanhapi-production.up.railway.app",
+        "GOOGLE_MAPS_API_KEY": "AIzaSyB-qQR9kJXefBNKb9Y7qa3vphWCpLGP9HA"
+      }
+    },
+    "production": {
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "env": {
+        "API_URL": "https://namthanhapi-production.up.railway.app",
+        "GOOGLE_MAPS_API_KEY": "AIzaSyB-qQR9kJXefBNKb9Y7qa3vphWCpLGP9HA"
+      }
+    }
+  }
+}
