@@ -1,0 +1,8 @@
+node_modules
+.git
+android
+ios
+*.log
+.env.local
+coverage
+__tests__
