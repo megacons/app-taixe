@@ -1,0 +1,45 @@
+services:
+  mongodb:
+    image: mongo:6.0
+    container_name: namthanh_mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: namthanh2024
+      MONGO_INITDB_DATABASE: namthanh_db
+    ports:
+      - '27017:27017'
+    volumes:
+      # Map ra thư mục cố định trên Windows — data không bao giờ mất
+      - ./data/mongodb:/data/db
+      - ./data/mongodb-config:/data/configdb
+    networks:
+      - namthanh_network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongo-express:
+    image: mongo-express:1.0.2
+    container_name: namthanh_mongo_express
+    restart: on-failure
+    ports:
+      - '8082:8081'
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: namthanh2024
+      ME_CONFIG_MONGODB_SERVER: namthanh_mongodb
+      ME_CONFIG_MONGODB_PORT: 27017
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: namthanh2024
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - namthanh_network
+
+networks:
+  namthanh_network:
+    driver: bridge

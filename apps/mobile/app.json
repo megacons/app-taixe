@@ -1,0 +1,53 @@
+{
+  "expo": {
+    "name": "Nam Thành Driver",
+    "slug": "namthanh-driver",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.namthanh.driver",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Ứng dụng cần truy cập vị trí để ghi nhận địa điểm chuyến hàng",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Ứng dụng cần truy cập vị trí nền để theo dõi GPS",
+        "NSCameraUsageDescription": "Ứng dụng cần truy cập camera để chụp ảnh biên nhận",
+        "NSPhotoLibraryUsageDescription": "Ứng dụng cần truy cập thư viện ảnh để tải lên biên nhận"
+      }
+    },
+    "android": {
+      "package": "com.namthanh.driver",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyB-qQR9kJXefBNKb9Y7qa3vphWCpLGP9HA"
+        }
+      },
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "INTERNET",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE"
+      ],
+      "versionCode": 1
+    },
+    "plugins": [
+      "expo-location",
+      "expo-camera",
+      "expo-image-picker",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#163797",
+          "defaultChannel": "default",
+          "sounds": []
+        }
+      ]
+    ]
+  }
+}

@@ -1,0 +1,287 @@
+const express = require('express');
+const router = express.Router();
+const { Notification } = require('../models');
+const { authenticate } = require('../middleware/auth');
+
+/**
+ * GET /notifications
+ */
+router.get('/', authenticate, async (req, res, next) => {
+  try {
+    const { page = 1, limit = 30, is_read, type } = req.query;
+    const filter = { user_id: req.user._id };
+    if (is_read !== undefined) filter.is_read = is_read === 'true';
+    if (type) filter.type = type;
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const [notifications, total] = await Promise.all([
+      Notification.find(filter).sort('-created_at').skip(skip).limit(parseInt(limit)).lean(),
+      Notification.countDocuments(filter),
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        notifications,
+        total,
+        unread: await Notification.countDocuments({ user_id: req.user._id, is_read: false }),
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * PUT /notifications/:id/read
+ */
+router.put('/:id/read', authenticate, async (req, res, next) => {
+  try {
+    await Notification.findOneAndUpdate(
+      { _id: req.params.id, user_id: req.user._id },
+      { $set: { is_read: true, read_at: new Date() } }
+    );
+    res.json({ success: true, message: 'Đã đọc thông báo' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * PUT /notifications/read-all
+ */
+router.put('/read-all', authenticate, async (req, res, next) => {
+  try {
+    await Notification.updateMany(
+      { user_id: req.user._id, is_read: false },
+      { $set: { is_read: true, read_at: new Date() } }
+    );
+    res.json({ success: true, message: 'Đã đọc tất cả thông báo' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * PUT /notifications/fcm-token
+ * Lưu FCM token cho push notification
+ */
+router.put('/fcm-token', authenticate, async (req, res, next) => {
+  try {
+    const { token } = req.body;
+    if (!token) return res.status(400).json({ success: false, message: 'token là bắt buộc' });
+
+    const { User } = require('../models');
+    await User.findByIdAndUpdate(req.user._id, { fcm_token: token });
+
+    res.json({ success: true, message: 'Lưu FCM token thành công' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * POST /notifications/broadcast
+ * Admin gửi thông báo tới tất cả driver hoặc 1 driver cụ thể
+ * Body: multipart/form-data với fields: title, message, type, target_driver_id, file (optional)
+ */
+router.post('/broadcast', authenticate, async (req, res, next) => {
+  try {
+    if (!['manager', 'coordinator', 'accountant'].includes(req.user.role)) {
+      return res.status(403).json({ success: false, message: 'Không có quyền gửi thông báo' });
+    }
+
+    // Handle multipart (có file) hoặc JSON (không có file)
+    const multer  = require('multer');
+    const path    = require('path');
+    const { v4: uuidv4 } = require('uuid');
+    const fs      = require('fs');
+
+    const storage = multer.diskStorage({
+      destination: (req, file, cb) => {
+        const dir = './uploads/documents';
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        cb(null, dir);
+      },
+      filename: (req, file, cb) => {
+        const ext = path.extname(file.originalname);
+        cb(null, `${uuidv4()}${ext}`);
+      },
+    });
+    const upload = multer({
+      storage,
+      limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
+    }).single('file');
+
+    await new Promise((resolve, reject) => {
+      upload(req, res, err => {
+        if (err) reject(err);
+        else resolve(null);
+      });
+    });
+
+    const { title, message, type = 'announcement', target_driver_id, target_user_id, target_ids } = req.body;
+    if (!title?.trim()) return res.status(400).json({ success: false, message: 'Tiêu đề là bắt buộc' });
+    if (!message?.trim()) return res.status(400).json({ success: false, message: 'Nội dung là bắt buộc' });
+
+    // Build attachment info nếu có file
+    let attachment = null;
+    if (req.file) {
+      attachment = {
+        url:           `/uploads/documents/${req.file.filename}`,
+        original_name: Buffer.from(req.file.originalname, 'latin1').toString('utf8'),
+        mime_type:     req.file.mimetype,
+        size:          req.file.size,
+      };
+    }
+
+    const { User, Driver } = require('../models');
+    let userIds = [];
+
+    // Ưu tiên: danh sách nhiều người (multi-select)
+    const idsArray = target_ids
+      ? (Array.isArray(target_ids) ? target_ids : String(target_ids).split(',').filter(Boolean))
+      : null;
+
+    if (idsArray && idsArray.length > 0) {
+      // Gửi tới danh sách cụ thể — mỗi id có thể là driver._id hoặc user._id
+      // Phân loại: tìm drivers có _id trong list → lấy user_id; còn lại dùng trực tiếp
+      const drivers = await Driver.find({ _id: { $in: idsArray } }).select('_id user_id').lean();
+      const driverIdSet = new Set(drivers.map(d => d._id.toString()));
+      const driverUserIds = drivers.map(d => d.user_id);
+      const directUserIds = idsArray.filter(id => !driverIdSet.has(id));
+      userIds = [...driverUserIds, ...directUserIds];
+    } else if (target_user_id) {
+      userIds = [target_user_id];
+    } else if (target_driver_id) {
+      const driver = await Driver.findById(target_driver_id).lean();
+      if (!driver) return res.status(404).json({ success: false, message: 'Không tìm thấy tài xế' });
+      userIds = [driver.user_id];
+    } else {
+      const allUsers = await User.find({
+        is_deleted: { $ne: true },
+        status: 'active',
+      }).select('_id').lean();
+      userIds = allUsers.map(u => u._id);
+    }
+
+    if (!userIds.length) {
+      return res.status(400).json({ success: false, message: 'Không tìm thấy người nhận' });
+    }
+
+    const notifications = userIds.map(uid => ({
+      user_id:    uid,
+      title:      title.trim(),
+      message:    message.trim(),
+      type,
+      attachment: attachment || undefined,
+      data:       { sent_by: req.user._id, sent_by_name: req.user.name },
+    }));
+    await Notification.insertMany(notifications);
+
+    try {
+      const io = req.app.get('io');
+      if (io) {
+        userIds.forEach(uid => {
+          io.to(`user_${uid}`).emit('notification', {
+            title: title.trim(),
+            message: message.trim(),
+            type,
+            has_attachment: !!attachment,
+          });
+        });
+      }
+    } catch (_) {}
+
+    res.json({
+      success: true,
+      message: `Đã gửi thông báo tới ${userIds.length} người`,
+      data: { sent_count: userIds.length, has_attachment: !!attachment },
+    });
+  } catch (err) { next(err); }
+});
+
+/**
+ * GET /notifications/broadcast/history
+ * Admin xem lịch sử thông báo đã gửi
+ */
+router.get('/broadcast/history', authenticate, async (req, res, next) => {
+  try {
+    if (!['manager', 'coordinator', 'accountant'].includes(req.user.role)) {
+      return res.status(403).json({ success: false, message: 'Không có quyền' });
+    }
+    const { page = 1, limit = 30 } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const history = await Notification.aggregate([
+      { $match: { 'data.sent_by': { $exists: true } } }, // chỉ lấy broadcast (có data.sent_by)
+      { $sort: { created_at: -1 } },
+      {
+        $group: {
+          _id:        { title: '$title', message: '$message', minute: { $dateToString: { format: '%Y-%m-%dT%H:%M', date: '$created_at' } } },
+          sent_count: { $sum: 1 },
+          created_at: { $first: '$created_at' },
+          title:      { $first: '$title' },
+          message:    { $first: '$message' },
+          type:       { $first: '$type' },
+          attachment: { $first: '$attachment' },
+          sent_by:    { $first: '$data.sent_by_name' },
+        },
+      },
+      { $sort: { created_at: -1 } },
+      { $skip: skip },
+      { $limit: parseInt(limit) },
+    ]);
+
+    res.json({ success: true, data: { history } });
+  } catch (err) { next(err); }
+});
+
+/**
+ * DELETE /notifications/broadcast/recall
+ * Thu hồi thông báo — xóa tất cả notifications có cùng title+message+minute
+ * Body: { title, message, created_at }
+ */
+router.delete('/broadcast/recall', authenticate, async (req, res, next) => {
+  try {
+    if (!['manager', 'coordinator', 'accountant'].includes(req.user.role)) {
+      return res.status(403).json({ success: false, message: 'Không có quyền' });
+    }
+    const { title, message, created_at } = req.body;
+    if (!title || !message || !created_at) {
+      return res.status(400).json({ success: false, message: 'Thiếu thông tin để thu hồi' });
+    }
+
+    // Tính khoảng thời gian trong cùng phút
+    const dt = new Date(created_at);
+    const from = new Date(dt); from.setSeconds(0, 0);
+    const to   = new Date(dt); to.setSeconds(59, 999);
+
+    const result = await Notification.deleteMany({
+      title,
+      message,
+      created_at: { $gte: from, $lte: to },
+    });
+
+    res.json({ success: true, message: `Đã thu hồi ${result.deletedCount} thông báo` });
+  } catch (err) { next(err); }
+});
+
+/**
+ * POST /notifications/push-token
+ * Lưu Expo Push Token của user (gọi sau khi đăng nhập)
+ */
+router.post('/push-token', authenticate, async (req, res, next) => {
+  try {
+    const { token } = req.body;
+    if (!token) return res.status(400).json({ success: false, message: 'Token is required' });
+
+    const { User } = require('../models');
+    await User.findByIdAndUpdate(req.user._id, { fcm_token: token });
+    console.info(`[Push] Token saved for user ${req.user._id}: ${token.slice(0, 30)}...`);
+    res.json({ success: true, message: 'Push token saved' });
+  } catch (err) { next(err); }
+});
+
+module.exports = router;

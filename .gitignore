@@ -1,0 +1,16 @@
+﻿node_modules/
+.env
+*.log
+dist/
+.expo/
+android/
+ios/
+uploads/avatars/*
+uploads/receipts/*
+uploads/images/*
+uploads/documents/*
+uploads/attendance/*
+!uploads/.gitkeep
+!uploads/avatars/.gitkeep
+!uploads/receipts/.gitkeep
+!uploads/images/.gitkeep

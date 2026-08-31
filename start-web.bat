@@ -1,0 +1,6 @@
+@echo off
+cd /d p:\app_taixe\apps\web
+echo Installing web dependencies...
+npm install
+echo Starting Web Admin...
+npm run dev
