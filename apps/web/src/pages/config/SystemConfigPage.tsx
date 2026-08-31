@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { CheckIcon, PencilIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { CheckIcon, PencilIcon, XMarkIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
@@ -9,6 +9,9 @@ import { useConfigStore } from '@/stores/configStore';
 const TABS = [
   { id: 'company',  label: 'Thông tin công ty', icon: '🏢' },
   { id: 'overtime', label: 'Lương & Tăng ca',   icon: '💰' },
+  { id: 'gps',      label: 'GPS',               icon: '📍' },
+  { id: 'approval', label: 'Quy trình duyệt',   icon: '✅' },
+  { id: 'notif',    label: 'Thông báo',          icon: '🔔' },
 ] as const;
 
 type TabId = typeof TABS[number]['id'];

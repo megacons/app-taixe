@@ -29,7 +29,7 @@ export default function GPSTrackingPage() {
 
   /* ── Load Google Maps ── */
   useEffect(() => {
-    if (window.google?.maps) {
+    if ((window as any).google?.maps) {
       initMap();
       return;
     }
@@ -53,7 +53,7 @@ export default function GPSTrackingPage() {
   /* ── Init map ── */
   const initMap = () => {
     if (!mapRef.current) return;
-    mapInstance.current = new window.google.maps.Map(mapRef.current, {
+    mapInstance.current = new (window as any).google.maps.Map(mapRef.current, {
       zoom: 12,
       center: { lat: 10.7769, lng: 106.7009 }, // HCM
       mapTypeId: 'roadmap',
@@ -104,7 +104,8 @@ export default function GPSTrackingPage() {
 
   /* ── Update/create marker ── */
   const updateMarker = (data: DriverLocation) => {
-    if (!mapInstance.current || !window.google?.maps) return;
+    if (!mapInstance.current || !(window as any).google?.maps) return;
+    const g = (window as any).google;
 
     const pos = { lat: data.latitude, lng: data.longitude };
 
@@ -113,12 +114,12 @@ export default function GPSTrackingPage() {
       marker.setPosition(pos);
       marker.setTitle(`${data.driver_name} — ${data.speed} km/h`);
     } else {
-      const marker = new window.google.maps.Marker({
+      const marker = new g.maps.Marker({
         position: pos,
         map: mapInstance.current,
         title: `${data.driver_name} — ${data.speed} km/h`,
         icon: {
-          path: window.google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+          path: g.maps.SymbolPath.FORWARD_CLOSED_ARROW,
           scale: 6,
           fillColor: '#163797',
           fillOpacity: 1,

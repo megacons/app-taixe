@@ -10,6 +10,7 @@ interface User {
   status: string;
   avatar: string | null;
   driver_id?: string;
+  email?: string;
 }
 
 interface AuthState {
