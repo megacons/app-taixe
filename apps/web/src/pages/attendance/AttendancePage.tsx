@@ -7,7 +7,7 @@ import { format, parseISO, addWeeks, subWeeks, startOfWeek, endOfWeek } from 'da
 import { vi } from 'date-fns/locale';
 import api from '@/lib/api';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://192.168.88.181:5000';
+const BASE_URL = import.meta.env.VITE_API_URL || '';
 
 function avatarSrc(url?: string | null): string | null {
   if (!url) return null;

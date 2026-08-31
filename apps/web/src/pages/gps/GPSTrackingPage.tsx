@@ -65,7 +65,8 @@ export default function GPSTrackingPage() {
 
   /* ── Socket.io realtime ── */
   useEffect(() => {
-    const socket = io('http://localhost:5000', { transports: ['websocket'] });
+    const SOCKET_URL = import.meta.env.VITE_API_URL || '';
+    const socket = io(SOCKET_URL, { transports: ['websocket', 'polling'] });
     socketRef.current = socket;
 
     socket.on('connect', () => {
