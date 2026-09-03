@@ -316,10 +316,6 @@ function StaffTab({ canEdit = true, isCoordinator = false }: { canEdit?: boolean
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Thông tin nhân viên</p>
           </div>
           <div>
-            <label className="form-label">Mã nhân viên</label>
-            <input {...register('employee_id')} className="form-input" placeholder="Tự sinh nếu để trống (NT001...)" />
-          </div>
-          <div>
             <label className="form-label">Ngày vào làm</label>
             <input {...register('join_date')} type="date" className="form-input" />
           </div>
