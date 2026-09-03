@@ -368,12 +368,10 @@ router.put(
 
       await request.save();
 
-      // ── Khi duyệt yêu cầu chi (expense) → tự động tạo FundEntry ──────────
+      // ── Khi duyệt yêu cầu chi (expense) → check balance + tự động tạo FundEntry ──
       if (request.type === 'expense' && request.driver_id) {
         try {
           const mongoose = require('mongoose');
-
-          // Lấy FundEntry model (đã định nghĩa trong fund.js)
           const FundEntry = mongoose.models.FundEntry;
 
           if (FundEntry) {
@@ -381,6 +379,27 @@ router.put(
             const expenseDate = request.payload?.date
               ?? new Date().toISOString().slice(0, 10);
             const month = expenseDate.slice(0, 7); // 'YYYY-MM'
+
+            // ── Check balance trước khi duyệt ──────────────────────────────
+            const allEntries = await FundEntry.find({
+              driver_id: request.driver_id,
+              month,
+            }).lean();
+            const totalAdvance = allEntries.reduce((s, e) => s + (e.advance || 0), 0);
+            const totalExpense = allEntries.reduce((s, e) => s + (e.expense || 0), 0);
+            const currentBalance = totalAdvance - totalExpense;
+
+            if (currentBalance < amount) {
+              // Vẫn duyệt được nhưng trả về warning để frontend hiển thị
+              request._insufficientFund = true;
+              request._balanceInfo = {
+                current_balance: currentBalance,
+                required: amount,
+                shortage: amount - currentBalance,
+                driver_id: String(request.driver_id),
+              };
+            }
+            // ───────────────────────────────────────────────────────────────
 
             // Tìm entry ngày đó, cộng dồn nếu có
             const existing = await FundEntry.findOne({
@@ -409,7 +428,6 @@ router.put(
             }
           }
         } catch (fundErr) {
-          // Không block nếu lỗi tạo fund entry
           console.warn('FundEntry create error:', fundErr.message);
         }
       }
@@ -486,6 +504,13 @@ router.put(
         success: true,
         message: 'Duyệt yêu cầu thành công',
         data: request,
+        insufficient_fund: request._insufficientFund ? {
+          warning:         'Quỹ tài xế không đủ để chi',
+          current_balance: request._balanceInfo.current_balance,
+          required:        request._balanceInfo.required,
+          shortage:        request._balanceInfo.shortage,
+          driver_id:       request._balanceInfo.driver_id,
+        } : null,
       });
     } catch (err) {
       next(err);

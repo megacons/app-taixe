@@ -115,8 +115,31 @@ export default function RequestsPage() {
     if (!approveTarget) return;
     setActionLoading(true);
     try {
-      await api.put(`/requests/${approveTarget._id}/approve`, { comment });
-      toast.success('Đã duyệt yêu cầu');
+      const res = await api.put(`/requests/${approveTarget._id}/approve`, { comment });
+      const insuf = res.data?.insufficient_fund;
+      if (insuf) {
+        toast(
+          (t) => (
+            <div className="flex flex-col gap-1">
+              <p className="font-semibold text-amber-800">⚠️ Đã duyệt — quỹ không đủ</p>
+              <p className="text-xs text-amber-700">
+                Còn lại: <strong>{new Intl.NumberFormat('vi-VN').format(insuf.current_balance)}đ</strong>
+                , thiếu: <strong>{new Intl.NumberFormat('vi-VN').format(insuf.shortage)}đ</strong>
+              </p>
+              <a
+                href={`/finance/fund`}
+                onClick={() => toast.dismiss(t.id)}
+                className="mt-1 text-xs font-bold text-amber-900 underline"
+              >
+                → Nạp tiền vào quỹ tài xế
+              </a>
+            </div>
+          ),
+          { duration: 8000, style: { background: '#fef3c7', color: '#92400e', maxWidth: 320 } }
+        );
+      } else {
+        toast.success('Đã duyệt yêu cầu');
+      }
       setApproveTarget(null);
       refetch();
       refreshPendingCount();

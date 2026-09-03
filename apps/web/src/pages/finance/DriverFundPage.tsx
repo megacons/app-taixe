@@ -226,14 +226,33 @@ export default function DriverFundPage() {
 
   const handleApproveExpense = async (id: string) => {
     try {
-      await api.put(`/requests/${id}/approve`, { comment: 'Admin duyệt' });
-      toast.success('✅ Đã duyệt — tiền chi đã được cập nhật vào quỹ');
-      // Reload cả 3 nơi: danh sách expenses, bảng fund detail, list tài xế
-      if (viewExpenses) loadExpenses(viewExpenses);
-      if (selected && selected.driver_id === viewExpenses?.driver_id) {
-        loadDetail(selected);
+      const res = await api.put(`/requests/${id}/approve`, { comment: 'Admin duyệt' });
+      const insuf = res.data?.insufficient_fund;
+      if (insuf) {
+        toast(
+          (t) => (
+            <div className="flex flex-col gap-1">
+              <p className="font-semibold text-amber-800">⚠️ Đã duyệt — quỹ không đủ</p>
+              <p className="text-xs text-amber-700">
+                Còn lại: <strong>{new Intl.NumberFormat('vi-VN').format(insuf.current_balance)}đ</strong>
+                , thiếu: <strong>{new Intl.NumberFormat('vi-VN').format(insuf.shortage)}đ</strong>
+              </p>
+              <button
+                onClick={() => { toast.dismiss(t.id); setQuickFundDriver(viewExpenses); setShowAdd(true); }}
+                className="mt-1 text-xs font-bold text-amber-900 underline text-left"
+              >
+                → Nạp tiền ngay
+              </button>
+            </div>
+          ),
+          { duration: 8000, style: { background: '#fef3c7', color: '#92400e', maxWidth: 320 } }
+        );
+      } else {
+        toast.success('✅ Đã duyệt — tiền chi đã được cập nhật vào quỹ');
       }
-      refetch(); // cập nhật số dư left panel
+      if (viewExpenses) loadExpenses(viewExpenses);
+      if (selected && selected.driver_id === viewExpenses?.driver_id) loadDetail(selected);
+      refetch();
     } catch (e: any) {
       toast.error(e?.response?.data?.message ?? 'Duyệt thất bại');
     }

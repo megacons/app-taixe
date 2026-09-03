@@ -70,14 +70,29 @@ export default function AdminRequests() {
 
   const onRefresh = async () => { setRefreshing(true); await fetchRequests(statusFilter); setRefreshing(false); };
 
-  const doApprove = async (id: string, title: string) => {
+  const doApprove = async (id: string, title: string, type: string) => {
     Alert.alert('Duyệt yêu cầu', `Duyệt "${title}"?`, [
       { text: 'Hủy', style: 'cancel' },
       { text: '✅ Duyệt', onPress: async () => {
         setApproving(id);
         try {
-          await api.put(`/requests/${id}/approve`, { comment: 'Admin duyệt' });
+          const res = await api.put(`/requests/${id}/approve`, { comment: 'Admin duyệt' });
           setRequests(prev => prev.filter(r => r._id !== id));
+
+          // Check quỹ không đủ sau khi duyệt expense
+          const insuf = res.data?.insufficient_fund;
+          if (insuf && type === 'expense') {
+            const shortage = new Intl.NumberFormat('vi-VN').format(insuf.shortage);
+            const balance  = new Intl.NumberFormat('vi-VN').format(insuf.current_balance);
+            Alert.alert(
+              '⚠️ Quỹ tài xế không đủ',
+              `Đã duyệt thành công.\n\nQuỹ hiện tại: ${balance}đ\nThiếu: ${shortage}đ\n\nBạn có muốn nạp tiền vào quỹ ngay không?`,
+              [
+                { text: 'Để sau', style: 'cancel' },
+                { text: '💰 Nạp tiền ngay', onPress: () => navigation.navigate('Fund') },
+              ]
+            );
+          }
         } catch (e: any) { Alert.alert('Lỗi', e?.response?.data?.message ?? 'Thất bại'); }
         finally { setApproving(null); }
       }},
@@ -167,7 +182,7 @@ export default function AdminRequests() {
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={[S.approveBtn, isLoading && { opacity: 0.5 }]}
-                      onPress={() => doApprove(req._id, req.title)}
+                      onPress={() => doApprove(req._id, req.title, req.type)}
                       disabled={isLoading}
                     >
                       {isLoading
