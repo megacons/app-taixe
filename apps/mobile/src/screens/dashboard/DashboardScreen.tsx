@@ -465,7 +465,12 @@ function KPICard({ icon, label, value, sub, valueColor, onPress }: {
     <Wrapper style={kpiStyles.card} onPress={onPress} activeOpacity={0.75}>
       <Text style={kpiStyles.icon}>{icon}</Text>
       <Text style={kpiStyles.label}>{label}</Text>
-      <Text style={[kpiStyles.value, valueColor ? { color: valueColor } : {}]}>{value}</Text>
+      <Text
+        style={[kpiStyles.value, valueColor ? { color: valueColor } : {}]}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.5}
+      >{value}</Text>
       {sub && <Text style={kpiStyles.sub}>{sub}</Text>}
       {onPress && <Text style={{ fontSize: 10, color: Colors.primary, marginTop: 2 }}>→</Text>}
     </Wrapper>
