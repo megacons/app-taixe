@@ -226,9 +226,9 @@ export default function DashboardScreen() {
   };
 
   const formatCurrency = (val: number) => {
-    if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}Mđ`;
-    if (val >= 1_000) return `${(val / 1_000).toFixed(0)}K`;
-    return `${val}đ`;
+    const abs = Math.abs(val);
+    const formatted = new Intl.NumberFormat('vi-VN').format(abs);
+    return `${val < 0 ? '-' : ''}${formatted}đ`;
   };
 
   const handleNav = (route: string) => {
