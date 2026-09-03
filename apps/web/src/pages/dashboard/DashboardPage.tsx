@@ -545,24 +545,28 @@ export default function DashboardPage() {
           {loading || chartLoading ? (
             <div className="h-56 flex items-center justify-center text-gray-400 text-sm">Đang tải...</div>
           ) : (
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={chartData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis
-                  dataKey="date"
-                  tick={{ fontSize: 10 }}
-                  interval={chartMode === 'month' ? 4 : chartMode === 'year' ? 0 : 0}
-                  angle={chartMode === 'month' ? -35 : 0}
-                  textAnchor={chartMode === 'month' ? 'end' : 'middle'}
-                  height={chartMode === 'month' ? 45 : 20}
-                />
-                <YAxis tickFormatter={v => fmtMoney(v)} tick={{ fontSize: 11 }} width={50} />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
-                <Bar dataKey="advance" name="Quỹ đã cấp" fill="#163797" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="expense" name="Tài xế đã chi" fill="#f8b30e" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <div style={{ overflowX: chartMode === 'month' ? 'auto' : 'visible' }}>
+              <div style={{ width: chartMode === 'month' ? Math.max(chartData.length * 28, 400) : '100%', minWidth: '100%' }}>
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={chartData} margin={{ top: 4, right: 8, left: 0, bottom: chartMode === 'month' ? 30 : 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis
+                      dataKey="date"
+                      tick={{ fontSize: 10 }}
+                      interval={0}
+                      angle={chartMode === 'month' ? -45 : 0}
+                      textAnchor={chartMode === 'month' ? 'end' : 'middle'}
+                      height={chartMode === 'month' ? 50 : 20}
+                    />
+                    <YAxis tickFormatter={v => fmtMoney(v)} tick={{ fontSize: 11 }} width={50} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend wrapperStyle={{ fontSize: 11 }} />
+                    <Bar dataKey="advance" name="Quỹ đã cấp" fill="#163797" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="expense" name="Tài xế đã chi" fill="#f8b30e" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
           )}
         </div>
 
