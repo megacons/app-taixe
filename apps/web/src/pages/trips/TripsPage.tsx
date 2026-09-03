@@ -278,10 +278,12 @@ export default function TripsPage() {
                 </td></tr>
               )}
               {(() => {
-                // Tính STT per ngày: reset về 1 khi qua ngày mới
+                // Tính STT per ngày: reset về 1 khi qua ngày mới (timezone VN)
                 const dayCounters: Record<string, number> = {};
                 const sttPerTrip = trips.map(t => {
-                  const dateKey = t.trip_date ? t.trip_date.slice(0, 10) : 'unknown';
+                  const dateKey = t.trip_date
+                    ? new Date(t.trip_date).toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' })
+                    : 'unknown';
                   dayCounters[dateKey] = (dayCounters[dateKey] ?? 0) + 1;
                   return dayCounters[dateKey];
                 });
