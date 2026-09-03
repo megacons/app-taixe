@@ -1,5 +1,6 @@
 {
   "expo": {
+    "sdkVersion": "57.0.0",
     "name": "Nam Thành Driver",
     "slug": "namthanh-driver",
     "version": "1.0.0",
@@ -60,7 +61,10 @@
           "defaultChannel": "default",
           "sounds": []
         }
-      ]
+      ],
+      "expo-secure-store",
+      "expo-splash-screen",
+      "expo-status-bar"
     ],
     "extra": {
       "eas": {
