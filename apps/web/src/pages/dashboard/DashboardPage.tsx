@@ -548,7 +548,14 @@ export default function DashboardPage() {
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={chartData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 10 }}
+                  interval={chartMode === 'month' ? 4 : chartMode === 'year' ? 0 : 0}
+                  angle={chartMode === 'month' ? -35 : 0}
+                  textAnchor={chartMode === 'month' ? 'end' : 'middle'}
+                  height={chartMode === 'month' ? 45 : 20}
+                />
                 <YAxis tickFormatter={v => fmtMoney(v)} tick={{ fontSize: 11 }} width={50} />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
