@@ -491,9 +491,6 @@ export default function DashboardPage() {
         }
       </div>
 
-      {/* ── Biểu đồ số chuyến ── */}
-      <TripChart />
-
       {/* Chart + Top Drivers */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Revenue chart */}
@@ -604,6 +601,9 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* ── Biểu đồ số chuyến ── */}
+      <TripChart />
 
     </div>
 
