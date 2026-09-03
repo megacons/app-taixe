@@ -74,6 +74,7 @@ export default function DashboardPage() {
   const now = new Date();
   const [chartData, setChartData] = useState<ChartPoint[]>([]);
   const [chartLoading, setChartLoading] = useState(false);
+  const [chartMode, setChartMode] = useState<'week' | 'month' | 'year'>('week');
   const [weekOffset, setWeekOffset] = useState(0);
   const [loading, setLoading]   = useState(true);
   const [topDrivers, setTopDrivers] = useState<any[]>([]);
@@ -116,8 +117,8 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    loadChart(weekOffset);
-  }, [weekOffset]);
+    loadChart(weekOffset, chartMode);
+  }, [weekOffset, chartMode]);
 
   // Load KPI tháng so sánh mỗi khi thay đổi
   useEffect(() => {
@@ -275,36 +276,71 @@ export default function DashboardPage() {
     }
   };
 
-  const loadChart = async (offset: number) => {
+  const loadChart = async (offset: number, mode: 'week' | 'month' | 'year' = 'week') => {
     setChartLoading(true);
     try {
       const today = new Date();
-      // Tìm T2 của tuần hiện tại
-      const dow = today.getDay(); // 0=CN, 1=T2...6=T7
-      const daysSinceMonday = dow === 0 ? 6 : dow - 1;
-      const monday = subDays(today, daysSinceMonday - offset * 7);
-
       const points: ChartPoint[] = [];
-      const DAY_LABELS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
-      for (let i = 0; i < 7; i++) {
-        const d   = subDays(monday, -i); // monday + i ngày
-        const str = d.toISOString().slice(0, 10);
-        const label = `${DAY_LABELS[i]} ${format(d, 'dd/MM', { locale: vi })}`;
-        try {
-          const [fundRes, tripRes] = await Promise.all([
-            api.get('/fund/summary/daily', { params: { date: str } }),
-            api.get('/trips/summary/daily', { params: { date: str } }),
-          ]);
-          points.push({
-            date:    label,
-            advance: fundRes.data.data?.total_advance ?? 0,
-            expense: fundRes.data.data?.total_expense ?? 0,
-            trips:   tripRes.data.data?.total_trips   ?? 0,
-          });
-        } catch {
-          points.push({ date: label, advance: 0, expense: 0, trips: 0 });
+
+      if (mode === 'week') {
+        const dow = today.getDay();
+        const daysSinceMonday = dow === 0 ? 6 : dow - 1;
+        const monday = subDays(today, daysSinceMonday - offset * 7);
+        const DAY_LABELS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+        for (let i = 0; i < 7; i++) {
+          const d   = subDays(monday, -i);
+          const str = d.toISOString().slice(0, 10);
+          const label = `${DAY_LABELS[i]} ${format(d, 'dd/MM', { locale: vi })}`;
+          try {
+            const [fundRes, tripRes] = await Promise.all([
+              api.get('/fund/summary/daily', { params: { date: str } }),
+              api.get('/trips/summary/daily', { params: { date: str } }),
+            ]);
+            points.push({ date: label, advance: fundRes.data.data?.total_advance ?? 0, expense: fundRes.data.data?.total_expense ?? 0, trips: tripRes.data.data?.total_trips ?? 0 });
+          } catch {
+            points.push({ date: label, advance: 0, expense: 0, trips: 0 });
+          }
+        }
+      } else if (mode === 'month') {
+        const year  = today.getFullYear() + Math.floor((today.getMonth() + offset) / 12);
+        const month = ((today.getMonth() + offset) % 12 + 12) % 12 + 1;
+        const daysInMonth = new Date(year, month, 0).getDate();
+        for (let d = 1; d <= daysInMonth; d++) {
+          const str   = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+          const label = `${d}/${month}`;
+          try {
+            const [fundRes, tripRes] = await Promise.all([
+              api.get('/fund/summary/daily', { params: { date: str } }),
+              api.get('/trips/summary/daily', { params: { date: str } }),
+            ]);
+            points.push({ date: label, advance: fundRes.data.data?.total_advance ?? 0, expense: fundRes.data.data?.total_expense ?? 0, trips: tripRes.data.data?.total_trips ?? 0 });
+          } catch {
+            points.push({ date: label, advance: 0, expense: 0, trips: 0 });
+          }
+        }
+      } else {
+        // year mode
+        const year = today.getFullYear() + offset;
+        for (let m = 1; m <= 12; m++) {
+          const label = `T${m}/${year}`;
+          try {
+            const [fundRes, tripRes] = await Promise.all([
+              api.get('/fund/drivers', { params: { month: m, year } }),
+              api.get('/trips', { params: { month: m, year, limit: 1 } }),
+            ]);
+            const drivers: any[] = fundRes.data.data?.drivers ?? [];
+            points.push({
+              date:    label,
+              advance: drivers.reduce((s: number, d: any) => s + (d.total_advance || 0), 0),
+              expense: drivers.reduce((s: number, d: any) => s + (d.total_expense || 0), 0),
+              trips:   tripRes.data.data?.pagination?.total ?? 0,
+            });
+          } catch {
+            points.push({ date: label, advance: 0, expense: 0, trips: 0 });
+          }
         }
       }
+
       setChartData(points);
     } finally {
       setChartLoading(false);
@@ -460,8 +496,23 @@ export default function DashboardPage() {
         {/* Revenue chart */}
         <div className="lg:col-span-2 card">
           <div className="card-header">
-            <h2 className="font-semibold text-gray-900">Quỹ tài xế 7 ngày qua</h2>
+            <h2 className="font-semibold text-gray-900">
+              {chartMode === 'week' ? 'Quỹ tài xế theo tuần' : chartMode === 'month' ? 'Quỹ tài xế theo tháng' : 'Quỹ tài xế theo năm'}
+            </h2>
             <div className="flex items-center gap-2">
+              {/* Mode selector */}
+              <div className="flex rounded-lg overflow-hidden border border-gray-200 text-xs">
+                {(['week','month','year'] as const).map(m => (
+                  <button
+                    key={m}
+                    onClick={() => { setChartMode(m); setWeekOffset(0); }}
+                    className={`px-2.5 py-1 font-medium transition-colors ${chartMode === m ? 'bg-primary text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                  >
+                    {m === 'week' ? 'Tuần' : m === 'month' ? 'Tháng' : 'Năm'}
+                  </button>
+                ))}
+              </div>
+              {/* Navigation */}
               <button
                 onClick={() => setWeekOffset(w => w - 1)}
                 className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 font-bold transition-colors"
@@ -469,11 +520,19 @@ export default function DashboardPage() {
               <span className="text-xs text-gray-500 min-w-[130px] text-center">
                 {(() => {
                   const today = new Date();
-                  const dow   = today.getDay();
-                  const diff  = dow === 0 ? 6 : dow - 1;
-                  const mon   = subDays(today, diff - weekOffset * 7);
-                  const sun   = subDays(mon, -6);
-                  return `${format(mon, 'dd/MM')} – ${format(sun, 'dd/MM/yyyy')}`;
+                  if (chartMode === 'week') {
+                    const dow  = today.getDay();
+                    const diff = dow === 0 ? 6 : dow - 1;
+                    const mon  = subDays(today, diff - weekOffset * 7);
+                    const sun  = subDays(mon, -6);
+                    return `${format(mon, 'dd/MM')} – ${format(sun, 'dd/MM/yyyy')}`;
+                  } else if (chartMode === 'month') {
+                    const year  = today.getFullYear() + Math.floor((today.getMonth() + weekOffset) / 12);
+                    const month = ((today.getMonth() + weekOffset) % 12 + 12) % 12 + 1;
+                    return `Tháng ${month}/${year}`;
+                  } else {
+                    return `Năm ${today.getFullYear() + weekOffset}`;
+                  }
                 })()}
               </span>
               <button
