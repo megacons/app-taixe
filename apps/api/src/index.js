@@ -236,6 +236,12 @@ mongoose
       // Khởi động birthday cron job
       const { startBirthdayCron } = require('./utils/birthdayCron');
       startBirthdayCron();
+
+      // Khởi động Cloudinary cleanup cron (mỗi Chủ nhật 2h sáng)
+      if (process.env.CLOUDINARY_CLOUD_NAME) {
+        const { startCloudinaryCleanup } = require('./utils/cloudinaryCleanup');
+        startCloudinaryCleanup();
+      }
     });
   })
   .catch(err => {
