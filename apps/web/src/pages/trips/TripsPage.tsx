@@ -208,7 +208,7 @@ export default function TripsPage() {
       </div>
 
       {/* Filters */}
-      <div className="card p-4 pb-5 mb-5">
+      <div className="card p-4 pt-5 pb-5 mb-5 overflow-visible">
         <div className="flex flex-wrap gap-3 items-end">
           <div>
             <p className="text-xs font-medium text-gray-600 mb-1">Ngày</p>
