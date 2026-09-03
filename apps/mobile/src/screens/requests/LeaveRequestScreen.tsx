@@ -205,20 +205,22 @@ export default function LeaveRequestScreen() {
             <View style={S.rowHalf}>
               <DatePickerField
                 label="Ngày bắt đầu"
-                value={startDate ?? new Date()}
+                value={startDate}
                 onChange={(d) => { setStartDate(d); setErrors(e => ({ ...e, startDate: '' })); }}
                 required
                 error={errors.startDate}
                 compact
+                placeholder="Chọn ngày"
               />
               {showEndDate && (
                 <DatePickerField
                   label="Ngày kết thúc"
-                  value={endDate ?? new Date()}
+                  value={endDate}
                   onChange={(d) => { setEndDate(d); setErrors(e => ({ ...e, endDate: '' })); }}
                   required
                   error={errors.endDate}
                   compact
+                  placeholder="Chọn ngày"
                 />
               )}
             </View>

@@ -12,12 +12,13 @@ import { vi } from 'date-fns/locale';
 
 interface Props {
   label:        string;
-  value:        Date;
+  value:        Date | null;
   onChange:     (date: Date) => void;
   required?:    boolean;
   error?:       string;
   compact?:     boolean;
-  monthOnly?:   boolean; // chỉ chọn tháng/năm, không chọn ngày
+  monthOnly?:   boolean;
+  placeholder?: string;
 }
 
 const DOW       = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
@@ -33,31 +34,33 @@ const YEARS      = Array.from({ length: END_YEAR - START_YEAR + 1 }, (_, i) => S
 
 type PickMode = 'day' | 'year' | 'month';
 
-export default function DatePickerField({ label, value, onChange, required, error, compact, monthOnly }: Props) {
+export default function DatePickerField({ label, value, onChange, required, error, compact, monthOnly, placeholder }: Props) {
+  const effectiveValue = value ?? new Date();
   const [show,     setShow]     = useState(false);
-  const [viewDate, setViewDate] = useState(value);
+  const [viewDate, setViewDate] = useState(effectiveValue);
   const [mode,     setMode]     = useState<PickMode>(monthOnly ? 'year' : 'day');
-  const [selYear,  setSelYear]  = useState(value.getFullYear());
+  const [selYear,  setSelYear]  = useState(effectiveValue.getFullYear());
   const yearScrollRef = useRef<ScrollView>(null);
 
-  const ITEM_H = 46; // chiều cao mỗi item năm
+  const ITEM_H = 46;
 
   const scrollToYear = (y: number) => {
     const idx = YEARS.indexOf(y);
     if (idx >= 0 && yearScrollRef.current) {
-      // Cuộn để năm nằm giữa (maxHeight=240, ~5 item hiện, offset về giữa)
       const offset = Math.max(0, idx * ITEM_H - 90);
       yearScrollRef.current.scrollTo({ y: offset, animated: false });
     }
   };
 
-  const displayValue = monthOnly
-    ? format(value, 'MM/yyyy', { locale: vi })
-    : format(value, 'dd/MM/yyyy', { locale: vi });
+  const displayValue = value === null
+    ? null
+    : monthOnly
+      ? format(value, 'MM/yyyy', { locale: vi })
+      : format(value, 'dd/MM/yyyy', { locale: vi });
 
   const openPicker = () => {
-    setViewDate(value);
-    setSelYear(value.getFullYear());
+    setViewDate(effectiveValue);
+    setSelYear(effectiveValue.getFullYear());
     setMode(monthOnly ? 'year' : 'day');
     setShow(true);
     // Scroll đến năm sau khi modal render
@@ -102,7 +105,9 @@ export default function DatePickerField({ label, value, onChange, required, erro
 
       <TouchableOpacity style={[S.input, error ? S.inputError : null]} onPress={openPicker} activeOpacity={0.8}>
         <Text style={S.calIcon}>📅</Text>
-        <Text style={[S.valueText, compact && { fontSize: 13 }]} numberOfLines={1}>{displayValue}</Text>
+        <Text style={[S.valueText, compact && { fontSize: 13 }, !displayValue && { color: Colors.gray400 }]} numberOfLines={1}>
+          {displayValue ?? (placeholder ?? 'Chọn ngày')}
+        </Text>
         <Text style={S.dropArrow}>▾</Text>
       </TouchableOpacity>
       {error ? <Text style={S.errorText}>{error}</Text> : null}
@@ -114,7 +119,7 @@ export default function DatePickerField({ label, value, onChange, required, erro
           <View style={S.calendar}>
             {/* Selected date bar */}
             <View style={S.selectedBar}>
-              <Text style={S.selectedValue}>{displayValue}</Text>
+              <Text style={S.selectedValue}>{displayValue ?? (placeholder ?? 'Chọn ngày')}</Text>
             </View>
 
             {/* ── YEAR picker ── */}
