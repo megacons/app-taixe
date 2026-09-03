@@ -18,7 +18,7 @@ const getImageUrl = (url: string | null | undefined): string | null => {
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
   return url.startsWith('/') ? url : `/${url}`;
 };
-
+  
 interface Trip {
   _id: string;
   trip_date: string;
@@ -208,7 +208,7 @@ export default function TripsPage() {
       </div>
 
       {/* Filters */}
-      <div className="card p-4 mb-5">
+      <div className="card p-4 pb-5 mb-5">
         <div className="flex flex-wrap gap-3 items-end">
           <div>
             <p className="text-xs font-medium text-gray-600 mb-1">Ngày</p>
