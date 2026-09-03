@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, FlatList, StyleSheet, TouchableOpacity,
   RefreshControl, ActivityIndicator, Alert, ScrollView,
-  DeviceEventEmitter,
+  DeviceEventEmitter, Modal, TextInput, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -40,6 +40,8 @@ export default function AdminRequests() {
   const [refreshing, setRefreshing] = useState(false);
   const [statusFilter, setStatusFilter] = useState('pending');
   const [approving, setApproving] = useState<string | null>(null);
+  const [rejectTarget, setRejectTarget] = useState<{ id: string; title: string } | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
 
   const fetchRequests = useCallback(async (status = statusFilter) => {
     try {
@@ -100,20 +102,28 @@ export default function AdminRequests() {
   };
 
   const doReject = async (id: string, title: string) => {
-    Alert.alert('Từ chối', `Từ chối "${title}"?`, [
-      { text: 'Hủy', style: 'cancel' },
-      { text: '❌ Từ chối', style: 'destructive', onPress: async () => {
-        setApproving(id);
-        try {
-          await api.put(`/requests/${id}/reject`, { rejection_reason: 'Admin từ chối' });
-          setRequests(prev => prev.filter(r => r._id !== id));
-        } catch (e: any) { Alert.alert('Lỗi', e?.response?.data?.message ?? 'Thất bại'); }
-        finally { setApproving(null); }
-      }},
-    ]);
+    setRejectTarget({ id, title });
+    setRejectReason('');
+  };
+
+  const confirmReject = async () => {
+    if (!rejectTarget) return;
+    setApproving(rejectTarget.id);
+    try {
+      await api.put(`/requests/${rejectTarget.id}/reject`, {
+        rejection_reason: rejectReason.trim() || 'Admin từ chối',
+      });
+      setRequests(prev => prev.filter(r => r._id !== rejectTarget.id));
+      setRejectTarget(null);
+    } catch (e: any) {
+      Alert.alert('Lỗi', e?.response?.data?.message ?? 'Thất bại');
+    } finally {
+      setApproving(null);
+    }
   };
 
   return (
+    <>
     <SafeAreaView style={S.safe} edges={['top']}>
       <View style={S.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={S.backBtn}>
@@ -204,6 +214,58 @@ export default function AdminRequests() {
         />
       )}
     </SafeAreaView>
+
+    {/* ── Modal nhập lý do từ chối ── */}
+    <Modal
+      visible={!!rejectTarget}
+      transparent
+      animationType="slide"
+      onRequestClose={() => setRejectTarget(null)}
+    >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
+        <View style={M.overlay}>
+          <View style={M.sheet}>
+            <Text style={M.title}>Lý do từ chối</Text>
+            <Text style={M.subtitle} numberOfLines={2}>
+              "{rejectTarget?.title}"
+            </Text>
+            <TextInput
+              style={M.input}
+              placeholder="Nhập lý do từ chối (không bắt buộc)..."
+              placeholderTextColor={Colors.gray400}
+              value={rejectReason}
+              onChangeText={setRejectReason}
+              multiline
+              numberOfLines={3}
+              textAlignVertical="top"
+              autoFocus
+            />
+            <View style={M.actions}>
+              <TouchableOpacity
+                style={M.cancelBtn}
+                onPress={() => setRejectTarget(null)}
+              >
+                <Text style={M.cancelText}>Hủy</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[M.rejectBtn, approving ? { opacity: 0.6 } : {}]}
+                onPress={confirmReject}
+                disabled={!!approving}
+              >
+                {approving
+                  ? <ActivityIndicator size="small" color={Colors.white} />
+                  : <Text style={M.rejectText}>❌ Xác nhận từ chối</Text>
+                }
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+    </>
   );
 }
 
@@ -238,4 +300,17 @@ const S = StyleSheet.create({
   approveText: { fontSize: 13, fontWeight: '600', color: Colors.white },
   empty:       { alignItems: 'center', paddingTop: 60, gap: 8 },
   emptyText:   { fontSize: 14, color: Colors.gray500 },
+});
+
+const M = StyleSheet.create({
+  overlay:   { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  sheet:     { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 36 },
+  title:     { fontSize: 17, fontWeight: '800', color: Colors.gray900, marginBottom: 6 },
+  subtitle:  { fontSize: 13, color: Colors.gray500, marginBottom: 14, fontStyle: 'italic' },
+  input:     { borderWidth: 1.5, borderColor: Colors.gray200, borderRadius: 10, padding: 12, fontSize: 14, color: Colors.gray900, minHeight: 80, textAlignVertical: 'top', backgroundColor: '#fafafa', marginBottom: 16 },
+  actions:   { flexDirection: 'row', gap: 10 },
+  cancelBtn: { flex: 1, height: 46, borderRadius: 10, borderWidth: 1.5, borderColor: Colors.gray300, justifyContent: 'center', alignItems: 'center' },
+  cancelText:{ fontSize: 14, fontWeight: '600', color: Colors.gray600 },
+  rejectBtn: { flex: 2, height: 46, borderRadius: 10, backgroundColor: Colors.error, justifyContent: 'center', alignItems: 'center' },
+  rejectText:{ fontSize: 14, fontWeight: '700', color: '#fff' },
 });
