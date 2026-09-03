@@ -448,7 +448,7 @@ export default function DriverFundPage() {
                   <table className="w-full text-xs border-collapse">
                     <thead>
                       <tr className="bg-primary text-white">
-                        {['STT', 'Ngày', 'Số tiền', 'Ghi chú / Mục đích', 'Trạng thái'].map((h, i) => (
+                        {['STT', 'Ngày', 'Số tiền', 'Ghi chú / Mục đích', 'Trạng thái', ''].map((h, i) => (
                           <th key={i} className="px-4 py-2.5 text-left font-semibold border-r border-primary-700/50 last:border-0 whitespace-nowrap">
                             {h}
                           </th>
@@ -475,10 +475,38 @@ export default function DriverFundPage() {
                             <td className="px-4 py-2.5 border-r border-gray-100 text-gray-700">
                               {r.note || r.title || '—'}
                             </td>
-                            <td className="px-4 py-2.5">
+                            <td className="px-4 py-2.5 border-r border-gray-100">
                               <span className={`inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full ${st.bg} ${st.text}`}>
                                 {st.label}
                               </span>
+                            </td>
+                            <td className="px-4 py-2.5">
+                              <div className="flex gap-1 justify-center">
+                                <button
+                                  onClick={() => setEditExpense(r)}
+                                  className="p-1.5 rounded-lg text-gray-400 hover:bg-yellow-50 hover:text-yellow-600 transition-colors"
+                                  title="Sửa"
+                                >
+                                  <PencilIcon className="w-3.5 h-3.5" />
+                                </button>
+                                {r.status === 'pending' && (
+                                  <button
+                                    onClick={async () => {
+                                      if (!confirm(`Xóa yêu cầu "${r.title}"?`)) return;
+                                      try {
+                                        await api.delete(`/requests/${r._id}`);
+                                        toast.success('Đã xóa yêu cầu');
+                                        if (selected) loadDetail(selected);
+                                        refetch();
+                                      } catch { toast.error('Xóa thất bại'); }
+                                    }}
+                                    className="p-1.5 rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+                                    title="Xóa"
+                                  >
+                                    <TrashIcon className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         );
