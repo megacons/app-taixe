@@ -254,7 +254,8 @@ export default function DashboardScreen() {
               ) : (
                 <Text style={styles.logoText}>🚛</Text>
               )}
-            </View>            <Text style={styles.brandName}>{companyName}</Text>
+            </View>
+            <Text style={styles.brandName}>{companyName}</Text>
           </View>
           <TouchableOpacity
             style={styles.notifBtn}
