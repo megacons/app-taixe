@@ -602,6 +602,9 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* ── Biểu đồ số chuyến ── */}
+      <TripChart />
+
     </div>
 
     {/* ── Modals (rendered via Portal to avoid stacking context issues) ── */}
@@ -1156,5 +1159,136 @@ export default function DashboardPage() {
       document.body
     )}
     </>
+  );
+}
+
+/* ══════════════════════════════════════════════════════
+ *  TripChart — Biểu đồ số chuyến theo tuần/tháng/năm
+ * ══════════════════════════════════════════════════════ */
+function TripChart() {
+  const [mode, setMode]       = useState<'week' | 'month' | 'year'>('week');
+  const [offset, setOffset]   = useState(0);
+  const [data, setData]       = useState<{ date: string; trips: number }[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const loadData = useCallback(async (m: 'week' | 'month' | 'year', off: number) => {
+    setLoading(true);
+    try {
+      const today = new Date();
+      const points: { date: string; trips: number }[] = [];
+
+      if (m === 'week') {
+        const dow = today.getDay();
+        const daysSinceMonday = dow === 0 ? 6 : dow - 1;
+        const monday = subDays(today, daysSinceMonday - off * 7);
+        const DAY_LABELS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+        for (let i = 0; i < 7; i++) {
+          const d   = subDays(monday, -i);
+          const str = d.toISOString().slice(0, 10);
+          const label = `${DAY_LABELS[i]} ${format(d, 'dd/MM', { locale: vi })}`;
+          try {
+            const res = await api.get('/trips/summary/daily', { params: { date: str } });
+            points.push({ date: label, trips: res.data.data?.total_trips ?? 0 });
+          } catch { points.push({ date: label, trips: 0 }); }
+        }
+      } else if (m === 'month') {
+        const year  = today.getFullYear() + Math.floor((today.getMonth() + off) / 12);
+        const month = ((today.getMonth() + off) % 12 + 12) % 12 + 1;
+        const daysInMonth = new Date(year, month, 0).getDate();
+        for (let d = 1; d <= daysInMonth; d++) {
+          const str   = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+          const label = `${d}/${month}`;
+          try {
+            const res = await api.get('/trips/summary/daily', { params: { date: str } });
+            points.push({ date: label, trips: res.data.data?.total_trips ?? 0 });
+          } catch { points.push({ date: label, trips: 0 }); }
+        }
+      } else {
+        const year = today.getFullYear() + off;
+        for (let month = 1; month <= 12; month++) {
+          try {
+            const res = await api.get('/trips', { params: { month, year, limit: 1 } });
+            points.push({ date: `T${month}/${year}`, trips: res.data.data?.pagination?.total ?? 0 });
+          } catch { points.push({ date: `T${month}/${year}`, trips: 0 }); }
+        }
+      }
+      setData(points);
+    } finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { loadData(mode, offset); }, [mode, offset]);
+
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (!active || !payload?.length) return null;
+    return (
+      <div className="bg-white border border-gray-100 rounded-xl shadow-lg p-3 text-xs">
+        <p className="font-semibold text-gray-700 mb-1">{label}</p>
+        <p className="text-blue-600">{payload[0].value} chuyến</p>
+      </div>
+    );
+  };
+
+  const rangeLabel = () => {
+    const today = new Date();
+    if (mode === 'week') {
+      const dow  = today.getDay();
+      const diff = dow === 0 ? 6 : dow - 1;
+      const mon  = subDays(today, diff - offset * 7);
+      const sun  = subDays(mon, -6);
+      return `${format(mon, 'dd/MM')} – ${format(sun, 'dd/MM/yyyy')}`;
+    } else if (mode === 'month') {
+      const year  = today.getFullYear() + Math.floor((today.getMonth() + offset) / 12);
+      const month = ((today.getMonth() + offset) % 12 + 12) % 12 + 1;
+      return `Tháng ${month}/${year}`;
+    } else {
+      return `Năm ${today.getFullYear() + offset}`;
+    }
+  };
+
+  return (
+    <div className="card">
+      <div className="card-header">
+        <h2 className="font-semibold text-gray-900">
+          Số chuyến {mode === 'week' ? 'theo tuần' : mode === 'month' ? 'theo tháng' : 'theo năm'}
+        </h2>
+        <div className="flex items-center gap-2">
+          {/* Mode selector */}
+          <div className="flex rounded-lg overflow-hidden border border-gray-200 text-xs">
+            {(['week','month','year'] as const).map(m => (
+              <button key={m} onClick={() => { setMode(m); setOffset(0); }}
+                className={`px-2.5 py-1 font-medium transition-colors ${mode === m ? 'bg-primary text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}>
+                {m === 'week' ? 'Tuần' : m === 'month' ? 'Tháng' : 'Năm'}
+              </button>
+            ))}
+          </div>
+          <button onClick={() => setOffset(o => o - 1)}
+            className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 font-bold transition-colors">‹</button>
+          <span className="text-xs text-gray-500 min-w-[130px] text-center">{rangeLabel()}</span>
+          <button onClick={() => setOffset(o => Math.min(0, o + 1))} disabled={offset >= 0}
+            className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 font-bold transition-colors disabled:opacity-30 disabled:cursor-not-allowed">›</button>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="h-56 flex items-center justify-center text-gray-400 text-sm">Đang tải...</div>
+      ) : (
+        <div style={{ overflowX: mode === 'month' ? 'auto' : 'visible' }}>
+          <div style={{ width: mode === 'month' ? Math.max(data.length * 28, 400) : '100%', minWidth: '100%' }}>
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: mode === 'month' ? 30 : 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="date" tick={{ fontSize: 10 }} interval={0}
+                  angle={mode === 'month' ? -45 : 0}
+                  textAnchor={mode === 'month' ? 'end' : 'middle'}
+                  height={mode === 'month' ? 50 : 20} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 11 }} width={30} />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar dataKey="trips" name="Số chuyến" fill="#163797" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
