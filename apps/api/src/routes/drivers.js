@@ -5,7 +5,7 @@ const { body, query, param } = require('express-validator');
 const { Driver, User, Vehicle } = require('../models');
 const { authenticate, authorize } = require('../middleware/auth');
 const { validate } = require('../middleware/validate');
-const { upload, getFileUrl } = require('../middleware/upload');
+const { upload: generalUpload, avatarUpload, getFileUrl } = require('../middleware/upload');
 
 /**
  * GET /drivers
@@ -442,7 +442,7 @@ router.put('/profile/me', authenticate, authorize('driver'), async (req, res, ne
 router.post(
   '/avatar',
   authenticate,
-  upload.single('avatar'),
+  avatarUpload.single('avatar'),
   async (req, res, next) => {
     try {
       if (!req.file) {

@@ -1,64 +1,50 @@
 const multer = require('multer');
-const path = require('path');
-const { v4: uuidv4 } = require('uuid');
-const fs = require('fs');
+const { createCloudinaryStorage } = require('../config/cloudinary');
 
-const UPLOAD_PATH = process.env.UPLOAD_PATH || './uploads';
 const MAX_FILE_SIZE = parseInt(process.env.MAX_FILE_SIZE) || 10 * 1024 * 1024; // 10MB
 
-// Ensure upload dirs exist
-const createDirs = () => {
-  const dirs = ['images', 'receipts', 'documents', 'avatars'];
-  dirs.forEach(dir => {
-    const fullPath = path.join(UPLOAD_PATH, dir);
-    if (!fs.existsSync(fullPath)) {
-      fs.mkdirSync(fullPath, { recursive: true });
-    }
-  });
-};
-createDirs();
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    let folder = 'images';
-    if (file.fieldname === 'avatar') folder = 'avatars';
-    else if (file.fieldname === 'receipt' || file.fieldname === 'delivery_receipt')
-      folder = 'receipts';
-    else if (file.fieldname === 'document' || file.fieldname === 'attachment')
-      folder = 'documents';
-
-    cb(null, path.join(UPLOAD_PATH, folder));
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    const filename = `${uuidv4()}${ext}`;
-    cb(null, filename);
-  },
-});
-
 const fileFilter = (req, file, cb) => {
-  const allowedImageTypes = /jpeg|jpg|png|gif|webp/;
-  const allowedDocTypes = /pdf|doc|docx|xls|xlsx/;
-  const ext = path.extname(file.originalname).toLowerCase().replace('.', '');
-
-  if (allowedImageTypes.test(ext) || allowedDocTypes.test(ext)) {
+  const allowedTypes = /jpeg|jpg|png|gif|webp|pdf|doc|docx|xls|xlsx/;
+  const ext = (file.originalname.split('.').pop() || '').toLowerCase();
+  if (allowedTypes.test(ext) || allowedTypes.test(file.mimetype)) {
     cb(null, true);
   } else {
     cb(new Error('Loại file không được hỗ trợ. Chỉ chấp nhận: jpg, png, pdf, doc, xlsx'), false);
   }
 };
 
-const upload = multer({
-  storage,
-  limits: { fileSize: MAX_FILE_SIZE },
+// Tạo multer instance cho từng loại upload
+const createUploader = (folder) => multer({
+  storage: createCloudinaryStorage(folder),
+  limits:  { fileSize: MAX_FILE_SIZE },
   fileFilter,
 });
 
-// Helper to get public URL from file path
-const getFileUrl = file => {
+// Các uploader theo từng loại
+const upload         = createUploader('uploads');     // general
+const avatarUpload   = createUploader('avatars');
+const receiptUpload  = createUploader('receipts');
+const documentUpload = createUploader('documents');
+const attendanceUpload = createUploader('attendance');
+
+/**
+ * getFileUrl — tương thích với cả Cloudinary (req.file.path) và legacy local
+ * Cloudinary trả về file.path = https://res.cloudinary.com/...
+ */
+const getFileUrl = (file) => {
   if (!file) return null;
-  const relativePath = file.path.replace(/\\/g, '/').split('uploads/')[1];
-  return `/uploads/${relativePath}`;
+  // Cloudinary: file.path là URL đầy đủ
+  if (file.path && file.path.startsWith('http')) return file.path;
+  // Legacy local fallback
+  const relativePath = (file.path || '').replace(/\\/g, '/').split('uploads/')[1];
+  return relativePath ? `/uploads/${relativePath}` : null;
 };
 
-module.exports = { upload, getFileUrl };
+module.exports = {
+  upload,
+  avatarUpload,
+  receiptUpload,
+  documentUpload,
+  attendanceUpload,
+  getFileUrl,
+};

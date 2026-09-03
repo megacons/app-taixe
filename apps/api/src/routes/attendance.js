@@ -1,25 +1,11 @@
 const express = require('express');
 const router  = express.Router();
-const multer  = require('multer');
-const path    = require('path');
-const fs      = require('fs');
-const { v4: uuidv4 } = require('uuid');
 const { Attendance } = require('../models');
 const { authenticate, authorize } = require('../middleware/auth');
+const { attendanceUpload, getFileUrl } = require('../middleware/upload');
 
-// Storage cho ảnh chấm công
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const dir = './uploads/attendance';
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    cb(null, dir);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `${uuidv4()}${ext}`);
-  },
-});
-const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } }).single('photo');
+// Multer middleware cho ảnh chấm công (Cloudinary)
+const upload = attendanceUpload.single('photo');
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 
@@ -33,7 +19,7 @@ router.post('/checkin', authenticate, async (req, res, next) => {
 
     const date = req.body.date || todayStr();
     let photoUrl = null;
-    if (req.file) photoUrl = `/uploads/attendance/${req.file.filename}`;
+    if (req.file) photoUrl = getFileUrl(req.file);
 
     // Location metadata (optional)
     const latitude  = req.body.latitude  ? parseFloat(req.body.latitude)  : null;
