@@ -9,9 +9,6 @@ import { useConfigStore } from '@/stores/configStore';
 const TABS = [
   { id: 'company',  label: 'Thông tin công ty', icon: '🏢' },
   { id: 'overtime', label: 'Lương & Tăng ca',   icon: '💰' },
-  { id: 'gps',      label: 'GPS',               icon: '📍' },
-  { id: 'approval', label: 'Quy trình duyệt',   icon: '✅' },
-  { id: 'notif',    label: 'Thông báo',          icon: '🔔' },
 ] as const;
 
 type TabId = typeof TABS[number]['id'];
@@ -284,58 +281,6 @@ export default function SystemConfigPage() {
               formatValue={formatValue}
               loading={loading}
             />
-          )}
-
-          {/* ═══ Tab: GPS ═══ */}
-          {activeTab === 'gps' && (
-            <ConfigSection
-              title="Cấu hình GPS"
-              description="Thiết lập khoảng thời gian ping GPS và cài đặt theo dõi."
-              configs={configsByCategory('gps')}
-              editKey={editKey}
-              editValue={editValue}
-              setEditValue={setEditValue}
-              onEdit={startEdit}
-              onSave={saveEdit}
-              onCancel={() => setEditKey(null)}
-              saving={saving}
-              formatValue={formatValue}
-              loading={loading}
-            />
-          )}
-
-          {/* ═══ Tab: Quy trình duyệt ═══ */}
-          {activeTab === 'approval' && (
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">Quy trình duyệt</h3>
-              <p className="text-sm text-gray-500 mb-6">
-                Phân quyền phê duyệt các loại yêu cầu theo vai trò.
-              </p>
-              <ApprovalMatrix />
-            </div>
-          )}
-
-          {/* ═══ Tab: Thông báo ═══ */}
-          {activeTab === 'notif' && (
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">Thông báo</h3>
-              <p className="text-sm text-gray-500 mb-6">
-                Cấu hình Firebase FCM và kênh gửi thông báo.
-              </p>
-              <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 flex items-start gap-3">
-                <InformationCircleIcon className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-semibold text-amber-800">Cấu hình Firebase FCM</p>
-                  <p className="text-xs text-amber-700 mt-1">
-                    Để bật push notification cho mobile app, cần cấu hình
-                    <code className="bg-amber-100 px-1 rounded font-mono mx-1">FIREBASE_PROJECT_ID</code>,
-                    <code className="bg-amber-100 px-1 rounded font-mono mx-1">FIREBASE_PRIVATE_KEY</code> và
-                    <code className="bg-amber-100 px-1 rounded font-mono mx-1">FIREBASE_CLIENT_EMAIL</code> trong
-                    file <code className="bg-amber-100 px-1 rounded font-mono">apps/api/.env</code>.
-                  </p>
-                </div>
-              </div>
-            </div>
           )}
 
           {/* ── Info note ── */}
