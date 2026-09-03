@@ -94,18 +94,13 @@ export default function LeaveBalanceScreen() {
 
               <View style={S.statsRow}>
                 <View style={S.statItem}>
-                  <Text style={S.statNum}>{data.accrued_days ?? 0}</Text>
-                  <Text style={S.statLabel}>Tổng tích lũy</Text>
+                  <Text style={[S.statNum, { color: '#fde68a' }]}>{data.balance_days ?? 0}</Text>
+                  <Text style={S.statLabel}>Còn phép</Text>
                 </View>
                 <View style={S.statDivider} />
                 <View style={S.statItem}>
                   <Text style={[S.statNum, { color: '#fca5a5' }]}>{data.used_days ?? 0}</Text>
                   <Text style={S.statLabel}>Đã nghỉ</Text>
-                </View>
-                <View style={S.statDivider} />
-                <View style={S.statItem}>
-                  <Text style={[S.statNum, { color: '#fde68a' }]}>{data.balance_days ?? 0}</Text>
-                  <Text style={S.statLabel}>Còn lại</Text>
                 </View>
               </View>
             </View>
