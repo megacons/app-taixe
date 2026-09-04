@@ -711,6 +711,26 @@ router.delete('/:id', authenticate, async (req, res, next) => {
     }
 
     await request.deleteOne();
+
+    // ── Nếu xóa expense đã approved → rollback FundEntry ──
+    if (request.type === 'expense' && request.status === 'approved' && request.driver_id) {
+      try {
+        const mongoose = require('mongoose');
+        const FundEntry = mongoose.models.FundEntry;
+        if (FundEntry) {
+          const amount = request.payload?.amount ?? 0;
+          const expenseDate = request.payload?.date ?? new Date().toISOString().slice(0, 10);
+          const entry = await FundEntry.findOne({ driver_id: request.driver_id, date: expenseDate });
+          if (entry) {
+            entry.expense = Math.max(0, entry.expense - amount);
+            await entry.save();
+          }
+        }
+      } catch (e) {
+        console.warn('FundEntry rollback error:', e.message);
+      }
+    }
+
     res.json({ success: true, message: 'Đã xóa yêu cầu' });
   } catch (err) { next(err); }
 });

@@ -489,7 +489,7 @@ export default function DriverFundPage() {
                                 >
                                   <PencilIcon className="w-3.5 h-3.5" />
                                 </button>
-                                {r.status === 'pending' && (
+                                {(r.status === 'pending' || r.status === 'approved') && (
                                   <button
                                     onClick={async () => {
                                       if (!confirm(`Xóa yêu cầu "${r.title}"?`)) return;
@@ -498,6 +498,11 @@ export default function DriverFundPage() {
                                         toast.success('Đã xóa yêu cầu');
                                         if (selected) loadDetail(selected);
                                         refetch();
+                                        // Reload reqList
+                                        if (selected) {
+                                          const reqRes = await api.get(`/fund/${selected.driver_id}/requests`, { params: { month, year } });
+                                          setReqList(reqRes.data.data?.requests ?? []);
+                                        }
                                       } catch { toast.error('Xóa thất bại'); }
                                     }}
                                     className="p-1.5 rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
