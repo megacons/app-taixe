@@ -67,7 +67,7 @@ export default function TripsPage() {
     : '';
 
   const { data, loading, refetch } = useApi<any>('/trips', {
-    page, limit: 20, sort: 'trip_date',
+    page, limit: 20, sort: '-trip_date',
     ...(dateParam ? { date: dateParam } : {}),
     ...(!dateParam && month ? { month } : {}),
     ...(!dateParam && year  ? { year  } : {}),
@@ -99,7 +99,7 @@ export default function TripsPage() {
     try {
       // Lấy tất cả chuyến theo filter hiện tại (không phân trang)
       const res = await api.get('/trips', {
-        params: { limit: 2000, sort: 'trip_date',
+        params: { limit: 2000, sort: '-trip_date',
           ...(dateParam ? { date: dateParam } : {}),
           ...(!dateParam && month ? { month } : {}),
           ...(!dateParam && year  ? { year  } : {}),
@@ -278,16 +278,14 @@ export default function TripsPage() {
                 </td></tr>
               )}
               {(() => {
-                // Tính STT per ngày+tài xế: reset về 1 khi qua ngày mới hoặc tài xế khác
-                const dayDriverCounters: Record<string, number> = {};
+                // STT theo thứ tự xuất hiện trong list, reset khi qua ngày mới
+                const dayCounters: Record<string, number> = {};
                 const sttPerTrip = trips.map(t => {
                   const dateKey = t.trip_date
                     ? new Date(t.trip_date).toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' })
                     : 'unknown';
-                  const driverKey = t.driver_id?._id ?? 'unknown';
-                  const key = `${dateKey}_${driverKey}`;
-                  dayDriverCounters[key] = (dayDriverCounters[key] ?? 0) + 1;
-                  return dayDriverCounters[key];
+                  dayCounters[dateKey] = (dayCounters[dateKey] ?? 0) + 1;
+                  return dayCounters[dateKey];
                 });
                 return trips.map((t, idx) => (
                 <tr key={t._id} className={t.is_overtime ? 'bg-orange-50/40' : ''}>
