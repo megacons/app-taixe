@@ -309,7 +309,9 @@ export default function ProfilePage() {
                         {!n.is_read && <div className="w-2 h-2 rounded-full bg-primary" />}
                       </div>
                     </div>
-                    <p className="text-sm text-gray-600 mt-0.5 line-clamp-2">{n.message}</p>
+                    <div className="text-sm text-gray-600 mt-0.5 line-clamp-2 prose prose-sm max-w-none"
+                      dangerouslySetInnerHTML={{ __html: n.message }}
+                    />
                     <p className="text-xs text-gray-400 mt-1">
                       {n.created_at ? format(parseISO(n.created_at), 'HH:mm - dd/MM/yyyy', { locale: vi }) : '—'}
                       {n.sent_by && <span className="ml-1">· {n.sent_by}</span>}
@@ -340,7 +342,9 @@ export default function ProfilePage() {
               <p className="text-xs text-gray-400">
                 🕐 {selectedNotif.created_at ? format(parseISO(selectedNotif.created_at), 'HH:mm - dd/MM/yyyy (EEEE)', { locale: vi }) : '—'}
               </p>
-              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{selectedNotif.message}</p>
+              <div className="text-sm text-gray-700 leading-relaxed prose prose-sm max-w-none"
+                dangerouslySetInnerHTML={{ __html: selectedNotif.message }}
+              />
               {selectedNotif.attachment?.url && (
                 <a href={selectedNotif.attachment.url.startsWith('/') ? selectedNotif.attachment.url : `/${selectedNotif.attachment.url}`}
                   target="_blank" rel="noreferrer"
