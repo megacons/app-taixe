@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import {
   View, Text, FlatList, StyleSheet, TouchableOpacity,
   RefreshControl, ActivityIndicator, Modal, ScrollView,
-  DeviceEventEmitter, Linking,
+  DeviceEventEmitter, Linking, useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -10,6 +10,7 @@ import { Colors } from '@/constants/colors';
 import api from '@/lib/api';
 import { format, parseISO } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import RenderHtml from 'react-native-render-html';
 
 const BASE_URL = process.env.API_URL || 'http://192.168.88.181:5000';
 
@@ -68,6 +69,7 @@ const TYPE_LABEL: Record<string, string> = {
 
 export default function NotificationsScreen() {
   const navigation = useNavigation();
+  const { width } = useWindowDimensions();
   const [notifs,     setNotifs]     = useState<Notif[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -207,7 +209,30 @@ export default function NotificationsScreen() {
                 <View style={D.divider} />
 
                 {/* Nội dung đầy đủ */}
-                <Text style={D.message}>{selected.message}</Text>
+                {selected.message ? (
+                  selected.message.trim().startsWith('<') ? (
+                    <RenderHtml
+                      contentWidth={width - 40}
+                      source={{ html: selected.message }}
+                      tagsStyles={{
+                        p:          { fontSize: 15, color: Colors.gray700, lineHeight: 24, marginBottom: 8 },
+                        h1:         { fontSize: 20, fontWeight: '800', color: Colors.gray900, marginBottom: 8 },
+                        h2:         { fontSize: 17, fontWeight: '700', color: Colors.gray900, marginBottom: 6 },
+                        h3:         { fontSize: 15, fontWeight: '700', color: Colors.gray900, marginBottom: 4 },
+                        ul:         { paddingLeft: 16 },
+                        ol:         { paddingLeft: 16 },
+                        li:         { fontSize: 15, color: Colors.gray700, lineHeight: 22, marginBottom: 4 },
+                        blockquote: { borderLeftWidth: 3, borderLeftColor: Colors.primary, paddingLeft: 12, color: Colors.gray500 },
+                        a:          { color: Colors.primary, textDecorationLine: 'underline' },
+                        strong:     { fontWeight: '700' },
+                        em:         { fontStyle: 'italic' },
+                        img:        { borderRadius: 8, marginVertical: 8 },
+                      }}
+                    />
+                  ) : (
+                    <Text style={D.message}>{selected.message}</Text>
+                  )
+                ) : null}
 
                 {/* File đính kèm */}
                 {selected.attachment?.url && (

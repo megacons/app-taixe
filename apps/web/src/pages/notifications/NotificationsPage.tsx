@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import Modal from '@/components/ui/Modal';
-import MonthYearPicker from '@/components/ui/MonthYearPicker';
+import RichTextEditor from '@/components/RichTextEditor';
 
 /* ── Helpers ── */
 const getImageUrl = (url: string | null | undefined): string | null => {
@@ -546,10 +546,12 @@ export default function NotificationsPage() {
                 {/* Nội dung */}
                 <div>
                   <label className="form-label">Nội dung *</label>
-                  <textarea className="form-input w-full resize-none" rows={5}
-                    placeholder="Nhập nội dung thông báo..."
-                    value={message} onChange={e => setMessage(e.target.value)} maxLength={5000} />
-                  <p className="text-xs text-gray-400 mt-1 text-right">{message.length}/5000</p>
+                  <RichTextEditor
+                    value={message}
+                    onChange={setMessage}
+                    placeholder="Nhập nội dung thông báo... (hỗ trợ định dạng văn bản, hình ảnh)"
+                    minHeight={200}
+                  />
                 </div>
 
                 {/* Preview */}
@@ -562,7 +564,9 @@ export default function NotificationsPage() {
                       </span>
                       <div>
                         <p className="font-semibold text-gray-900 text-sm">{title || '(tiêu đề)'}</p>
-                        <p className="text-gray-600 text-sm mt-0.5">{message || '(nội dung)'}</p>
+                        <div className="text-gray-600 text-sm mt-0.5 prose prose-sm max-w-none"
+                          dangerouslySetInnerHTML={{ __html: message || '<span style="color:#9ca3af">(nội dung)</span>' }}
+                        />
                       </div>
                     </div>
                   </div>
@@ -660,7 +664,9 @@ export default function NotificationsPage() {
                         </div>
 
                         {/* Message */}
-                        <p className="text-sm text-gray-600 line-clamp-2">{h.message}</p>
+                        <div className="text-sm text-gray-600 line-clamp-2 prose prose-sm max-w-none"
+                          dangerouslySetInnerHTML={{ __html: h.message }}
+                        />
 
                         {/* File đính kèm */}
                         {h.attachment?.url && (
@@ -758,9 +764,12 @@ export default function NotificationsPage() {
           </div>
           <div>
             <label className="form-label">Nội dung *</label>
-            <textarea className="form-input w-full resize-none" rows={5}
-              value={editMessage} onChange={e => setEditMessage(e.target.value)} maxLength={5000} />
-            <p className="text-xs text-gray-400 mt-1 text-right">{editMessage.length}/5000</p>
+            <RichTextEditor
+              value={editMessage}
+              onChange={setEditMessage}
+              placeholder="Nhập nội dung thông báo..."
+              minHeight={180}
+            />
           </div>
 
           {/* File đính kèm cũ */}

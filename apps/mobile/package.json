@@ -34,6 +34,7 @@
     "react": "19.2.3",
     "react-hook-form": "^7.50.1",
     "react-native": "0.86.3",
+    "react-native-render-html": "^6.3.4",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
     "react-native-view-shot": "5.1.0",
