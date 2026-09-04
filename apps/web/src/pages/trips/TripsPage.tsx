@@ -278,14 +278,16 @@ export default function TripsPage() {
                 </td></tr>
               )}
               {(() => {
-                // Tính STT per ngày: reset về 1 khi qua ngày mới (timezone VN)
-                const dayCounters: Record<string, number> = {};
+                // Tính STT per ngày+tài xế: reset về 1 khi qua ngày mới hoặc tài xế khác
+                const dayDriverCounters: Record<string, number> = {};
                 const sttPerTrip = trips.map(t => {
                   const dateKey = t.trip_date
                     ? new Date(t.trip_date).toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' })
                     : 'unknown';
-                  dayCounters[dateKey] = (dayCounters[dateKey] ?? 0) + 1;
-                  return dayCounters[dateKey];
+                  const driverKey = t.driver_id?._id ?? 'unknown';
+                  const key = `${dateKey}_${driverKey}`;
+                  dayDriverCounters[key] = (dayDriverCounters[key] ?? 0) + 1;
+                  return dayDriverCounters[key];
                 });
                 return trips.map((t, idx) => (
                 <tr key={t._id} className={t.is_overtime ? 'bg-orange-50/40' : ''}>
