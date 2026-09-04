@@ -100,6 +100,7 @@ export default function SystemConfigPage() {
       const url = res.data.data?.url;
       if (url) {
         await api.put('/materials/configs/logo_url', { value: url });
+        setLogoPreview(url);
         toast.success('Đã cập nhật logo');
         refreshGlobalConfig();
       }
@@ -210,7 +211,7 @@ export default function SystemConfigPage() {
                     <div className="w-24 h-24 mb-4 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
                       {logoPreview || logoUrl ? (
                         <img
-                          src={logoPreview ?? (logoUrl?.startsWith('/') ? logoUrl : `/${logoUrl}`)}
+                          src={logoPreview ?? (logoUrl?.startsWith('http') ? logoUrl : logoUrl?.startsWith('/') ? logoUrl : `/${logoUrl}`)}
                           alt="logo"
                           className="w-full h-full object-contain"
                         />
