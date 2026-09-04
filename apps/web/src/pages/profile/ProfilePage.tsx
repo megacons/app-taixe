@@ -338,7 +338,7 @@ export default function ProfilePage() {
               <button onClick={() => setSelectedNotif(null)}
                 className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 font-bold">✕</button>
             </div>
-            <div className="p-6 space-y-3">
+            <div className="p-6 space-y-3 overflow-y-auto max-h-[60vh]">
               <p className="text-xs text-gray-400">
                 🕐 {selectedNotif.created_at ? format(parseISO(selectedNotif.created_at), 'HH:mm - dd/MM/yyyy (EEEE)', { locale: vi }) : '—'}
               </p>
