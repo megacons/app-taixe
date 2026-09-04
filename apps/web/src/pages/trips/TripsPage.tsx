@@ -208,10 +208,10 @@ export default function TripsPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-4 py-4 mb-5">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-4 py-5 mb-5" style={{ overflow: 'visible' }}>
         <div className="flex flex-wrap gap-4 items-start">
           <div className="flex flex-col gap-1">
-            <p className="text-xs font-medium text-gray-600">Ngày</p>
+            <p className="text-xs font-medium text-gray-600 leading-5">Ngày</p>
             <select className="form-select h-9 text-sm w-24" value={day}
               onChange={e => { setDay(e.target.value); setPage(1); }}>
               <option value="">Tất cả</option>
@@ -219,7 +219,7 @@ export default function TripsPage() {
             </select>
           </div>
           <div className="flex flex-col gap-1">
-            <p className="text-xs font-medium text-gray-600">Tháng</p>
+            <p className="text-xs font-medium text-gray-600 leading-5">Tháng</p>
             <select className="form-select h-9 text-sm w-32" value={month}
               onChange={e => { setMonth(e.target.value); setPage(1); }}>
               <option value="">Tất cả</option>
@@ -227,7 +227,7 @@ export default function TripsPage() {
             </select>
           </div>
           <div className="flex flex-col gap-1">
-            <p className="text-xs font-medium text-gray-600">Năm</p>
+            <p className="text-xs font-medium text-gray-600 leading-5">Năm</p>
             <select className="form-select h-9 text-sm w-28" value={year}
               onChange={e => { setYear(e.target.value); setPage(1); }}>
               <option value="">Tất cả</option>
@@ -235,7 +235,7 @@ export default function TripsPage() {
             </select>
           </div>
           <div>
-            <p className="text-xs font-medium text-gray-600">Tài xế</p>
+            <p className="text-xs font-medium text-gray-600 leading-5">Tài xế</p>
             <select className="form-select h-9 text-sm" value={driverId}
               onChange={e => { setDriverId(e.target.value); setPage(1); }}>
               <option value="">Tất cả tài xế</option>
