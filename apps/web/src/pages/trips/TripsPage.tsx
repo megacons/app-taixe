@@ -278,14 +278,24 @@ export default function TripsPage() {
                 </td></tr>
               )}
               {(() => {
-                // STT theo thứ tự xuất hiện trong list, reset khi qua ngày mới
+                // STT: chuyến đầu tiên trong ngày (cũ nhất) = 1, tăng dần
+                // Đếm tổng số chuyến mỗi ngày trước
+                const dayTotal: Record<string, number> = {};
+                trips.forEach(t => {
+                  const dateKey = t.trip_date
+                    ? new Date(t.trip_date).toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' })
+                    : 'unknown';
+                  dayTotal[dateKey] = (dayTotal[dateKey] ?? 0) + 1;
+                });
+                // Đếm ngược: chuyến cuối cùng trong list (= cũ nhất vì sort mới→cũ) = STT 1
                 const dayCounters: Record<string, number> = {};
                 const sttPerTrip = trips.map(t => {
                   const dateKey = t.trip_date
                     ? new Date(t.trip_date).toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' })
                     : 'unknown';
                   dayCounters[dateKey] = (dayCounters[dateKey] ?? 0) + 1;
-                  return dayCounters[dateKey];
+                  // STT = tổng - số đã đếm + 1 → chuyến cuối list = 1, đầu list = tổng
+                  return dayTotal[dateKey] - dayCounters[dateKey] + 1;
                 });
                 return trips.map((t, idx) => (
                 <tr key={t._id} className={t.is_overtime ? 'bg-orange-50/40' : ''}>
