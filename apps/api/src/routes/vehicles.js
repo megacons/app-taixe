@@ -102,7 +102,7 @@ router.post(
       .trim()
       .notEmpty()
       .withMessage('Biển số xe là bắt buộc')
-      .matches(/^[0-9]{2}[A-Z]{1}-?[0-9]{4,5}$/)
+      .matches(/^[0-9]{2}[A-Z]{1,2}-?[0-9]{4,5}$/)
       .withMessage('Biển số xe không hợp lệ (VD: 51C-12345)'),
     body('vehicle_type').optional().isIn(['truck', 'dump_truck', 'trailer', 'pickup', 'other']),
     validate,
