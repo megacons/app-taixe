@@ -1,7 +1,10 @@
 const multer = require('multer');
-const { createCloudinaryStorage } = require('../config/cloudinary');
+const { uploadToCloudinary } = require('../config/cloudinary');
 
 const MAX_FILE_SIZE = parseInt(process.env.MAX_FILE_SIZE) || 10 * 1024 * 1024; // 10MB
+
+// Dùng memoryStorage — file giữ trong RAM, sau đó upload lên Cloudinary
+const memoryStorage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
   const allowedTypes = /jpeg|jpg|png|gif|webp|pdf|doc|docx|xls|xlsx/;
@@ -9,36 +12,93 @@ const fileFilter = (req, file, cb) => {
   if (allowedTypes.test(ext) || allowedTypes.test(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('Loại file không được hỗ trợ. Chỉ chấp nhận: jpg, png, pdf, doc, xlsx'), false);
+    cb(new Error('Loại file không được hỗ trợ'), false);
   }
 };
 
-// Tạo multer instance cho từng loại upload
-const createUploader = (folder) => multer({
-  storage: createCloudinaryStorage(folder),
+const multerInstance = multer({
+  storage: memoryStorage,
   limits:  { fileSize: MAX_FILE_SIZE },
   fileFilter,
 });
 
-// Các uploader theo từng loại
-const upload         = createUploader('uploads');     // general
-const avatarUpload   = createUploader('avatars');
-const receiptUpload  = createUploader('receipts');
-const documentUpload = createUploader('documents');
-const attendanceUpload = createUploader('attendance');
+/**
+ * Middleware factory: upload file lên Cloudinary sau khi multer parse xong
+ * @param {string} folder - thư mục Cloudinary
+ * @param {string} fieldName - tên field trong form
+ */
+const createUploadMiddleware = (folder, fieldName = 'file') => {
+  const isImage = (mimetype) => /jpeg|jpg|png|gif|webp/.test(mimetype || '');
+
+  return [
+    multerInstance.single(fieldName),
+    async (req, res, next) => {
+      try {
+        if (!req.file) return next();
+
+        const resourceType = isImage(req.file.mimetype) ? 'image' : 'raw';
+        const url = await uploadToCloudinary(
+          req.file.buffer,
+          `namthanh/${folder}`,
+          resourceType
+        );
+        // Gắn url vào req.file để route handler dùng
+        req.file.cloudinaryUrl = url;
+        req.file.path = url; // tương thích với getFileUrl
+        next();
+      } catch (err) {
+        next(err);
+      }
+    },
+  ];
+};
 
 /**
- * getFileUrl — tương thích với cả Cloudinary (req.file.path) và legacy local
- * Cloudinary trả về file.path = https://res.cloudinary.com/...
+ * Middleware factory cho upload nhiều file
+ */
+const createMultiUploadMiddleware = (folder, fieldName = 'files', maxCount = 10) => {
+  const isImage = (mimetype) => /jpeg|jpg|png|gif|webp/.test(mimetype || '');
+
+  return [
+    multerInstance.array(fieldName, maxCount),
+    async (req, res, next) => {
+      try {
+        if (!req.files || req.files.length === 0) return next();
+
+        const urls = await Promise.all(
+          req.files.map(f => {
+            const resourceType = isImage(f.mimetype) ? 'image' : 'raw';
+            return uploadToCloudinary(f.buffer, `namthanh/${folder}`, resourceType);
+          })
+        );
+        // Gắn url vào từng file
+        req.files = req.files.map((f, i) => ({ ...f, path: urls[i], cloudinaryUrl: urls[i] }));
+        next();
+      } catch (err) {
+        next(err);
+      }
+    },
+  ];
+};
+
+/**
+ * getFileUrl — lấy URL từ file object
+ * Hỗ trợ cả Cloudinary (path = https://...) và legacy local
  */
 const getFileUrl = (file) => {
   if (!file) return null;
-  // Cloudinary: file.path là URL đầy đủ
   if (file.path && file.path.startsWith('http')) return file.path;
-  // Legacy local fallback
+  if (file.cloudinaryUrl) return file.cloudinaryUrl;
   const relativePath = (file.path || '').replace(/\\/g, '/').split('uploads/')[1];
   return relativePath ? `/uploads/${relativePath}` : null;
 };
+
+// Export các uploader cho từng loại
+const upload          = { single: (f) => createUploadMiddleware('uploads', f),   array: (f, n) => createMultiUploadMiddleware('uploads', f, n) };
+const avatarUpload    = { single: (f) => createUploadMiddleware('avatars', f) };
+const receiptUpload   = { single: (f) => createUploadMiddleware('receipts', f) };
+const documentUpload  = { single: (f) => createUploadMiddleware('documents', f) };
+const attendanceUpload= { single: (f) => createUploadMiddleware('attendance', f) };
 
 module.exports = {
   upload,
@@ -47,4 +107,5 @@ module.exports = {
   documentUpload,
   attendanceUpload,
   getFileUrl,
+  multerInstance,
 };

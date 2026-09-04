@@ -6,7 +6,6 @@ const { Driver, User, Vehicle } = require('../models');
 const { authenticate, authorize } = require('../middleware/auth');
 const { validate } = require('../middleware/validate');
 const { upload: generalUpload, avatarUpload, getFileUrl } = require('../middleware/upload');
-
 /**
  * GET /drivers
  * Lấy danh sách tài xế (có phân trang, lọc, tìm kiếm)
@@ -442,8 +441,7 @@ router.put('/profile/me', authenticate, authorize('driver'), async (req, res, ne
 router.post(
   '/avatar',
   authenticate,
-  avatarUpload.single('avatar'),
-  async (req, res, next) => {
+  ...avatarUpload.single('avatar'),  async (req, res, next) => {
     try {
       if (!req.file) {
         return res.status(400).json({ success: false, message: 'Vui lòng chọn ảnh' });

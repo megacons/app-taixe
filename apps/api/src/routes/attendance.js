@@ -6,7 +6,6 @@ const { attendanceUpload, getFileUrl } = require('../middleware/upload');
 
 // Multer middleware cho ảnh chấm công (Cloudinary)
 const upload = attendanceUpload.single('photo');
-
 const todayStr = () => new Date().toISOString().slice(0, 10);
 
 /**
@@ -15,7 +14,13 @@ const todayStr = () => new Date().toISOString().slice(0, 10);
  */
 router.post('/checkin', authenticate, async (req, res, next) => {
   try {
-    await new Promise((resolve, reject) => upload(req, res, err => err ? reject(err) : resolve(null)));
+    await new Promise((resolve, reject) => {
+      const [multerMw, cloudinaryMw] = upload;
+      multerMw(req, res, (err) => {
+        if (err) return reject(err);
+        cloudinaryMw(req, res, (err2) => err2 ? reject(err2) : resolve(null));
+      });
+    });
 
     const date = req.body.date || todayStr();
     let photoUrl = null;
