@@ -67,7 +67,7 @@ export default function TripsPage() {
     : '';
 
   const { data, loading, refetch } = useApi<any>('/trips', {
-    page, limit: 20, sort: '-trip_date',
+    page, limit: 20, sort: 'trip_date',
     ...(dateParam ? { date: dateParam } : {}),
     ...(!dateParam && month ? { month } : {}),
     ...(!dateParam && year  ? { year  } : {}),
@@ -99,7 +99,7 @@ export default function TripsPage() {
     try {
       // Lấy tất cả chuyến theo filter hiện tại (không phân trang)
       const res = await api.get('/trips', {
-        params: { limit: 2000, sort: '-trip_date',
+        params: { limit: 2000, sort: 'trip_date',
           ...(dateParam ? { date: dateParam } : {}),
           ...(!dateParam && month ? { month } : {}),
           ...(!dateParam && year  ? { year  } : {}),
