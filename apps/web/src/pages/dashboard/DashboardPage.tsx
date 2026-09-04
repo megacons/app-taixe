@@ -492,12 +492,46 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Biểu đồ số chuyến ── */}
-      <TripChart />
-
-      {/* Chart + Top Drivers */}
+      {/* Số chuyến + Top Drivers */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Revenue chart */}
-        <div className="lg:col-span-2 card">
+        <div className="lg:col-span-2">
+          <TripChart />
+        </div>
+
+        {/* Top drivers */}
+        <div className="card">
+          <div className="card-header">
+            <h2 className="font-semibold text-gray-900">Top tài xế tháng này</h2>
+          </div>
+          {loading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="h-10 bg-gray-50 rounded-lg animate-pulse" />
+              ))}
+            </div>
+          ) : topDrivers.length === 0 ? (
+            <p className="text-sm text-gray-400 text-center py-6">Chưa có dữ liệu</p>
+          ) : (
+            <div className="space-y-3">
+              {topDrivers.map((d, i) => (
+                <div key={d.name} className="flex items-center gap-3">
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0
+                    ${i === 0 ? 'bg-yellow-100 text-yellow-700' : i === 1 ? 'bg-gray-100 text-gray-600' : 'bg-orange-50 text-orange-600'}`}>
+                    {i + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{d.name}</p>
+                    <p className="text-xs text-gray-400">{d.trips} chuyến</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Quỹ tài xế */}
+      <div className="card">
           <div className="card-header">
             <h2 className="font-semibold text-gray-900">
               {chartMode === 'week' ? 'Quỹ tài xế theo tuần' : chartMode === 'month' ? 'Quỹ tài xế theo tháng' : 'Quỹ tài xế theo năm'}
@@ -569,37 +603,6 @@ export default function DashboardPage() {
                   </BarChart>
                 </ResponsiveContainer>
               </div>
-            </div>
-          )}
-        </div>
-
-        {/* Top drivers */}
-        <div className="card">
-          <div className="card-header">
-            <h2 className="font-semibold text-gray-900">Top tài xế tháng này</h2>
-          </div>
-          {loading ? (
-            <div className="space-y-3">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="h-10 bg-gray-50 rounded-lg animate-pulse" />
-              ))}
-            </div>
-          ) : topDrivers.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-6">Chưa có dữ liệu</p>
-          ) : (
-            <div className="space-y-3">
-              {topDrivers.map((d, i) => (
-                <div key={d.name} className="flex items-center gap-3">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0
-                    ${i === 0 ? 'bg-yellow-100 text-yellow-700' : i === 1 ? 'bg-gray-100 text-gray-600' : 'bg-orange-50 text-orange-600'}`}>
-                    {i + 1}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{d.name}</p>
-                    <p className="text-xs text-gray-400">{d.trips} chuyến</p>
-                  </div>
-                </div>
-              ))}
             </div>
           )}
         </div>
