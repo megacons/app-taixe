@@ -98,7 +98,7 @@ export default function AdminFund() {
 
               <View style={S.fundRow}>
                 <View style={S.fundItem}>
-                  <Text style={S.fundLabel}>Tổng ứng</Text>
+                  <Text style={S.fundLabel}>Đã cấp</Text>
                   <Text style={[S.fundValue, { color: '#3b82f6' }]}>{fmtVND(d.total_advance)}đ</Text>
                 </View>
                 <View style={S.fundItem}>
@@ -183,15 +183,13 @@ function AddFundModal({ driver, month, onClose, onSuccess }: any) {
   };
 
   return (
-    <Modal visible transparent animationType="slide">
-      <View style={M.overlay}>
-        <TouchableOpacity style={M.backdrop} onPress={onClose} activeOpacity={1} />
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={{ width: '100%' }}
-          keyboardVerticalOffset={0}
-        >
-          <View style={M.sheet}>
+    <Modal visible transparent animationType="fade">
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
+        <TouchableOpacity style={M.overlay} activeOpacity={1} onPress={onClose}>
+          <TouchableOpacity activeOpacity={1} style={M.sheet} onPress={() => {}}>
             <View style={M.header}>
               <TouchableOpacity onPress={onClose}><Text style={M.cancel}>Hủy</Text></TouchableOpacity>
               <Text style={M.title}>Nạp quỹ</Text>
@@ -255,9 +253,9 @@ function AddFundModal({ driver, month, onClose, onSuccess }: any) {
               </TouchableOpacity>
               <View style={{ height: 20 }} />
             </ScrollView>
-          </View>
-        </KeyboardAvoidingView>
-      </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -338,7 +336,7 @@ function FundEntriesModal({ driver, month, year, onClose }: any) {
               <View style={T.statsBar}>
                 <View style={T.statItem}>
                   <Text style={[T.statValue, { color: '#3b82f6' }]}>{fmtVND(totals.advance)}đ</Text>
-                  <Text style={T.statLabel}>Tổng ứng</Text>
+                  <Text style={T.statLabel}>Đã cấp</Text>
                 </View>
                 <View style={T.statDivider} />
                 <View style={T.statItem}>
@@ -446,9 +444,9 @@ const S = StyleSheet.create({
 });
 
 const M = StyleSheet.create({
-  overlay:    { flex: 1, justifyContent: 'flex-end' },
-  backdrop:   { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' },
-  sheet:      { backgroundColor: Colors.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '85%' },
+  overlay:    { flex: 1, justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.45)', padding: 16 },
+  backdrop:   { ...StyleSheet.absoluteFillObject, backgroundColor: 'transparent' },
+  sheet:      { backgroundColor: Colors.white, borderRadius: 20, maxHeight: '90%' },
   header:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14, backgroundColor: Colors.primary, borderTopLeftRadius: 20, borderTopRightRadius: 20 },
   title:      { fontSize: 16, fontWeight: '700', color: Colors.white },
   cancel:     { fontSize: 14, color: 'rgba(255,255,255,0.8)' },
@@ -469,9 +467,9 @@ const M = StyleSheet.create({
 });
 
 const T = StyleSheet.create({
-  overlay:   { flex: 1, justifyContent: 'flex-end' },
-  backdrop:  { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' },
-  sheet:     { backgroundColor: Colors.background, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '90%', minHeight: '70%' },
+  overlay:    { flex: 1, justifyContent: 'flex-end' },
+  backdrop:   { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' },
+  sheet:      { backgroundColor: Colors.background, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '90%', minHeight: '70%' },
   header:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: Colors.primary, borderTopLeftRadius: 20, borderTopRightRadius: 20 },
   title:     { flex: 1, fontSize: 16, fontWeight: '700', color: Colors.white, textAlign: 'center' },
   cancel:    { fontSize: 13, color: 'rgba(255,255,255,0.85)', width: 60 },
