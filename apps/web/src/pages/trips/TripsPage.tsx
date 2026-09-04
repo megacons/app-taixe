@@ -208,7 +208,7 @@ export default function TripsPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-4 py-5 mb-5" style={{ overflow: 'visible' }}>
+      <div className="bg-white rounded-xl border border-gray-200 px-4 pt-4 pb-6 mb-5">
         <div className="flex flex-wrap gap-4 items-start">
           <div className="flex flex-col gap-1">
             <p className="text-xs font-medium text-gray-600 leading-5">Ngày</p>
