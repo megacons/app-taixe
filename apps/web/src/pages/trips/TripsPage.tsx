@@ -208,8 +208,8 @@ export default function TripsPage() {
       </div>
 
       {/* Filters */}
-      <div className="card p-4 pt-5 pb-5 mb-5 overflow-visible">
-        <div className="flex flex-wrap gap-3 items-end">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-4 pt-4 pb-5 mb-5">
+        <div className="flex flex-wrap gap-3 items-end pt-1">
           <div>
             <p className="text-xs font-medium text-gray-600 mb-1">Ngày</p>
             <select className="form-select h-9 text-sm w-24" value={day}
