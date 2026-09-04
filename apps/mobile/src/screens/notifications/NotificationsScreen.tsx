@@ -14,6 +14,8 @@ import RenderHtml from 'react-native-render-html';
 
 const BASE_URL = process.env.API_URL || 'http://192.168.88.181:5000';
 
+const stripHtml = (html: string) => html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+
 const fmtFileSize = (bytes: number) => {
   if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)}MB`;
   if (bytes >= 1024) return `${(bytes / 1024).toFixed(0)}KB`;
@@ -149,7 +151,7 @@ export default function NotificationsScreen() {
               <Text style={S.itemIcon}>{TYPE_ICON[item.type] || '🔔'}</Text>
               <View style={S.itemContent}>
                 <Text style={S.itemTitle}>{item.title}</Text>
-                <Text style={S.itemMsg} numberOfLines={2}>{item.message}</Text>
+                <Text style={S.itemMsg} numberOfLines={2}>{stripHtml(item.message)}</Text>
                 {item.attachment?.url && (
                   <View style={S.attachBadge}>
                     <Text style={S.attachBadgeText}>
