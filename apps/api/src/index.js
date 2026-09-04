@@ -229,7 +229,18 @@ mongoose
       console.warn('⚠️ Migration drop index thất bại:', e.message);
     }
 
-    server.listen(PORT, () => {
+    // ── Migration: drop old unique index on vehicles.license_plate ──
+    try {
+      const db = mongoose.connection.db;
+      const indexes = await db.collection('vehicles').indexes();
+      const oldIdx = indexes.find(idx => idx.name === 'license_plate_1' && idx.unique && !idx.partialFilterExpression);
+      if (oldIdx) {
+        await db.collection('vehicles').dropIndex('license_plate_1');
+        console.info('✅ Migration: đã xóa unique index license_plate_1 trong vehicles');
+      }
+    } catch (e) {
+      console.warn('⚠️ Migration vehicles index:', e.message);
+    }    server.listen(PORT, () => {
       console.info(`🚀 Server running on port ${PORT}`);
       console.info(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
 

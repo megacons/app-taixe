@@ -6,10 +6,8 @@ const vehicleSchema = new mongoose.Schema(
     license_plate: {
       type: String,
       required: [true, 'Biển số xe là bắt buộc'],
-      unique: true,
       trim: true,
       uppercase: true,
-      index: true,
     },
     vehicle_type: {
       type: String,
@@ -68,6 +66,12 @@ const vehicleSchema = new mongoose.Schema(
 );
 
 vehicleSchema.plugin(softDeletePlugin);
+
+// Unique index chỉ áp dụng cho xe chưa bị soft-delete
+vehicleSchema.index(
+  { license_plate: 1 },
+  { unique: true, partialFilterExpression: { is_deleted: { $ne: true } } }
+);
 
 const Vehicle = mongoose.model('Vehicle', vehicleSchema);
 
