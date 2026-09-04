@@ -63,7 +63,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
           onClick={() => navigate('/profile')}>
           <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-white text-xs font-semibold overflow-hidden">
             {user?.avatar ? (
-              <img src={user.avatar.startsWith('/') ? user.avatar : `/${user.avatar}`}
+              <img src={user.avatar.startsWith('http') ? user.avatar : user.avatar.startsWith('/') ? user.avatar : `/${user.avatar}`}
                 alt="avatar" className="w-full h-full object-cover" />
             ) : (
               user?.name?.charAt(0).toUpperCase()

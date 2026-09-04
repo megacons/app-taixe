@@ -141,6 +141,7 @@ export default function ProfilePage() {
       if (url) {
         await api.put('/users/me', { avatar: url });
         setUser({ ...user!, avatar: url });
+        setAvatarPreview(url);
         toast.success('Đã cập nhật ảnh đại diện');
       }
     } catch {
