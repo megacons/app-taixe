@@ -208,26 +208,26 @@ export default function TripsPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-4 pt-4 pb-5 mb-5">
-        <div className="flex flex-wrap gap-3 items-end pt-1">
-          <div>
-            <p className="text-xs font-medium text-gray-600 mb-1">Ngày</p>
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-4 py-4 mb-5">
+        <div className="flex flex-wrap gap-4 items-start">
+          <div className="flex flex-col gap-1">
+            <p className="text-xs font-medium text-gray-600">Ngày</p>
             <select className="form-select h-9 text-sm w-24" value={day}
               onChange={e => { setDay(e.target.value); setPage(1); }}>
               <option value="">Tất cả</option>
               {DAYS.map(d => <option key={d} value={d}>{String(d).padStart(2,'0')}</option>)}
             </select>
           </div>
-          <div>
-            <p className="text-xs font-medium text-gray-600 mb-1">Tháng</p>
+          <div className="flex flex-col gap-1">
+            <p className="text-xs font-medium text-gray-600">Tháng</p>
             <select className="form-select h-9 text-sm w-32" value={month}
               onChange={e => { setMonth(e.target.value); setPage(1); }}>
               <option value="">Tất cả</option>
               {MONTHS.map(m => <option key={m.v} value={m.v}>{m.l}</option>)}
             </select>
           </div>
-          <div>
-            <p className="text-xs font-medium text-gray-600 mb-1">Năm</p>
+          <div className="flex flex-col gap-1">
+            <p className="text-xs font-medium text-gray-600">Năm</p>
             <select className="form-select h-9 text-sm w-28" value={year}
               onChange={e => { setYear(e.target.value); setPage(1); }}>
               <option value="">Tất cả</option>
@@ -235,7 +235,7 @@ export default function TripsPage() {
             </select>
           </div>
           <div>
-            <p className="text-xs font-medium text-gray-600 mb-1">Tài xế</p>
+            <p className="text-xs font-medium text-gray-600">Tài xế</p>
             <select className="form-select h-9 text-sm" value={driverId}
               onChange={e => { setDriverId(e.target.value); setPage(1); }}>
               <option value="">Tất cả tài xế</option>
@@ -245,7 +245,10 @@ export default function TripsPage() {
             </select>
           </div>
           {(day || month || year || driverId) && (
-            <button onClick={clearFilters} className="btn-outline h-9 text-sm px-3">Xóa bộ lọc</button>
+            <div className="flex flex-col gap-1">
+              <p className="text-xs font-medium text-transparent">.</p>
+              <button onClick={clearFilters} className="btn-outline h-9 text-sm px-3">Xóa bộ lọc</button>
+            </div>
           )}
         </div>
       </div>
