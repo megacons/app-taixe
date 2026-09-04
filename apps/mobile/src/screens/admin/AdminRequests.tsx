@@ -27,10 +27,10 @@ const TYPE_LABEL: Record<string, string> = {
 };
 
 const FILTERS = [
+  { key: '',         label: 'Tất cả' },
   { key: 'pending',  label: '⏳ Chờ duyệt' },
   { key: 'approved', label: '✅ Đã duyệt' },
   { key: 'rejected', label: '❌ Từ chối' },
-  { key: '',         label: '📋 Tất cả' },
 ];
 
 export default function AdminRequests() {
