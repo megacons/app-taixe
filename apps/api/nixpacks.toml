@@ -1,0 +1,5 @@
+[phases.build]
+cmds = ["npm run build --workspace=@namthanh/api"]
+
+[start]
+cmd = "npm run start --workspace=@namthanh/api"
