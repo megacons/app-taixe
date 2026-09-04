@@ -109,7 +109,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       >
         <div className="w-9 h-9 bg-accent rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
           {logoUrl ? (
-            <img src={logoUrl.startsWith('/') ? logoUrl : `/${logoUrl}`}
+            <img src={logoUrl.startsWith('http') ? logoUrl : logoUrl.startsWith('/') ? logoUrl : `/${logoUrl}`}
               alt="logo" className="w-full h-full object-cover" />
           ) : (
             <TruckIcon className="w-5 h-5 text-gray-900" />
