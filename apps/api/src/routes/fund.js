@@ -669,4 +669,39 @@ router.get('/:driverId/requests', authenticate, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+/**
+ * GET /fund/:driverId/advances?month=M&year=Y
+ * Lấy tất cả lần nạp tiền (FundEntry.advance > 0) của tài xế trong tháng
+ */
+router.get('/:driverId/advances', authenticate, authorize('coordinator', 'accountant', 'manager'), async (req, res, next) => {
+  try {
+    const { month, year } = req.query;
+    const now = new Date();
+    const m = month ? String(month).padStart(2, '0') : String(now.getMonth() + 1).padStart(2, '0');
+    const y = year  ? String(year)  : String(now.getFullYear());
+    const monthStr = `${y}-${m}`;
+    const dateFrom = `${monthStr}-01`;
+    const dateTo   = `${monthStr}-31`;
+
+    const entries = await FundEntry.find({
+      driver_id: req.params.driverId,
+      advance:   { $gt: 0 },
+      date:      { $gte: dateFrom, $lte: dateTo },
+    }).sort('-date').lean();
+
+    res.json({
+      success: true,
+      data: {
+        advances: entries.map(e => ({
+          _id:     e._id,
+          date:    e.date,
+          advance: e.advance,
+          note:    e.note ?? '',
+        })),
+        total: entries.reduce((s, e) => s + e.advance, 0),
+      },
+    });
+  } catch (err) { next(err); }
+});
+
 module.exports = router;

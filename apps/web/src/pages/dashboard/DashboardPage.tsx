@@ -177,22 +177,20 @@ export default function DashboardPage() {
 
       await Promise.all(drivers.map(async (d: any) => {
         try {
-          // Chỉ lấy FundEntry advances (tiền admin nạp trực tiếp vào quỹ)
-          const fundRes = await api.get(`/fund/${d.driver_id}/entries`, {
+          // Lấy tất cả lần nạp tiền trực tiếp (raw FundEntry advances)
+          const fundRes = await api.get(`/fund/${d.driver_id}/advances`, {
             params: { month: nowMonth, year: nowYear },
           });
-          const rows: any[] = fundRes.data.data?.rows ?? [];
-          rows
-            .filter((r: any) => r.advance > 0)
-            .forEach((r: any) => allEntries.push({
-              _id:         `fund-${r.entry_id ?? r.date}-${d.driver_id}`,
-              date:        r.date,
-              advance:     r.advance,
-              note:        r.note ?? '',
-              driver_name: d.full_name,
-              employee_id: d.employee_id,
-              driver_id:   d.driver_id,
-            }));
+          const advances: any[] = fundRes.data.data?.advances ?? [];
+          advances.forEach((e: any) => allEntries.push({
+            _id:         e._id,
+            date:        e.date,
+            advance:     e.advance,
+            note:        e.note ?? '',
+            driver_name: d.full_name,
+            employee_id: d.employee_id,
+            driver_id:   d.driver_id,
+          }));
         } catch (_) {}
       }));
 
