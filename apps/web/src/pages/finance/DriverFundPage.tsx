@@ -456,7 +456,7 @@ export default function DriverFundPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {reqList.map((r: any, idx: number) => {
+                      {reqList.filter((r: any) => r.status === 'approved').map((r: any, idx: number) => {
                         const ST: Record<string, { bg: string; text: string; label: string }> = {
                           approved: { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Đã duyệt' },
                           pending:  { bg: 'bg-yellow-100',  text: 'text-yellow-700',  label: 'Chờ duyệt' },
@@ -519,15 +519,14 @@ export default function DriverFundPage() {
                     </tbody>
                     <tfoot>
                       <tr className="bg-primary text-white font-bold text-xs">
-                        <td colSpan={2} className="px-4 py-2.5">TỔNG ({reqList.length} yêu cầu)</td>
+                        <td colSpan={2} className="px-4 py-2.5">TỔNG ({reqList.filter((r: any) => r.status === 'approved').length} yêu cầu đã duyệt)</td>
                         <td className="px-4 py-2.5 text-right">
                           -{new Intl.NumberFormat('vi-VN').format(
                             reqList.filter((r: any) => r.status === 'approved').reduce((s: number, r: any) => s + r.amount, 0)
                           )}đ
                         </td>
                         <td className="px-4 py-2.5 opacity-75 text-[10px]">
-                          {reqList.filter((r: any) => r.status === 'approved').length} đã duyệt ·{' '}
-                          {reqList.filter((r: any) => r.status === 'pending').length} chờ duyệt
+                          {reqList.filter((r: any) => r.status === 'pending').length} chờ duyệt · {reqList.filter((r: any) => r.status === 'rejected').length} từ chối
                         </td>
                       </tr>
                     </tfoot>
