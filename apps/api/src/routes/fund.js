@@ -693,10 +693,11 @@ router.get('/:driverId/advances', authenticate, authorize('coordinator', 'accoun
       success: true,
       data: {
         advances: entries.map(e => ({
-          _id:     e._id,
-          date:    e.date,
-          advance: e.advance,
-          note:    e.note ?? '',
+          _id:        e._id,
+          date:       e.date,
+          advance:    e.advance,
+          note:       e.note ?? '',
+          created_at: e.created_at,
         })),
         total: entries.reduce((s, e) => s + e.advance, 0),
       },
