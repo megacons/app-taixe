@@ -176,7 +176,11 @@ router.post('/broadcast', authenticate, async (req, res, next) => {
       message:    message.trim(),
       type,
       attachment: attachment || undefined,
-      data:       { sent_by: req.user._id, sent_by_name: req.user.name },
+      data: {
+        sent_by:      req.user._id,
+        sent_by_name: req.user.name,
+        target_ids:   idsArray ?? null, // lưu danh sách user_id đã gửi (null = tất cả)
+      },
     }));
     await Notification.insertMany(notifications);
 
@@ -215,7 +219,7 @@ router.get('/broadcast/history', authenticate, async (req, res, next) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     const history = await Notification.aggregate([
-      { $match: { 'data.sent_by': { $exists: true } } }, // chỉ lấy broadcast (có data.sent_by)
+      { $match: { 'data.sent_by': { $exists: true } } },
       { $sort: { created_at: -1 } },
       {
         $group: {
@@ -227,6 +231,8 @@ router.get('/broadcast/history', authenticate, async (req, res, next) => {
           type:       { $first: '$type' },
           attachment: { $first: '$attachment' },
           sent_by:    { $first: '$data.sent_by_name' },
+          target_ids: { $first: '$data.target_ids' },
+          user_ids:   { $push: '$user_id' },
         },
       },
       { $sort: { created_at: -1 } },
@@ -234,7 +240,18 @@ router.get('/broadcast/history', authenticate, async (req, res, next) => {
       { $limit: parseInt(limit) },
     ]);
 
-    res.json({ success: true, data: { history } });
+    // Resolve tên người nhận cho các thông báo gửi tới 1 hoặc vài người
+    const { User } = require('../models');
+    const result = await Promise.all(history.map(async h => {
+      let sent_to_names: string[] | null = null;
+      if (h.target_ids && h.target_ids.length > 0 && h.target_ids.length <= 10) {
+        const users = await User.find({ _id: { $in: h.target_ids } }).select('name').lean();
+        sent_to_names = users.map((u: any) => u.name);
+      }
+      return { ...h, sent_to_names };
+    }));
+
+    res.json({ success: true, data: { history: result } });
   } catch (err) { next(err); }
 });
 

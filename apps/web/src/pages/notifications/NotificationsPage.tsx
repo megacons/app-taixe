@@ -42,12 +42,14 @@ const fmtFileSize = (bytes: number) => {
 
 /* ── Types ── */
 interface HistoryItem {
-  title:      string;
-  message:    string;
-  sent_count: number;
-  created_at: string;
-  type?:      string;
-  sent_by?:   string;
+  title:          string;
+  message:        string;
+  sent_count:     number;
+  created_at:     string;
+  type?:          string;
+  sent_by?:       string;
+  target_ids?:    string[] | null;
+  sent_to_names?: string[] | null;
   attachment?: {
     url:           string;
     original_name: string;
@@ -339,7 +341,12 @@ export default function NotificationsPage() {
       fd.append('title',   editTitle.trim());
       fd.append('message', editMessage.trim());
       fd.append('type',    editItem?.type ?? 'announcement');
-      // Nếu có file mới đính kèm
+
+      // Giữ nguyên người nhận gốc
+      if (editItem?.target_ids && editItem.target_ids.length > 0) {
+        fd.append('target_ids', editItem.target_ids.join(','));
+      }
+
       if (editFile) fd.append('file', editFile);
 
       const res = await api.post('/notifications/broadcast', fd, {
@@ -682,7 +689,10 @@ export default function NotificationsPage() {
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <span className="font-semibold text-gray-900 text-sm">{h.title}</span>
                           <span className="inline-flex items-center gap-1 text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-medium flex-shrink-0">
-                            <CheckCircleIcon className="w-3 h-3" />{h.sent_count} người
+                            <CheckCircleIcon className="w-3 h-3" />
+                            {h.sent_to_names && h.sent_to_names.length > 0
+                              ? h.sent_to_names.join(', ')
+                              : `${h.sent_count} người`}
                           </span>
                           {h.type && h.type !== 'announcement' && (
                             <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full flex-shrink-0">
@@ -733,12 +743,15 @@ export default function NotificationsPage() {
                             setEditTitle(h.title);
                             setEditMessage(h.message);
                             setEditFile(null);
-                            // Gửi lại không sửa
+                            // Gửi lại không sửa — giữ nguyên người nhận gốc
                             setTimeout(async () => {
                               const fd = new FormData();
                               fd.append('title', h.title);
                               fd.append('message', h.message);
                               fd.append('type', h.type ?? 'announcement');
+                              if (h.target_ids && h.target_ids.length > 0) {
+                                fd.append('target_ids', h.target_ids.join(','));
+                              }
                               try {
                                 await api.post('/notifications/broadcast', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
                                 toast.success('Đã gửi lại thông báo');
@@ -784,6 +797,19 @@ export default function NotificationsPage() {
           </>
         }>
         <div className="space-y-4">
+          {/* Người nhận */}
+          <div className="bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 flex items-center gap-2">
+            <UserGroupIcon className="w-4 h-4 text-blue-500 flex-shrink-0" />
+            <span className="text-sm text-blue-700">
+              <strong>Gửi lại tới: </strong>
+              {editItem?.sent_to_names && editItem.sent_to_names.length > 0
+                ? editItem.sent_to_names.join(', ')
+                : editItem?.target_ids && editItem.target_ids.length > 0
+                  ? `${editItem.target_ids.length} người đã chọn`
+                  : 'Tất cả mọi người'}
+            </span>
+          </div>
+
           <div>
             <label className="form-label">Tiêu đề *</label>
             <input type="text" className="form-input w-full"
