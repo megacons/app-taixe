@@ -216,39 +216,19 @@ export default function NotificationsPage() {
     const totalSalary = basePlusAllowance + (salaryPreview.overtime_pay_month ?? 0);
 
     const salaryTitle = `💵 Thông báo lương tháng ${salaryMonth}/${salaryYear}`;
-    const salaryMessage = `
-<div style="font-family: sans-serif; max-width: 500px;">
-  <p style="font-size: 15px; color: #333;">Xin chào <strong>${salaryPreview.full_name}</strong>,</p>
-  <p style="font-size: 14px; color: #555; margin-bottom: 12px;">Dưới đây là thông tin lương tháng <strong>${salaryMonth}/${salaryYear}</strong> của bạn:</p>
+    const salaryMessage = `Xin chào ${salaryPreview.full_name},
 
-  <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-    <tr style="background: #f0f4ff;">
-      <td style="padding: 10px 14px; border: 1px solid #dde3f0; color: #555;">💼 Lương cơ bản + phụ cấp</td>
-      <td style="padding: 10px 14px; border: 1px solid #dde3f0; text-align: right; font-weight: 600; color: #163797;">${fmtVND(basePlusAllowance)}đ</td>
-    </tr>
-    <tr>
-      <td style="padding: 10px 14px; border: 1px solid #dde3f0; color: #555;">🔥 Chuyến tăng ca</td>
-      <td style="padding: 10px 14px; border: 1px solid #dde3f0; text-align: right; font-weight: 600; color: #ea580c;">${salaryPreview.overtime_trips_month ?? 0} chuyến</td>
-    </tr>
-    <tr style="background: #f0f4ff;">
-      <td style="padding: 10px 14px; border: 1px solid #dde3f0; color: #555;">💰 Tiền tăng ca</td>
-      <td style="padding: 10px 14px; border: 1px solid #dde3f0; text-align: right; font-weight: 600; color: #ea580c;">${fmtVND(salaryPreview.overtime_pay_month ?? 0)}đ</td>
-    </tr>
-    <tr>
-      <td style="padding: 10px 14px; border: 1px solid #dde3f0; color: #555;">💳 Tiền ứng (đã tạm ứng)</td>
-      <td style="padding: 10px 14px; border: 1px solid #dde3f0; text-align: right; font-weight: 600; color: #dc2626;">-${fmtVND(salaryPreview.advance_month ?? 0)}đ</td>
-    </tr>
-    <tr style="background: #163797;">
-      <td style="padding: 12px 14px; color: #fff; font-weight: 700; font-size: 15px;">🏆 TỔNG LƯƠNG</td>
-      <td style="padding: 12px 14px; text-align: right; color: #fde68a; font-weight: 800; font-size: 16px;">${fmtVND(totalSalary - (salaryPreview.advance_month ?? 0))}đ</td>
-    </tr>
-  </table>
+Thông tin lương tháng ${salaryMonth}/${salaryYear}:
 
-  <p style="margin-top: 16px; font-size: 13px; color: #888; border-top: 1px solid #eee; padding-top: 12px;">
-    Mọi thắc mắc vui lòng liên hệ bộ phận kế toán.<br/>
-    <em>Công ty TNHH Vận tải Nam Thành</em>
-  </p>
-</div>`.trim();
+💼 Lương cơ bản + phụ cấp: ${fmtVND(basePlusAllowance)}đ
+🔥 Chuyến tăng ca: ${salaryPreview.overtime_trips_month ?? 0} chuyến
+💰 Tiền tăng ca: ${fmtVND(salaryPreview.overtime_pay_month ?? 0)}đ
+💳 Tiền ứng: -${fmtVND(salaryPreview.advance_month ?? 0)}đ
+──────────────────
+🏆 Tổng lương thực nhận: ${fmtVND(totalSalary - (salaryPreview.advance_month ?? 0))}đ
+
+Mọi thắc mắc liên hệ bộ phận kế toán.
+Công ty TNHH Vận tải Nam Thành`;
 
     setSalarySending(true);
     try {

@@ -14,6 +14,8 @@ import RenderHtml from 'react-native-render-html';
 
 const BASE_URL = process.env.API_URL || 'http://192.168.88.181:5000';
 
+const isHtmlContent = (msg: string) => /<[a-z][\s\S]*>/i.test(msg);
+
 const stripHtml = (html: string) => html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
 
 const fmtFileSize = (bytes: number) => {
@@ -212,23 +214,25 @@ export default function NotificationsScreen() {
 
                 {/* Nội dung đầy đủ */}
                 {selected.message ? (
-                  selected.message.trim().startsWith('<') ? (
+                  isHtmlContent(selected.message) ? (
                     <RenderHtml
                       contentWidth={width - 40}
                       source={{ html: selected.message }}
                       tagsStyles={{
-                        p:          { fontSize: 15, color: Colors.gray700, lineHeight: 24, marginBottom: 8 },
-                        h1:         { fontSize: 20, fontWeight: '800', color: Colors.gray900, marginBottom: 8 },
-                        h2:         { fontSize: 17, fontWeight: '700', color: Colors.gray900, marginBottom: 6 },
-                        h3:         { fontSize: 15, fontWeight: '700', color: Colors.gray900, marginBottom: 4 },
+                        p:          { fontSize: 15, color: Colors.gray700, lineHeight: 22, marginBottom: 8 },
+                        h1:         { fontSize: 17, fontWeight: '700', color: Colors.gray900, marginBottom: 6 },
+                        h2:         { fontSize: 16, fontWeight: '700', color: Colors.gray900, marginBottom: 4 },
+                        h3:         { fontSize: 15, fontWeight: '600', color: Colors.gray900, marginBottom: 4 },
                         ul:         { paddingLeft: 16 },
                         ol:         { paddingLeft: 16 },
                         li:         { fontSize: 15, color: Colors.gray700, lineHeight: 22, marginBottom: 4 },
-                        blockquote: { borderLeftWidth: 3, borderLeftColor: Colors.primary, paddingLeft: 12, color: Colors.gray500 },
-                        a:          { color: Colors.primary, textDecorationLine: 'underline' },
-                        strong:     { fontWeight: '700' },
+                        blockquote: { paddingLeft: 12, color: Colors.gray500, borderLeftWidth: 3, borderLeftColor: Colors.gray300 },
+                        a:          { color: Colors.primary },
+                        strong:     { fontWeight: '700', color: Colors.gray900 },
                         em:         { fontStyle: 'italic' },
                         img:        { borderRadius: 8, marginVertical: 8 },
+                        td:         { fontSize: 14, color: Colors.gray700, padding: 6 },
+                        th:         { fontSize: 14, fontWeight: '700', color: Colors.gray900, padding: 6 },
                       }}
                     />
                   ) : (
