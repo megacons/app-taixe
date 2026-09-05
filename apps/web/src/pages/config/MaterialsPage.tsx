@@ -142,10 +142,6 @@ export default function MaterialsPage() {
             {errors.material_name && <p className="form-error">{errors.material_name.message as string}</p>}
           </div>
           <div>
-            <label className="form-label">Mã vật liệu</label>
-            <input {...register('code')} className="form-input" placeholder="DA1X2" />
-          </div>
-          <div>
             <label className="form-label">Đơn vị</label>
             <input {...register('unit')} className="form-input" placeholder="chuyến" />
           </div>
@@ -159,10 +155,6 @@ export default function MaterialsPage() {
               <option value="active">Hoạt động</option>
               <option value="inactive">Không dùng</option>
             </select>
-          </div>
-          <div className="col-span-2">
-            <label className="form-label">Mô tả</label>
-            <input {...register('description')} className="form-input" placeholder="Mô tả vật liệu..." />
           </div>
         </div>
       </Modal>
