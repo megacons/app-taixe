@@ -232,9 +232,13 @@ export default function NotificationsPage() {
       <td style="padding: 10px 14px; border: 1px solid #dde3f0; color: #555;">💰 Tiền tăng ca</td>
       <td style="padding: 10px 14px; border: 1px solid #dde3f0; text-align: right; font-weight: 600; color: #ea580c;">${fmtVND(salaryPreview.overtime_pay_month ?? 0)}đ</td>
     </tr>
+    <tr>
+      <td style="padding: 10px 14px; border: 1px solid #dde3f0; color: #555;">💳 Tiền ứng (đã tạm ứng)</td>
+      <td style="padding: 10px 14px; border: 1px solid #dde3f0; text-align: right; font-weight: 600; color: #dc2626;">-${fmtVND(salaryPreview.advance_month ?? 0)}đ</td>
+    </tr>
     <tr style="background: #163797;">
       <td style="padding: 12px 14px; color: #fff; font-weight: 700; font-size: 15px;">🏆 TỔNG LƯƠNG</td>
-      <td style="padding: 12px 14px; text-align: right; color: #fde68a; font-weight: 800; font-size: 16px;">${fmtVND(totalSalary)}đ</td>
+      <td style="padding: 12px 14px; text-align: right; color: #fde68a; font-weight: 800; font-size: 16px;">${fmtVND(totalSalary - (salaryPreview.advance_month ?? 0))}đ</td>
     </tr>
   </table>
 
