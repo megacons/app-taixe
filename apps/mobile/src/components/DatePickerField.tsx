@@ -64,7 +64,7 @@ export default function DatePickerField({ label, value, onChange, required, erro
     setMode(monthOnly ? 'year' : 'day');
     setShow(true);
     // Scroll đến năm sau khi modal render
-    setTimeout(() => scrollToYear(value.getFullYear()), 150);
+    setTimeout(() => scrollToYear(effectiveValue.getFullYear()), 150);
   };
 
   const closePicker = () => { setShow(false); setMode(monthOnly ? 'year' : 'day'); };
@@ -215,7 +215,7 @@ export default function DatePickerField({ label, value, onChange, required, erro
                 <View style={S.grid}>
                   {days.map((day, idx) => {
                     const inMonth  = isSameMonth(day, viewDate);
-                    const selected = isSameDay(day, value);
+                    const selected = value ? isSameDay(day, value) : false;
                     const today    = isToday(day);
                     const isSun    = day.getDay() === 0;
                     return (
