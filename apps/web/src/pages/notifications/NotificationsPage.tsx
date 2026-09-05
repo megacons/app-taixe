@@ -255,9 +255,6 @@ Công ty TNHH Vận tải Nam Thành`;
   /* ── Gửi mới ── */  const handleSend = async () => {
     if (!title.trim()) { toast.error('Vui lòng nhập tiêu đề'); return; }
     if (!message.trim()) { toast.error('Vui lòng nhập nội dung'); return; }
-    if (type === 'discipline' && selectedIds.size !== 1) {
-      toast.error('Kỷ luật phải chỉ định đúng 1 người cụ thể'); return;
-    }
     setSending(true);
     try {
       const fd = new FormData();
@@ -364,9 +361,6 @@ Công ty TNHH Vận tải Nam Thành`;
             <div>
               <label className="form-label">
                 Người nhận
-                {type === 'discipline' && (
-                  <span className="ml-2 text-xs text-red-500 font-normal">* Kỷ luật phải chỉ định 1 người</span>
-                )}
               </label>
 
               {/* Trigger button */}
@@ -485,7 +479,6 @@ Công ty TNHH Vận tải Nam Thành`;
                 onChange={e => {
                   const v = e.target.value;
                   setType(v);
-                  if (v !== 'discipline') setSelectedIds(new Set());
                   if (v !== 'salary') { setSalaryDriverId(''); setSalaryPreview(null); }
                 }}>
                 {TYPE_OPTIONS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
