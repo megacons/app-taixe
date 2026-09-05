@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, lazy, Suspense } from 'react';
 import {
   BellIcon, PaperAirplaneIcon, UserGroupIcon,
   ClockIcon, CheckCircleIcon, PaperClipIcon, XMarkIcon,
@@ -9,7 +9,8 @@ import toast from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import Modal from '@/components/ui/Modal';
-import RichTextEditor from '@/components/RichTextEditor';
+import MonthYearPicker from '@/components/ui/MonthYearPicker';
+const RichTextEditor = lazy(() => import('@/components/RichTextEditor'));
 
 /* ── Helpers ── */
 const getImageUrl = (url: string | null | undefined): string | null => {
@@ -546,12 +547,14 @@ export default function NotificationsPage() {
                 {/* Nội dung */}
                 <div>
                   <label className="form-label">Nội dung *</label>
-                  <RichTextEditor
-                    value={message}
-                    onChange={setMessage}
-                    placeholder="Nhập nội dung thông báo... (hỗ trợ định dạng văn bản, hình ảnh)"
-                    minHeight={200}
-                  />
+                  <Suspense fallback={<div className="h-48 border border-gray-200 rounded-xl flex items-center justify-center text-gray-400 text-sm">Đang tải editor...</div>}>
+                    <RichTextEditor
+                      value={message}
+                      onChange={setMessage}
+                      placeholder="Nhập nội dung thông báo... (hỗ trợ định dạng văn bản, hình ảnh)"
+                      minHeight={200}
+                    />
+                  </Suspense>
                 </div>
 
                 {/* Preview */}
@@ -764,12 +767,14 @@ export default function NotificationsPage() {
           </div>
           <div>
             <label className="form-label">Nội dung *</label>
-            <RichTextEditor
-              value={editMessage}
-              onChange={setEditMessage}
-              placeholder="Nhập nội dung thông báo..."
-              minHeight={180}
-            />
+            <Suspense fallback={<div className="h-40 border border-gray-200 rounded-xl flex items-center justify-center text-gray-400 text-sm">Đang tải editor...</div>}>
+              <RichTextEditor
+                value={editMessage}
+                onChange={setEditMessage}
+                placeholder="Nhập nội dung thông báo..."
+                minHeight={180}
+              />
+            </Suspense>
           </div>
 
           {/* File đính kèm cũ */}
