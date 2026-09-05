@@ -173,17 +173,38 @@ export default function DashboardPage() {
       const drivers: any[] = driverRes.data.data?.drivers ?? [];
       setFundDrivers(drivers);
 
-      // Lấy từng yêu cầu tiền ứng đã duyệt — mỗi yêu cầu = 1 dòng (giống phần Chi)
       const allEntries: any[] = [];
+
       await Promise.all(drivers.map(async (d: any) => {
         try {
-          const res = await api.get('/requests', {
+          // Nguồn 1: FundEntry advances (nạp trực tiếp từ admin)
+          const fundRes = await api.get(`/fund/${d.driver_id}/entries`, {
+            params: { month: nowMonth, year: nowYear },
+          });
+          const rows: any[] = fundRes.data.data?.rows ?? [];
+          rows
+            .filter((r: any) => r.advance > 0)
+            .forEach((r: any) => allEntries.push({
+              _id:         `fund-${r.entry_id ?? r.date}`,
+              date:        r.date,
+              advance:     r.advance,
+              note:        r.note ?? '',
+              driver_name: d.full_name,
+              employee_id: d.employee_id,
+              driver_id:   d.driver_id,
+              source:      'fund', // nạp trực tiếp
+            }));
+
+          // Nguồn 2: salary_advance requests đã duyệt (tạm ứng từ tài xế)
+          const reqRes = await api.get('/requests', {
             params: { type: 'salary_advance', status: 'approved', driverId: d.driver_id, limit: 200 },
           });
-          const reqs: any[] = res.data.data?.requests ?? [];
-          // Lọc theo tháng
+          const reqs: any[] = reqRes.data.data?.requests ?? [];
           reqs
-            .filter(r => r.created_at?.slice(0, 7) === monthStr)
+            .filter(r => {
+              const d2 = r.payload?.date ?? r.created_at?.slice(0, 10) ?? '';
+              return d2.startsWith(monthStr);
+            })
             .forEach(r => allEntries.push({
               _id:         r._id,
               date:        r.payload?.date ?? r.created_at?.slice(0, 10) ?? '',
@@ -194,13 +215,20 @@ export default function DashboardPage() {
               driver_id:   d.driver_id,
               title:       r.title,
               created_at:  r.created_at,
+              source:      'request', // tạm ứng từ tài xế
             }));
         } catch (_) {}
       }));
 
-      // Sắp xếp mới nhất lên đầu
-      allEntries.sort((a, b) => (b.date || b.created_at || '').localeCompare(a.date || a.created_at || ''));
-      setDriverEntries(allEntries);
+      // Sắp xếp mới nhất lên đầu, bỏ trùng lặp theo _id
+      const seen = new Set();
+      const unique = allEntries.filter(e => {
+        if (seen.has(e._id)) return false;
+        seen.add(e._id);
+        return true;
+      });
+      unique.sort((a, b) => (b.date || b.created_at || '').localeCompare(a.date || a.created_at || ''));
+      setDriverEntries(unique);
     } catch {
       setFundDrivers([]);
       setDriverEntries([]);
@@ -823,7 +851,7 @@ export default function DashboardPage() {
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50 sticky top-0 z-10">
                     <tr>
-                      {['Ngày', 'Tài xế', 'Mã NV', 'Số tiền cấp', 'Ghi chú'].map(h => (
+                      {['Ngày', 'Tài xế', 'Mã NV', 'Loại', 'Số tiền cấp', 'Ghi chú'].map(h => (
                         <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide border-b border-gray-100 whitespace-nowrap">{h}</th>
                       ))}
                     </tr>
@@ -838,6 +866,15 @@ export default function DashboardPage() {
                         </td>
                         <td className="px-4 py-3 font-semibold text-gray-900">{row.driver_name}</td>
                         <td className="px-4 py-3 text-gray-400 text-xs">{row.employee_id ?? '—'}</td>
+                        <td className="px-4 py-3">
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                            row.source === 'fund'
+                              ? 'bg-blue-100 text-blue-700'
+                              : 'bg-purple-100 text-purple-700'
+                          }`}>
+                            {row.source === 'fund' ? 'Admin nạp' : 'Tạm ứng'}
+                          </span>
+                        </td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           <span className="font-bold text-emerald-600 text-base">
                             {fmtMoney(row.advance)}đ
