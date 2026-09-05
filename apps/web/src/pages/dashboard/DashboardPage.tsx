@@ -194,12 +194,8 @@ export default function DashboardPage() {
         } catch (_) {}
       }));
 
-      // Sắp xếp mới nhất lên đầu (created_at chính xác hơn date)
-      allEntries.sort((a, b) => {
-        const ta = a.created_at || a.date || '';
-        const tb = b.created_at || b.date || '';
-        return tb.localeCompare(ta);
-      });
+      // Sắp xếp mới nhất lên đầu theo _id (ObjectId tăng dần theo thời gian tạo)
+      allEntries.sort((a, b) => String(b._id).localeCompare(String(a._id)));
       setDriverEntries(allEntries);
     } catch {
       setFundDrivers([]);

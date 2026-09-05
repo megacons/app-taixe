@@ -687,7 +687,7 @@ router.get('/:driverId/advances', authenticate, authorize('coordinator', 'accoun
       driver_id: req.params.driverId,
       advance:   { $gt: 0 },
       date:      { $gte: dateFrom, $lte: dateTo },
-    }).sort('-date').lean();
+    }).sort({ _id: -1 }).lean();
 
     res.json({
       success: true,
