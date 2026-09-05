@@ -142,10 +142,6 @@ export default function MaterialsPage() {
             {errors.material_name && <p className="form-error">{errors.material_name.message as string}</p>}
           </div>
           <div>
-            <label className="form-label">Đơn vị</label>
-            <input {...register('unit')} className="form-input" placeholder="chuyến" />
-          </div>
-          <div>
             <label className="form-label">Danh mục</label>
             <input {...register('category')} className="form-input" placeholder="Đá xây dựng" />
           </div>
