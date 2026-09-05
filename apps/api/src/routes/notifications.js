@@ -2,6 +2,29 @@ const express = require('express');
 const router = express.Router();
 const { Notification } = require('../models');
 const { authenticate } = require('../middleware/auth');
+const https = require('https');
+
+/* ── Expo Push Helper ── */
+async function sendExpoPush(tokens, title, body, data = {}) {
+  const valid = (tokens || []).filter(t => t && String(t).startsWith('ExponentPushToken'));
+  if (valid.length === 0) return;
+  const messages = valid.map(to => ({ to, title, body, data, sound: 'default', priority: 'high', channelId: 'default' }));
+  const payload = JSON.stringify(messages);
+  const options = {
+    hostname: 'exp.host', path: '/--/api/v2/push/send', method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload), 'Accept': 'application/json' },
+  };
+  return new Promise((resolve) => {
+    const req = https.request(options, res => {
+      let d = '';
+      res.on('data', chunk => { d += chunk; });
+      res.on('end', () => { try { resolve(JSON.parse(d)); } catch { resolve(d); } });
+    });
+    req.on('error', err => { console.warn('[Expo Push] Error:', err.message); resolve(null); });
+    req.write(payload);
+    req.end();
+  });
+}
 
 /**
  * GET /notifications
@@ -183,6 +206,23 @@ router.post('/broadcast', authenticate, async (req, res, next) => {
       },
     }));
     await Notification.insertMany(notifications);
+
+    // Gửi Expo Push notification đến tất cả user nhận
+    try {
+      const { User } = require('../models');
+      const usersWithToken = await User.find({
+        _id:       { $in: userIds },
+        fcm_token: { $ne: null, $exists: true },
+      }).select('fcm_token').lean();
+      const tokens = usersWithToken.map(u => u.fcm_token).filter(Boolean);
+      if (tokens.length > 0) {
+        const pushBody = message.trim().replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim().slice(0, 100);
+        await sendExpoPush(tokens, title.trim(), pushBody, { type: 'broadcast' });
+        console.info(`[Push] Broadcast sent to ${tokens.length} devices`);
+      }
+    } catch (pushErr) {
+      console.warn('[Push] Broadcast push failed:', pushErr.message);
+    }
 
     try {
       const io = req.app.get('io');

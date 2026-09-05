@@ -205,6 +205,26 @@ export default function DashboardScreen() {
     fetchFundRemaining();
     fetchUnreadCount();
     fetchLicensePlate();
+
+    // Realtime: lắng nghe notification mới → tăng badge ngay lập tức
+    let socket: any = null;
+    try {
+      const { io } = require('socket.io-client');
+      const BASE_URL = process.env.API_URL || 'http://192.168.88.181:5000';
+      socket = io(BASE_URL, { transports: ['websocket', 'polling'], reconnectionAttempts: 5 });
+      socket.on('connect', () => {
+        const { useAuthStore } = require('@/stores/authStore');
+        const userId = useAuthStore.getState().user?._id;
+        if (userId) socket.emit('join:user', userId);
+      });
+      socket.on('notification', () => {
+        setUnreadCount(prev => prev + 1);
+      });
+    } catch (_) {}
+
+    return () => {
+      if (socket) socket.disconnect();
+    };
   }, []);
 
   // Khi đổi tuần
