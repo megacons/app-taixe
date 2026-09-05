@@ -243,10 +243,10 @@ router.get('/broadcast/history', authenticate, async (req, res, next) => {
     // Resolve tên người nhận cho các thông báo gửi tới 1 hoặc vài người
     const { User } = require('../models');
     const result = await Promise.all(history.map(async h => {
-      let sent_to_names: string[] | null = null;
+      let sent_to_names = null;
       if (h.target_ids && h.target_ids.length > 0 && h.target_ids.length <= 10) {
         const users = await User.find({ _id: { $in: h.target_ids } }).select('name').lean();
-        sent_to_names = users.map((u: any) => u.name);
+        sent_to_names = users.map(u => u.name);
       }
       return { ...h, sent_to_names };
     }));
