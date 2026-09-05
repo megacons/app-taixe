@@ -104,15 +104,21 @@ router.get('/drivers', authenticate, authorize('coordinator', 'accountant', 'man
       .lean();
 
     const result = await Promise.all(drivers.map(async d => {
-      // Lấy entries tháng này
-      const entries = await FundEntry.find({ driver_id: d._id, month: monthStr }).lean();
+      const from = new Date(`${monthStr}-01T00:00:00.000Z`);
+      const to   = new Date(from); to.setMonth(to.getMonth() + 1);
+      const dateFrom = `${monthStr}-01`;
+      const dateTo   = `${monthStr}-31`;
+
+      // Query theo date range để tránh lỗi month field không khớp
+      const entries = await FundEntry.find({
+        driver_id: d._id,
+        date: { $gte: dateFrom, $lte: dateTo },
+      }).lean();
       const totalAdvance = entries.reduce((s, e) => s + (e.advance || 0), 0);
       const totalExpense = entries.reduce((s, e) => s + (e.expense || 0), 0);
       const remaining    = totalAdvance - totalExpense;
 
       // Tổng chuyến tháng
-      const from = new Date(`${monthStr}-01T00:00:00.000Z`);
-      const to   = new Date(from); to.setMonth(to.getMonth() + 1);
       const trips = await Trip.countDocuments({ driver_id: d._id, trip_date: { $gte: from, $lt: to }, status: { $ne: 'cancelled' } });
       const overtimeTrips = await Trip.countDocuments({ driver_id: d._id, trip_date: { $gte: from, $lt: to }, is_overtime: true });
 
@@ -164,10 +170,13 @@ router.get('/:driverId/entries', authenticate, async (req, res, next) => {
       .lean();
     if (!driver) return res.status(404).json({ success: false, message: 'Không tìm thấy tài xế' });
 
-    // Lấy tất cả entries tháng này
+    const dateFrom = `${monthStr}-01`;
+    const dateTo   = `${monthStr}-31`;
+
+    // Lấy tất cả entries tháng này (query theo date để tránh lỗi month field)
     const entries = await FundEntry.find({
       driver_id: req.params.driverId,
-      month:     monthStr,
+      date: { $gte: dateFrom, $lte: dateTo },
     }).sort('date').lean();
 
     // Lấy trips theo ngày để fill vào bảng
