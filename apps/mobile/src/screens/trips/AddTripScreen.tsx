@@ -264,7 +264,14 @@ export default function AddTripScreen() {
         onPress: async () => {
           const { status } = await ImagePicker.requestCameraPermissionsAsync();
           if (status !== 'granted') {
-            Alert.alert('Cần quyền camera', 'Vui lòng cấp quyền camera.');
+            Alert.alert(
+              'Cần quyền camera',
+              'Vui lòng cấp quyền camera trong Cài đặt để chụp ảnh biên nhận.',
+              [
+                { text: 'Hủy', style: 'cancel' },
+                { text: 'Mở Cài đặt', onPress: () => { const { Linking } = require('react-native'); Linking.openSettings(); } },
+              ]
+            );
             return;
           }
           const result = await ImagePicker.launchCameraAsync({
@@ -281,7 +288,17 @@ export default function AddTripScreen() {
         text: 'Chọn từ thư viện',
         onPress: async () => {
           const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-          if (status !== 'granted') return;
+          if (status !== 'granted') {
+            Alert.alert(
+              'Cần quyền thư viện ảnh',
+              'Vui lòng cấp quyền truy cập thư viện ảnh trong Cài đặt.',
+              [
+                { text: 'Hủy', style: 'cancel' },
+                { text: 'Mở Cài đặt', onPress: () => { const { Linking } = require('react-native'); Linking.openSettings(); } },
+              ]
+            );
+            return;
+          }
           const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
             quality: 0.8,
@@ -994,7 +1011,7 @@ function UnitPicker({ value, onChange }: { value: string; onChange: (v: string) 
           value={isCustom && value !== 'khác' ? value : customUnit}
           onChangeText={v => {
             setCustomUnit(v);
-            if (v.trim()) onChange(v.trim());
+            onChange(v.trim());
           }}
           placeholder="Nhập đơn vị (VD: chuyến, bao...)"
           placeholderTextColor={Colors.gray400}
