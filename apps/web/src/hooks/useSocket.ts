@@ -1,7 +1,8 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 
-const SOCKET_URL = '/';  // same origin — Vite proxy handles it
+// Production: kết nối trực tiếp Railway. Dev: dùng Vite proxy
+const SOCKET_URL = import.meta.env.VITE_API_URL || '/';
 
 let globalSocket: Socket | null = null;
 

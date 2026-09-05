@@ -45,7 +45,8 @@ export function usePendingRequests() {
     let socket: any = null;
     try {
       import('socket.io-client').then(({ io }) => {
-        socket = io('/', { transports: ['websocket', 'polling'] });
+        const SOCKET_URL = (import.meta as any).env?.VITE_API_URL || '/';
+        socket = io(SOCKET_URL, { transports: ['websocket', 'polling'] });
         socketRef.current = socket;
         socket.emit('join:admin');
 
