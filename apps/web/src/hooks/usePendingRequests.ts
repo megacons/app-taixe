@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import api from '@/lib/api';
+import toast from 'react-hot-toast';
 
 let _count = 0;
 const listeners = new Set<(n: number) => void>();
@@ -15,6 +16,17 @@ async function fetchCount() {
     notify(res.data.data?.pagination?.total ?? 0);
   } catch { /* silent */ }
 }
+
+const TYPE_LABEL: Record<string, string> = {
+  salary_advance:        'Tạm ứng lương',
+  expense:               'Chi phí',
+  leave:                 'Nghỉ phép',
+  purchase:              'Mua hàng',
+  additional_trip:       'Thêm chuyến',
+  attendance_adjustment: 'Đổi giờ công',
+  reward:                'Khen thưởng',
+  discipline:            'Kỷ luật',
+};
 
 /** Hook dùng trong bất kỳ component nào để lấy số pending realtime */
 export function usePendingRequests() {
@@ -32,12 +44,31 @@ export function usePendingRequests() {
     // Lazy init socket — chỉ khi hook được mount (user đã đăng nhập)
     let socket: any = null;
     try {
-      // dynamic import để tránh crash ở module level
       import('socket.io-client').then(({ io }) => {
         socket = io('/', { transports: ['websocket', 'polling'] });
         socketRef.current = socket;
         socket.emit('join:admin');
-        socket.on('new:request',      () => fetchCount());
+
+        socket.on('new:request', (data: any) => {
+          fetchCount();
+          // Hiện toast thông báo realtime
+          const typeName = TYPE_LABEL[data?.type] ?? 'Yêu cầu';
+          const driverName = data?.driver_name ?? 'Tài xế';
+          toast(
+            `🔔 ${driverName} gửi yêu cầu ${typeName}`,
+            {
+              duration: 6000,
+              icon: '📋',
+              style: {
+                background: '#163797',
+                color: '#fff',
+                fontWeight: '600',
+                fontSize: '14px',
+              },
+            }
+          );
+        });
+
         socket.on('request:approved', () => fetchCount());
         socket.on('request:rejected', () => fetchCount());
       }).catch(() => {/* socket optional */});
