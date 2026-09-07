@@ -47,7 +47,7 @@ interface Driver {
   department: string;
   join_date: string;
   status: string;
-  vehicle_id: { _id: string; license_plate: string } | null;
+  vehicle_id: { _id: string; license_plate: string; status?: string } | null;
   user_id: { phone: string; status: string; avatar: string | null; email?: string } | null;
 }
 
@@ -532,7 +532,9 @@ function DriversTab({ canEdit = true, canAdd = true }: { canEdit?: boolean; canA
                   <td className="text-sm text-gray-600">{d.employee_id ?? '—'}</td>
                   <td>
                     {d.vehicle_id
-                      ? <span className="badge badge-info">{d.vehicle_id.license_plate}</span>
+                      ? d.vehicle_id.status === 'maintenance'
+                        ? <span className="text-xs font-semibold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">🔧 {d.vehicle_id.license_plate} — Bảo dưỡng</span>
+                        : <span className="badge badge-info">{d.vehicle_id.license_plate}</span>
                       : <span className="text-gray-400 text-xs">Chưa gán</span>}
                   </td>
                   <td className="text-sm text-gray-600">

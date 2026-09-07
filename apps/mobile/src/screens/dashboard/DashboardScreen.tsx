@@ -80,6 +80,7 @@ export default function DashboardScreen() {
   const [monthlyTrips, setMonthlyTrips]   = useState(0);
   const [fundRemaining, setFundRemaining] = useState<number | null>(null);
   const [licensePlate, setLicensePlate]   = useState<string>('---');
+  const [vehicleStatus, setVehicleStatus] = useState<string>('active');
   const [weekOffset, setWeekOffset]       = useState(0);
   const { companyName, logoUrl: companyLogoUrl } = useCompanyConfig();
   const FUNCTIONS = user?.role === 'employee' ? FUNCTIONS_EMPLOYEE : FUNCTIONS_DRIVER;
@@ -96,8 +97,10 @@ export default function DashboardScreen() {
   const fetchLicensePlate = useCallback(async () => {
     try {
       const res = await api.get('/drivers/profile/me');
-      const plate = res.data.data?.vehicle_id?.license_plate;
+      const plate  = res.data.data?.vehicle_id?.license_plate;
+      const status = res.data.data?.vehicle_id?.status;
       setLicensePlate(plate || '---');
+      setVehicleStatus(status || 'active');
     } catch (_) {}
   }, []);
 
@@ -254,6 +257,25 @@ export default function DashboardScreen() {
   const handleNav = (route: string) => {
     if (route === 'Trips') {
       navigation.navigate('Main' as any);
+    } else if (route === 'AddTrip') {
+      // Kiểm tra xe trước khi tạo nhật trình
+      if (licensePlate === '---' || !licensePlate) {
+        Alert.alert(
+          '⚠️ Chưa có xe',
+          'Bạn chưa được gán xe. Vui lòng liên hệ quản lý để được phân công xe trước khi tạo nhật trình.',
+          [{ text: 'Đã hiểu', style: 'default' }]
+        );
+        return;
+      }
+      if (vehicleStatus === 'maintenance') {
+        Alert.alert(
+          '🔧 Xe đang bảo dưỡng',
+          `Xe ${licensePlate} đang trong quá trình bảo dưỡng. Vui lòng liên hệ quản lý để được hỗ trợ.`,
+          [{ text: 'Đã hiểu', style: 'default' }]
+        );
+        return;
+      }
+      navigation.navigate(route as any);
     } else {
       navigation.navigate(route as any);
     }
