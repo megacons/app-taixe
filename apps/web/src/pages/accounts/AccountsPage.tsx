@@ -534,7 +534,9 @@ function DriversTab({ canEdit = true, canAdd = true }: { canEdit?: boolean; canA
                     {d.vehicle_id
                       ? d.vehicle_id.status === 'maintenance'
                         ? <span className="text-xs font-semibold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">🔧 {d.vehicle_id.license_plate} — Bảo dưỡng</span>
-                        : <span className="badge badge-info">{d.vehicle_id.license_plate}</span>
+                        : d.vehicle_id.status === 'inactive' || d.vehicle_id.status === 'broken'
+                          ? <span className="text-xs font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">⛔ {d.vehicle_id.license_plate} — Không HĐ</span>
+                          : <span className="badge badge-info">{d.vehicle_id.license_plate}</span>
                       : <span className="text-gray-400 text-xs">Chưa gán</span>}
                   </td>
                   <td className="text-sm text-gray-600">

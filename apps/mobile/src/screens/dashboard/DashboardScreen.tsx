@@ -275,6 +275,14 @@ export default function DashboardScreen() {
         );
         return;
       }
+      if (vehicleStatus === 'inactive' || vehicleStatus === 'broken') {
+        Alert.alert(
+          '⛔ Xe không hoạt động',
+          `Xe ${licensePlate} hiện không hoạt động. Vui lòng liên hệ quản lý để được hỗ trợ.`,
+          [{ text: 'Đã hiểu', style: 'default' }]
+        );
+        return;
+      }
       navigation.navigate(route as any);
     } else {
       navigation.navigate(route as any);
