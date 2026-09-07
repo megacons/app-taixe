@@ -185,6 +185,15 @@ router.put(
 
       await vehicle.save();
 
+      // Nếu xe bị tắt/hỏng → tự động bỏ gán tài xế
+      const deactivatedStatuses = ['inactive', 'broken'];
+      if (deactivatedStatuses.includes(req.body.status) && vehicle.assigned_driver) {
+        await Driver.findByIdAndUpdate(vehicle.assigned_driver, { vehicle_id: null });
+        vehicle.assigned_driver = null;
+        await vehicle.save();
+        console.info(`[Vehicle] Auto-unassigned driver from vehicle ${vehicle.license_plate} (status: ${req.body.status})`);
+      }
+
       const updated = await Vehicle.findById(vehicle._id).populate(
         'assigned_driver',
         'full_name phone employee_id'
