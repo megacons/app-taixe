@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import {
   View, Text, FlatList, StyleSheet, TouchableOpacity,
   ActivityIndicator, RefreshControl, TextInput,
-  Image, Platform, Modal, ScrollView, Linking,
+  Image, Platform, Modal, ScrollView, Linking, useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -12,7 +12,11 @@ import { useAuthStore } from '@/stores/authStore';
 import api from '@/lib/api';
 import { format, parseISO } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import RenderHtml from 'react-native-render-html';
 import type { RootStackParamList } from '@/navigation';
+
+const stripHtml = (html: string) => html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+const isHtml = (s: string) => /<[a-z][\s\S]*>/i.test(s);
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -56,6 +60,14 @@ export default function DisciplineListScreen() {
   const [loading, setLoading]       = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedNotif, setSelectedNotif] = useState<any | null>(null);
+  const { width } = useWindowDimensions();
+
+  const markRead = async (id: string) => {
+    try {
+      await api.put(`/notifications/${id}/read`);
+      setItems(prev => prev.map(i => i._id === id ? { ...i, is_read: true } : i));
+    } catch (_) {}
+  };
 
   const fetchList = async () => {
     try {
@@ -139,7 +151,10 @@ export default function DisciplineListScreen() {
               <TouchableOpacity
                 style={[S.card, !item.is_read && S.cardUnread]}
                 activeOpacity={0.85}
-                onPress={() => setSelectedNotif(item)}
+                onPress={() => {
+                  setSelectedNotif(item);
+                  if (!item.is_read) markRead(item._id);
+                }}
               >
                 <View style={[S.severityBar, { backgroundColor: sev.barColor }]} />
                 <View style={S.cardContent}>
@@ -165,7 +180,7 @@ export default function DisciplineListScreen() {
                   </View>
 
                   {item.reason ? (
-                    <Text style={S.cardReason} numberOfLines={2}>{item.reason}</Text>
+                    <Text style={S.cardReason} numberOfLines={2}>{stripHtml(item.reason)}</Text>
                   ) : null}
                 </View>
                 <Text style={S.chevron}>›</Text>
@@ -204,7 +219,26 @@ export default function DisciplineListScreen() {
                   🕐 {format(parseISO(selectedNotif.created_at), 'HH:mm - dd/MM/yyyy (EEEE)', { locale: vi })}
                 </Text>
                 <View style={N.divider} />
-                <Text style={N.message}>{selectedNotif.reason}</Text>
+                {selectedNotif.reason ? (
+                  isHtml(selectedNotif.reason) ? (
+                    <RenderHtml
+                      contentWidth={width - 40}
+                      source={{ html: selectedNotif.reason }}
+                      tagsStyles={{
+                        p:      { fontSize: 15, color: Colors.gray700, lineHeight: 22, marginBottom: 8 },
+                        strong: { fontWeight: '700', color: Colors.gray900 },
+                        em:     { fontStyle: 'italic' },
+                        ul:     { paddingLeft: 16 },
+                        li:     { fontSize: 15, color: Colors.gray700, lineHeight: 22 },
+                        h1:     { fontSize: 17, fontWeight: '700', color: Colors.gray900, marginBottom: 6 },
+                        h2:     { fontSize: 16, fontWeight: '700', color: Colors.gray900, marginBottom: 4 },
+                        h3:     { fontSize: 15, fontWeight: '600', color: Colors.gray900, marginBottom: 4 },
+                      }}
+                    />
+                  ) : (
+                    <Text style={N.message}>{selectedNotif.reason}</Text>
+                  )
+                ) : null}
 
                 {/* File đính kèm */}
                 {selectedNotif.attachment?.url && (
