@@ -185,8 +185,8 @@ router.put(
 
       await vehicle.save();
 
-      // Nếu xe bị tắt/hỏng → tự động bỏ gán tài xế
-      const deactivatedStatuses = ['inactive', 'broken'];
+      // Nếu xe bị tắt/hỏng/bảo dưỡng → tự động bỏ gán tài xế
+      const deactivatedStatuses = ['inactive', 'broken', 'maintenance'];
       if (deactivatedStatuses.includes(req.body.status) && vehicle.assigned_driver) {
         await Driver.findByIdAndUpdate(vehicle.assigned_driver, { vehicle_id: null });
         vehicle.assigned_driver = null;
