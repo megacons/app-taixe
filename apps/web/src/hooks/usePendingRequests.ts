@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import api from '@/lib/api';
-import toast from 'react-hot-toast';
 
 let _count = 0;
 const listeners = new Set<(n: number) => void>();
@@ -52,22 +51,6 @@ export function usePendingRequests() {
 
         socket.on('new:request', (data: any) => {
           fetchCount();
-          // Hiện toast thông báo realtime
-          const typeName = TYPE_LABEL[data?.type] ?? 'Yêu cầu';
-          const driverName = data?.driver_name ?? 'Tài xế';
-          toast(
-            `🔔 ${driverName} gửi yêu cầu ${typeName}`,
-            {
-              duration: 6000,
-              icon: '📋',
-              style: {
-                background: '#163797',
-                color: '#fff',
-                fontWeight: '600',
-                fontSize: '14px',
-              },
-            }
-          );
         });
 
         socket.on('request:approved', () => fetchCount());
