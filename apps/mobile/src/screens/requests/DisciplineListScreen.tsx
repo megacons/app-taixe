@@ -165,9 +165,7 @@ export default function DisciplineListScreen() {
                         : format(parseISO(item.created_at), 'dd/MM/yyyy', { locale: vi })}
                     </Text>
                     {!item.is_read && (
-                      <View style={S.newBadge}>
-                        <Text style={S.newBadgeText}>Mới</Text>
-                      </View>
+                      <View style={S.unreadDot} />
                     )}
                   </View>
 
@@ -544,6 +542,7 @@ const S = StyleSheet.create({
   notifBadgeText:{ fontSize: 10, fontWeight: '700', color: Colors.error },
   newBadge:      { backgroundColor: Colors.error, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
   newBadgeText:  { fontSize: 10, fontWeight: '700', color: '#fff' },
+  unreadDot:     { width: 10, height: 10, borderRadius: 5, backgroundColor: Colors.primary },
 });
 
 /* ─────────────────────── Form Styles ─────────────────────── */
