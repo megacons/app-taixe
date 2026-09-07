@@ -78,15 +78,11 @@ export default function RequestsPage() {
 
   const { register: regReject, handleSubmit: handleReject, reset: resetReject, formState: { errors: errReject } } = useForm<{ reason: string }>();
 
-  // Realtime: join admin room, nhận new:request → toast + refetch
+  // Realtime: join admin room, nhận new:request → refetch (toast đã có ở AdminLayout)
   useSocket({
     rooms: ['join:admin'],
     events: {
-      'new:request': (data: any) => {
-        toast(`🔔 Yêu cầu mới: ${data.driver_name} — ${data.title}`, {
-          duration: 5000,
-          icon: '📋',
-        });
+      'new:request': () => {
         refetch();
       },
       'request:updated': () => {
