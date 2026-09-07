@@ -59,7 +59,9 @@ export default function TodayTripsScreen() {
     } catch { return date ?? ''; }
   })();
 
-  const overtimeCount = isMonthMode ? 0 : Math.max(0, trips.length - 4);
+  const overtimeCount = isMonthMode
+    ? trips.filter(t => t.is_overtime).length
+    : Math.max(0, trips.length - 4);
 
   // Build sections grouped by date (mới nhất lên đầu)
   const sections = (() => {
@@ -109,10 +111,12 @@ export default function TodayTripsScreen() {
   );
 
   const renderTrip = (t: any, index: number, dayTrips?: any[]) => {
-    // Tăng ca: nếu xem 1 ngày thì dựa index; nếu xem tháng thì dựa index trong ngày
-    const isOT = isMonthMode
-      ? (dayTrips ? index >= 4 : false)
-      : index >= 4;
+    // STT và tăng ca tính theo thứ tự thực trong ngày (chuyến sớm nhất = 1)
+    // section.data đang sort mới→cũ, nên chuyến sớm nhất ở CUỐI → STT = total - index
+    const total = dayTrips ? dayTrips.length : trips.length;
+    const chronoIndex = dayTrips ? (total - 1 - index) : (total - 1 - index);
+    const stt = chronoIndex + 1; // 1-based, chuyến đầu tiên trong ngày = 1
+    const isOT = stt > 4; // tăng ca từ chuyến thứ 5 trở đi
     return (
       <TouchableOpacity
         key={t._id}
@@ -121,7 +125,7 @@ export default function TodayTripsScreen() {
         activeOpacity={0.75}
       >
         <View style={[S.numBadge, isOT && { backgroundColor: Colors.accentDark }]}>
-          <Text style={S.numText}>{index + 1}</Text>
+          <Text style={S.numText}>{stt}</Text>
         </View>
         <View style={{ flex: 1 }}>
           {isAdmin && t.driver_id?.full_name && (
