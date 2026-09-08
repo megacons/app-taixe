@@ -265,6 +265,7 @@ function FundEntriesModal({ driver, month, year, onClose }: any) {
   const [entries, setEntries] = useState<any[]>([]);
   const [totals,  setTotals]  = useState({ advance: 0, expense: 0, remaining: 0 });
   const [loading, setLoading] = useState(true);
+  const [showAdvHistory, setShowAdvHistory] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -334,10 +335,10 @@ function FundEntriesModal({ driver, month, year, onClose }: any) {
             <>
               {/* Stats */}
               <View style={T.statsBar}>
-                <View style={T.statItem}>
+                <TouchableOpacity style={[T.statItem, T.statItemTap]} onPress={() => setShowAdvHistory(true)} activeOpacity={0.7}>
                   <Text style={[T.statValue, { color: '#3b82f6' }]}>{fmtVND(totals.advance)}đ</Text>
-                  <Text style={T.statLabel}>Đã cấp</Text>
-                </View>
+                  <Text style={T.statLabel}>Đã cấp 👆</Text>
+                </TouchableOpacity>
                 <View style={T.statDivider} />
                 <View style={T.statItem}>
                   <Text style={[T.statValue, { color: Colors.error }]}>{fmtVND(totals.expense)}đ</Text>
@@ -397,6 +398,95 @@ function FundEntriesModal({ driver, month, year, onClose }: any) {
                 </ScrollView>
               )}
             </>
+          )}
+        </View>
+      </View>
+    </Modal>
+
+    {/* Lịch sử các lần cấp tiền */}
+    {showAdvHistory && (
+      <AdvanceHistoryModal
+        driver={driver}
+        month={month}
+        year={year}
+        onClose={() => setShowAdvHistory(false)}
+      />
+    )}
+  );
+}
+
+/* ─── AdvanceHistoryModal — các lần cấp tiền ─────────────── */
+function AdvanceHistoryModal({ driver, month, year, onClose }: any) {
+  const [advances, setAdvances] = useState<any[]>([]);
+  const [total,    setTotal]    = useState(0);
+  const [loading,  setLoading]  = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await api.get(`/fund/${driver.driver_id}/advances`, { params: { month, year } });
+        setAdvances(res.data.data?.advances ?? []);
+        setTotal(res.data.data?.total ?? 0);
+      } catch (_) {}
+      finally { setLoading(false); }
+    })();
+  }, [driver.driver_id, month, year]);
+
+  return (
+    <Modal visible transparent animationType="fade">
+      <View style={AH.overlay}>
+        <TouchableOpacity style={AH.backdrop} activeOpacity={1} onPress={onClose} />
+        <View style={AH.sheet}>
+          {/* Header */}
+          <View style={AH.header}>
+            <TouchableOpacity onPress={onClose} style={AH.backBtn}>
+              <Text style={AH.backIcon}>←</Text>
+            </TouchableOpacity>
+            <Text style={AH.title} numberOfLines={1}>Lịch sử cấp tiền</Text>
+            <View style={{ width: 36 }} />
+          </View>
+
+          {/* Driver info */}
+          <View style={AH.driverRow}>
+            <Text style={AH.driverName}>{driver.full_name}</Text>
+            <Text style={AH.driverMeta}>🚛 {driver.license_plate} · Tháng {month}/{year}</Text>
+          </View>
+
+          {/* Total */}
+          <View style={AH.totalRow}>
+            <Text style={AH.totalLabel}>Tổng đã cấp</Text>
+            <Text style={AH.totalValue}>{fmtVND(total)}đ</Text>
+          </View>
+
+          {loading ? (
+            <ActivityIndicator color={Colors.primary} style={{ marginTop: 40 }} />
+          ) : advances.length === 0 ? (
+            <View style={AH.empty}>
+              <Text style={{ fontSize: 36 }}>💰</Text>
+              <Text style={AH.emptyText}>Chưa có lần cấp tiền nào</Text>
+            </View>
+          ) : (
+            <ScrollView contentContainerStyle={AH.list} showsVerticalScrollIndicator={false}>
+              {advances.map((a, idx) => {
+                const d = a.date ? new Date(a.date + 'T00:00:00') : null;
+                const dayLabel = d && !isNaN(d.getTime())
+                  ? `${['CN','T2','T3','T4','T5','T6','T7'][d.getDay()]} ${format(d, 'dd/MM/yyyy', { locale: vi })}`
+                  : a.date ?? '—';
+                return (
+                  <View key={String(a._id ?? idx)} style={AH.row}>
+                    <View style={AH.iconBox}>
+                      <Text style={{ fontSize: 20 }}>💰</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={AH.rowDate}>{dayLabel}</Text>
+                      {!!a.note && <Text style={AH.rowNote} numberOfLines={2}>{a.note}</Text>}
+                    </View>
+                    <Text style={AH.rowAmount}>+{fmtVND(a.advance)}đ</Text>
+                  </View>
+                );
+              })}
+              <View style={{ height: 20 }} />
+            </ScrollView>
           )}
         </View>
       </View>
@@ -478,6 +568,7 @@ const T = StyleSheet.create({
 
   statsBar:    { flexDirection: 'row', backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.border },
   statItem:    { flex: 1, alignItems: 'center', paddingVertical: 10 },
+  statItemTap: { backgroundColor: '#eff6ff' },
   statValue:   { fontSize: 14, fontWeight: '800', color: Colors.primary },
   statLabel:   { fontSize: 10, color: Colors.gray500, marginTop: 2 },
   statDivider: { width: 1, backgroundColor: Colors.border, marginVertical: 8 },
@@ -495,4 +586,28 @@ const T = StyleSheet.create({
 
   empty:      { alignItems: 'center', paddingTop: 60, gap: 8 },
   emptyText:  { fontSize: 14, color: Colors.gray500, textAlign: 'center' },
+});
+
+const AH = StyleSheet.create({
+  overlay:    { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 16, backgroundColor: 'rgba(0,0,0,0.65)' },
+  backdrop:   { ...StyleSheet.absoluteFillObject, backgroundColor: 'transparent' },
+  sheet:      { backgroundColor: Colors.white, borderRadius: 20, width: '100%', maxHeight: '88%', overflow: 'hidden' },
+  header:     { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: Colors.primary, gap: 8 },
+  backBtn:    { width: 32, height: 32, justifyContent: 'center' },
+  backIcon:   { fontSize: 20, color: Colors.white, fontWeight: '700' },
+  title:      { flex: 1, fontSize: 16, fontWeight: '700', color: Colors.white, textAlign: 'center' },
+  driverRow:  { paddingHorizontal: 16, paddingVertical: 12, backgroundColor: Colors.primary + '0d', borderBottomWidth: 1, borderBottomColor: Colors.border },
+  driverName: { fontSize: 15, fontWeight: '700', color: Colors.gray900 },
+  driverMeta: { fontSize: 12, color: Colors.primary, fontWeight: '600', marginTop: 2 },
+  totalRow:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#eff6ff', borderBottomWidth: 1, borderBottomColor: Colors.border },
+  totalLabel: { fontSize: 13, fontWeight: '600', color: '#1e40af' },
+  totalValue: { fontSize: 16, fontWeight: '800', color: '#1d4ed8' },
+  list:       { padding: 14, paddingBottom: 20 },
+  row:        { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: Colors.white, borderRadius: 12, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: Colors.border },
+  iconBox:    { width: 40, height: 40, borderRadius: 20, backgroundColor: '#dbeafe', justifyContent: 'center', alignItems: 'center', flexShrink: 0 },
+  rowDate:    { fontSize: 13, fontWeight: '700', color: Colors.gray900 },
+  rowNote:    { fontSize: 12, color: Colors.gray500, marginTop: 2 },
+  rowAmount:  { fontSize: 15, fontWeight: '800', color: '#16a34a' },
+  empty:      { alignItems: 'center', paddingTop: 40, gap: 8 },
+  emptyText:  { fontSize: 14, color: Colors.gray500 },
 });
