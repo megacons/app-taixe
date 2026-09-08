@@ -317,13 +317,12 @@ export default function AdminDashboard() {
                         )}
                       </View>
                     </View>
-                    {/* Trips in day — sort cũ nhất trước để STT đúng */}
-                    {[...trips].sort((a, b) =>
-                      new Date(a.trip_date).getTime() - new Date(b.trip_date).getTime()
-                    ).map((t, idx) => {
-                      const stt = idx + 1;
-                      const isOT = stt > 4;
-                      return (
+                    {/* Trips in day — mới nhất trên đầu, STT theo thứ tự thực (cũ nhất = 1) */}
+                    {[...trips]
+                      .sort((a, b) => new Date(a.trip_date).getTime() - new Date(b.trip_date).getTime())
+                      .map((t, idxAsc) => ({ t, stt: idxAsc + 1, isOT: idxAsc >= 4 }))
+                      .sort((a, b) => new Date(b.t.trip_date).getTime() - new Date(a.t.trip_date).getTime())
+                      .map(({ t, stt, isOT }) => (
                         <TouchableOpacity
                           key={t._id}
                           style={[S.tripCard, isOT && S.tripCardOT]}
@@ -355,8 +354,8 @@ export default function AdminDashboard() {
                             {isOT && <Text style={S.otBadge}>🔥 TC</Text>}
                           </View>
                         </TouchableOpacity>
-                      );
-                    })}
+                      ))
+                    }
                   </View>
                 ));
               })()
