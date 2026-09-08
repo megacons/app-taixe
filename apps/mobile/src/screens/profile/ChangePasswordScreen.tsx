@@ -59,6 +59,7 @@ export default function ChangePasswordScreen() {
           <View style={styles.card}>
             <PasswordField
               label="Mật khẩu hiện tại"
+              placeholder="Nhập mật khẩu đang dùng"
               value={currentPassword}
               onChange={setCurrentPassword}
               show={showCurrent}
@@ -67,6 +68,7 @@ export default function ChangePasswordScreen() {
             />
             <PasswordField
               label="Mật khẩu mới"
+              placeholder="Tối thiểu 6 ký tự"
               value={newPassword}
               onChange={setNewPassword}
               show={showNew}
@@ -95,21 +97,29 @@ export default function ChangePasswordScreen() {
   );
 }
 
-function PasswordField({ label, value, onChange, show, onToggle, error, isLast }: any) {
+function PasswordField({ label, placeholder, value, onChange, show, onToggle, error, isLast }: any) {
   return (
     <View style={[pStyles.group, !isLast && pStyles.groupBorder]}>
       <Text style={pStyles.label}>{label}</Text>
       <View style={pStyles.inputRow}>
         <TextInput
+          key={show ? `${label}-show` : `${label}-hide`}
           style={pStyles.input}
           value={value}
           onChangeText={onChange}
           secureTextEntry={!show}
           autoCapitalize="none"
-          placeholder="••••••"
+          autoCorrect={false}
+          autoComplete="off"
+          placeholder={placeholder ?? '••••••'}
           placeholderTextColor={Colors.gray400}
         />
-        <TouchableOpacity onPress={onToggle} style={pStyles.eye} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity
+          onPress={onToggle}
+          style={pStyles.eye}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          activeOpacity={0.6}
+        >
           <Text style={{ fontSize: 20 }}>{show ? '🙈' : '👁️'}</Text>
         </TouchableOpacity>
       </View>
