@@ -1,11 +1,14 @@
 import {
-  View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Image,
+  View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Image, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import * as ImagePicker from 'expo-image-picker';
 import { Colors } from '@/constants/colors';
 import { useAuthStore } from '@/stores/authStore';
 import { useCompanyConfig } from '@/hooks/useCompanyConfig';
+import api from '@/lib/api';
+import { useState } from 'react';
 
 const BASE_URL = process.env.API_URL || 'http://192.168.88.181:5000';
 
@@ -15,14 +18,55 @@ const ROLE_LABEL: Record<string, string> = {
 
 export default function AdminProfile() {
   const navigation = useNavigation<any>();
-  const { user, logout } = useAuthStore();
+  const { user, logout, setUser } = useAuthStore();
   const { companyName } = useCompanyConfig();
+  const [avatarUploading, setAvatarUploading] = useState(false);
 
   const handleLogout = () => {
     Alert.alert('Đăng xuất', 'Bạn có chắc muốn đăng xuất?', [
       { text: 'Hủy', style: 'cancel' },
       { text: 'Đăng xuất', style: 'destructive', onPress: logout },
     ]);
+  };
+
+  const handlePickAvatar = () => {
+    Alert.alert('Ảnh đại diện', 'Chọn nguồn ảnh', [
+      { text: 'Chụp ảnh', onPress: async () => {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') { Alert.alert('Cần quyền camera'); return; }
+        const r = await ImagePicker.launchCameraAsync({ allowsEditing: true, aspect: [1,1], quality: 0.85 });
+        if (!r.canceled) uploadAvatar(r.assets[0].uri);
+      }},
+      { text: 'Chọn từ thư viện', onPress: async () => {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') { Alert.alert('Cần quyền thư viện ảnh'); return; }
+        const r = await ImagePicker.launchImageLibraryAsync({ allowsEditing: true, aspect: [1,1], quality: 0.85 });
+        if (!r.canceled) uploadAvatar(r.assets[0].uri);
+      }},
+      { text: 'Hủy', style: 'cancel' },
+    ]);
+  };
+
+  const uploadAvatar = async (uri: string) => {
+    setAvatarUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('avatar', { uri, type: 'image/jpeg', name: 'avatar.jpg' } as any);
+      const res = await api.post('/drivers/avatar', fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 30000,
+      });
+      const rawUrl = res.data.data?.avatar ?? res.data.data?.url;
+      if (rawUrl) {
+        const full = (rawUrl.startsWith('http') ? rawUrl : `${BASE_URL}${rawUrl}`) + `?t=${Date.now()}`;
+        setUser({ ...user!, avatar: full });
+        Alert.alert('✅', 'Cập nhật ảnh thành công!');
+      }
+    } catch (e: any) {
+      Alert.alert('Lỗi', e?.response?.data?.message ?? 'Không thể cập nhật ảnh.');
+    } finally {
+      setAvatarUploading(false);
+    }
   };
 
   const MENU = [
@@ -53,7 +97,7 @@ export default function AdminProfile() {
       <ScrollView contentContainerStyle={S.content}>
         {/* User card */}
         <View style={S.userCard}>
-          <View style={S.userAvatarBox}>
+          <TouchableOpacity onPress={handlePickAvatar} disabled={avatarUploading} activeOpacity={0.8} style={S.userAvatarBox}>
             {user?.avatar ? (
               <Image
                 source={{ uri: user.avatar.startsWith('http') ? user.avatar : `${BASE_URL}${user.avatar}` }}
@@ -64,7 +108,12 @@ export default function AdminProfile() {
                 <Text style={S.userAvatarText}>{user?.name?.charAt(0)?.toUpperCase()}</Text>
               </View>
             )}
-          </View>
+            <View style={S.cameraBadge}>
+              {avatarUploading
+                ? <ActivityIndicator size="small" color="#fff" />
+                : <Text style={{ fontSize: 10 }}>📷</Text>}
+            </View>
+          </TouchableOpacity>
           <View>
             <Text style={S.userName}>{user?.name}</Text>
             <Text style={S.userRole}>{ROLE_LABEL[user?.role ?? ''] ?? 'Admin'}</Text>
@@ -115,10 +164,11 @@ const S = StyleSheet.create({
   headerTitle: { fontSize: 18, fontWeight: '700', color: Colors.white, flex: 1 },
   content:     { padding: 16, gap: 16, paddingBottom: 32 },
   userCard:       { backgroundColor: Colors.primary, borderRadius: 16, padding: 20, flexDirection: 'row', alignItems: 'center', gap: 16 },
-  userAvatarBox:  { width: 60, height: 60, borderRadius: 30, overflow: 'hidden' },
+  userAvatarBox:  { width: 60, height: 60, borderRadius: 30, overflow: 'hidden', position: 'relative' },
   userAvatar:     { width: 60, height: 60, borderRadius: 30, backgroundColor: Colors.accent, justifyContent: 'center', alignItems: 'center' },
   userAvatarImg:  { width: 60, height: 60, borderRadius: 30 },
   userAvatarText: { fontSize: 26, fontWeight: '700', color: Colors.gray900 },
+  cameraBadge:    { position: 'absolute', bottom: 0, right: 0, width: 20, height: 20, borderRadius: 10, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'center', alignItems: 'center', borderWidth: 1.5, borderColor: Colors.white },
   userName:    { fontSize: 18, fontWeight: '700', color: Colors.white },
   userRole:    { fontSize: 13, color: Colors.accent, fontWeight: '600', marginTop: 2 },
   userPhone:   { fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 2 },

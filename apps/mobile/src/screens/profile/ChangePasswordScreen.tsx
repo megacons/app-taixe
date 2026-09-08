@@ -18,6 +18,7 @@ export default function ChangePasswordScreen() {
   const [loading, setLoading] = useState(false);
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const validate = () => {
@@ -76,8 +77,8 @@ export default function ChangePasswordScreen() {
               label="Xác nhận mật khẩu mới"
               value={confirmPassword}
               onChange={setConfirmPassword}
-              show={showNew}
-              onToggle={() => setShowNew(!showNew)}
+              show={showConfirm}
+              onToggle={() => setShowConfirm(!showConfirm)}
               error={errors.confirmPassword}
               isLast
             />
