@@ -413,7 +413,6 @@ function FundEntriesModal({ driver, month, year, onClose, onShowAdvances }: any)
         </View>
       </View>
     </Modal>
-  </>
   );
 }
 
