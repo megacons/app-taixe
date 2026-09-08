@@ -336,9 +336,9 @@ function FundEntriesModal({ driver, month, year, onClose }: any) {
             <>
               {/* Stats */}
               <View style={T.statsBar}>
-                <TouchableOpacity style={[T.statItem, T.statItemTap]} onPress={() => setShowAdvHistory(true)} activeOpacity={0.7}>
+                <TouchableOpacity style={T.statItem} onPress={() => setShowAdvHistory(true)} activeOpacity={0.7}>
                   <Text style={[T.statValue, { color: '#3b82f6' }]}>{fmtVND(totals.advance)}đ</Text>
-                  <Text style={T.statLabel}>Đã cấp 👆</Text>
+                  <Text style={T.statLabel}>Đã cấp</Text>
                 </TouchableOpacity>
                 <View style={T.statDivider} />
                 <View style={T.statItem}>
@@ -426,10 +426,13 @@ function AdvanceHistoryModal({ driver, month, year, onClose }: any) {
   useEffect(() => {
     (async () => {
       try {
-        const res = await api.get(`/fund/${driver.driver_id}/advances`, { params: { month, year } });
+        const driverId = driver.driver_id ?? driver._id;
+        const res = await api.get(`/fund/${driverId}/advances`, { params: { month, year } });
         setAdvances(res.data.data?.advances ?? []);
         setTotal(res.data.data?.total ?? 0);
-      } catch (_) {}
+      } catch (e: any) {
+        console.warn('[AdvanceHistory] Error:', e?.response?.data ?? e?.message);
+      }
       finally { setLoading(false); }
     })();
   }, [driver.driver_id, month, year]);
@@ -570,7 +573,6 @@ const T = StyleSheet.create({
 
   statsBar:    { flexDirection: 'row', backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.border },
   statItem:    { flex: 1, alignItems: 'center', paddingVertical: 10 },
-  statItemTap: { backgroundColor: '#eff6ff' },
   statValue:   { fontSize: 14, fontWeight: '800', color: Colors.primary },
   statLabel:   { fontSize: 10, color: Colors.gray500, marginTop: 2 },
   statDivider: { width: 1, backgroundColor: Colors.border, marginVertical: 8 },
