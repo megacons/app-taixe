@@ -667,8 +667,8 @@ Công ty TNHH Vận tải Nam Thành`;
                             className="inline-flex items-center gap-1 text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-medium flex-shrink-0 hover:bg-emerald-200 transition-colors cursor-pointer"
                           >
                             <CheckCircleIcon className="w-3 h-3" />
-                            {h.sent_count >= 5
-                              ? `Tất cả ${h.sent_count} người`
+                            {(!h.target_ids || h.target_ids.length === 0)
+                              ? 'Tất cả'
                               : `${h.sent_count} người`}
                           </button>
                           {h.type && h.type !== 'announcement' && (
