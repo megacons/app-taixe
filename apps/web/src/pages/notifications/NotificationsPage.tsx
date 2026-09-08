@@ -126,6 +126,9 @@ export default function NotificationsPage() {
   const [showRecipientsOf, setShowRecipientsOf] = useState<HistoryItem | null>(null);
   const [editFile, setEditFile]     = useState<File | null>(null);
   const [editSending, setEditSending] = useState(false);
+  const [editSelectedIds, setEditSelectedIds] = useState<Set<string>>(new Set()); // rỗng = tất cả
+  const [showEditRecipientPicker, setShowEditRecipientPicker] = useState(false);
+  const [editRecipientSearch, setEditRecipientSearch] = useState('');
 
   // Recall state
   const [recalling, setRecalling] = useState<string | null>(null); // created_at của item đang recall
@@ -307,6 +310,14 @@ Công ty TNHH Vận tải Nam Thành`;
     setEditTitle(h.title);
     setEditMessage(h.message);
     setEditFile(null);
+    // Pre-populate người nhận từ target_ids gốc (rỗng = tất cả)
+    setEditSelectedIds(
+      h.target_ids && h.target_ids.length > 0
+        ? new Set(h.target_ids.map(String))
+        : new Set()
+    );
+    setShowEditRecipientPicker(false);
+    setEditRecipientSearch('');
   };
 
   /* ── Gửi lại sau khi sửa ── */
@@ -320,9 +331,9 @@ Công ty TNHH Vận tải Nam Thành`;
       fd.append('message', editMessage.trim());
       fd.append('type',    editItem?.type ?? 'announcement');
 
-      // Giữ nguyên người nhận gốc
-      if (editItem?.target_ids && editItem.target_ids.length > 0) {
-        fd.append('target_ids', editItem.target_ids.join(','));
+      // Dùng editSelectedIds (có thể đã thay đổi), rỗng = gửi tất cả
+      if (editSelectedIds.size > 0) {
+        fd.append('target_ids', Array.from(editSelectedIds).join(','));
       }
 
       if (editFile) fd.append('file', editFile);
@@ -774,17 +785,94 @@ Công ty TNHH Vận tải Nam Thành`;
           </>
         }>
         <div className="space-y-4">
-          {/* Người nhận */}
-          <div className="bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 flex items-center gap-2">
-            <UserGroupIcon className="w-4 h-4 text-blue-500 flex-shrink-0" />
-            <span className="text-sm text-blue-700">
-              <strong>Gửi lại tới: </strong>
-              {editItem?.sent_to_names && editItem.sent_to_names.length > 0
-                ? editItem.sent_to_names.join(', ')
-                : editItem?.target_ids && editItem.target_ids.length > 0
-                  ? `${editItem.target_ids.length} người đã chọn`
-                  : 'Tất cả mọi người'}
-            </span>
+          {/* Người nhận — có thể thay đổi */}
+          <div>
+            <label className="form-label">Người nhận</label>
+            <button
+              type="button"
+              onClick={() => setShowEditRecipientPicker(v => !v)}
+              className="w-full flex items-center justify-between form-input text-left"
+            >
+              <span className="truncate text-sm text-gray-700">
+                {editSelectedIds.size === 0
+                  ? '👥 Tất cả mọi người'
+                  : editSelectedIds.size === 1
+                  ? (() => { const r = recipients.find(x => editSelectedIds.has(x._id)); return r ? `${r.role === 'driver' ? '🚛' : '👤'} ${r.label}` : '1 người'; })()
+                  : `✅ Đã chọn ${editSelectedIds.size} người`}
+              </span>
+              <svg className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ${showEditRecipientPicker ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {showEditRecipientPicker && (
+              <div className="mt-1 border border-gray-200 rounded-lg bg-white shadow-lg z-20 max-h-72 flex flex-col">
+                <div className="p-2 border-b border-gray-100">
+                  <input
+                    type="text"
+                    placeholder="Tìm người..."
+                    value={editRecipientSearch}
+                    onChange={e => setEditRecipientSearch(e.target.value)}
+                    className="w-full text-sm border border-gray-200 rounded-md px-2.5 py-1.5 focus:outline-none focus:border-primary"
+                    autoFocus
+                  />
+                </div>
+                <div className="flex items-center justify-between px-3 py-1.5 border-b border-gray-100 bg-gray-50">
+                  <button type="button" onClick={() => setEditSelectedIds(new Set())}
+                    className="text-xs text-red-500 hover:text-red-700 font-medium">Bỏ chọn tất cả</button>
+                  <span className="text-xs text-gray-400">{editSelectedIds.size} đã chọn</span>
+                  <button type="button" onClick={() => setEditSelectedIds(new Set(recipients.map(r => r._id)))}
+                    className="text-xs text-primary hover:text-primary-800 font-medium">Chọn hết</button>
+                </div>
+                <div className="overflow-y-auto flex-1">
+                  {recipients.filter(r => r.role === 'driver' && r.label.toLowerCase().includes(editRecipientSearch.toLowerCase())).length > 0 && (
+                    <>
+                      <div className="px-3 py-1 text-[10px] font-semibold text-gray-400 uppercase bg-gray-50 sticky top-0">🚛 Tài xế</div>
+                      {recipients.filter(r => r.role === 'driver' && r.label.toLowerCase().includes(editRecipientSearch.toLowerCase())).map(r => (
+                        <label key={r._id} className="flex items-center gap-2.5 px-3 py-2 hover:bg-gray-50 cursor-pointer">
+                          <input type="checkbox" className="w-4 h-4 rounded text-primary accent-primary cursor-pointer"
+                            checked={editSelectedIds.has(r._id)}
+                            onChange={e => {
+                              const next = new Set(editSelectedIds);
+                              e.target.checked ? next.add(r._id) : next.delete(r._id);
+                              setEditSelectedIds(next);
+                            }} />
+                          <span className="text-sm text-gray-700 flex-1">{r.label}</span>
+                          {r.employee_id && <span className="text-xs text-gray-400">{r.employee_id}</span>}
+                        </label>
+                      ))}
+                    </>
+                  )}
+                  {recipients.filter(r => r.role !== 'driver' && r.label.toLowerCase().includes(editRecipientSearch.toLowerCase())).length > 0 && (
+                    <>
+                      <div className="px-3 py-1 text-[10px] font-semibold text-gray-400 uppercase bg-gray-50 sticky top-0">👤 Nhân viên / Quản lý</div>
+                      {recipients.filter(r => r.role !== 'driver' && r.label.toLowerCase().includes(editRecipientSearch.toLowerCase())).map(r => (
+                        <label key={r._id} className="flex items-center gap-2.5 px-3 py-2 hover:bg-gray-50 cursor-pointer">
+                          <input type="checkbox" className="w-4 h-4 rounded text-primary accent-primary cursor-pointer"
+                            checked={editSelectedIds.has(r._id)}
+                            onChange={e => {
+                              const next = new Set(editSelectedIds);
+                              e.target.checked ? next.add(r._id) : next.delete(r._id);
+                              setEditSelectedIds(next);
+                            }} />
+                          <span className="text-sm text-gray-700 flex-1">{r.label}</span>
+                          <span className="text-[10px] text-gray-400">[{ROLE_LABEL_SHORT[r.role] ?? r.role}]</span>
+                        </label>
+                      ))}
+                    </>
+                  )}
+                  {recipients.filter(r => r.label.toLowerCase().includes(editRecipientSearch.toLowerCase())).length === 0 && (
+                    <p className="text-center text-gray-400 text-sm py-4">Không tìm thấy</p>
+                  )}
+                </div>
+                <div className="px-3 py-2 border-t border-gray-100 bg-gray-50">
+                  <button type="button" onClick={() => setShowEditRecipientPicker(false)}
+                    className="w-full text-sm text-white bg-primary rounded-lg py-1.5 hover:bg-primary-800 transition-colors">
+                    Xong
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           <div>

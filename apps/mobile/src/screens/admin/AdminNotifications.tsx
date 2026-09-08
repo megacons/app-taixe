@@ -73,6 +73,8 @@ export default function AdminNotifications() {
   const [editItem,    setEditItem]    = useState<HistoryItem | null>(null);
   const [editTitle,   setEditTitle]   = useState('');
   const [editMessage, setEditMessage] = useState('');
+  const [editTargetId, setEditTargetId] = useState(''); // '' = tất cả
+  const [showEditDriverPicker, setShowEditDriverPicker] = useState(false);
   const [resending,   setResending]   = useState(false);
 
   /* ── recipients modal (từ detail) ── */
@@ -140,6 +142,10 @@ export default function AdminNotifications() {
     setEditItem(h);
     setEditTitle(h.title);
     setEditMessage(stripHtml(h.message));
+    // Pre-populate người nhận: nếu gửi 1 người → set targetId, nhiều người hoặc tất cả → ''
+    const firstTargetId = h.target_ids && h.target_ids.length === 1 ? h.target_ids[0] : '';
+    setEditTargetId(firstTargetId);
+    setShowEditDriverPicker(false);
     setDetailItem(null);
   };
 
@@ -149,11 +155,9 @@ export default function AdminNotifications() {
     if (!editTitle.trim())   { Alert.alert('Lỗi', 'Vui lòng nhập tiêu đề'); return; }
     if (!editMessage.trim()) { Alert.alert('Lỗi', 'Vui lòng nhập nội dung'); return; }
 
-    const recipientLabel = editItem.sent_to_names?.length
-      ? editItem.sent_to_names.join(', ')
-      : editItem.target_ids?.length
-        ? `${editItem.target_ids.length} người đã chọn`
-        : `tất cả tài xế`;
+    const recipientLabel = editTargetId
+      ? drivers.find(d => d._id === editTargetId)?.full_name ?? 'tài xế đã chọn'
+      : `tất cả tài xế`;
 
     Alert.alert('Xác nhận gửi lại', `Gửi lại tới: ${recipientLabel}?`, [
       { text: 'Hủy', style: 'cancel' },
@@ -166,9 +170,8 @@ export default function AdminNotifications() {
               message: editMessage.trim(),
               type:    editItem.type ?? 'announcement',
             };
-            // Giữ nguyên người nhận gốc
-            if (editItem.target_ids && editItem.target_ids.length > 0) {
-              payload.target_ids = editItem.target_ids.join(',');
+            if (editTargetId) {
+              payload.target_driver_id = editTargetId;
             }
             const res = await api.post('/notifications/broadcast', payload);
             Alert.alert('✅ Thành công', res.data.message ?? 'Đã gửi lại thông báo');
@@ -531,16 +534,60 @@ export default function AdminNotifications() {
               </View>
 
               <ScrollView contentContainerStyle={E.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-                {/* Người nhận (readonly) */}
-                <View style={E.recipientBox}>
-                  <Text style={E.recipientLabel}>Gửi lại tới:</Text>
-                  <Text style={E.recipientValue}>
-                    {editItem?.sent_to_names?.length
-                      ? editItem.sent_to_names.join(', ')
-                      : editItem?.target_ids?.length
-                        ? `${editItem.target_ids.length} người đã chọn`
-                        : 'Tất cả mọi người'}
-                  </Text>
+                {/* Người nhận — có thể thay đổi */}
+                <View style={E.field}>
+                  <Text style={E.label}>Người nhận</Text>
+                  <TouchableOpacity
+                    style={E.picker}
+                    onPress={() => setShowEditDriverPicker(v => !v)}
+                    activeOpacity={0.8}
+                  >
+                    <View style={E.pickerLeft}>
+                      <Text style={E.pickerIcon}>
+                        {editTargetId ? '👤' : '👥'}
+                      </Text>
+                      <Text style={E.pickerText}>
+                        {editTargetId
+                          ? drivers.find(d => d._id === editTargetId)?.full_name ?? 'Tài xế đã chọn'
+                          : `Tất cả tài xế (${drivers.length})`}
+                      </Text>
+                    </View>
+                    <Text style={E.pickerArrow}>{showEditDriverPicker ? '▲' : '▼'}</Text>
+                  </TouchableOpacity>
+
+                  {showEditDriverPicker && (
+                    <View style={E.dropdown}>
+                      {/* Tất cả */}
+                      <TouchableOpacity
+                        style={[E.dropItem, !editTargetId && E.dropItemActive]}
+                        onPress={() => { setEditTargetId(''); setShowEditDriverPicker(false); }}
+                      >
+                        <View style={E.dropAvatar}><Text style={{ fontSize: 14 }}>👥</Text></View>
+                        <Text style={[E.dropText, !editTargetId && E.dropTextActive]}>
+                          Tất cả tài xế ({drivers.length})
+                        </Text>
+                        {!editTargetId && <Text style={E.checkMark}>✓</Text>}
+                      </TouchableOpacity>
+                      {/* Từng tài xế */}
+                      {drivers.map(d => (
+                        <TouchableOpacity
+                          key={d._id}
+                          style={[E.dropItem, editTargetId === d._id && E.dropItemActive]}
+                          onPress={() => { setEditTargetId(d._id); setShowEditDriverPicker(false); }}
+                        >
+                          <View style={[E.dropAvatar, editTargetId === d._id && { backgroundColor: Colors.primary }]}>
+                            <Text style={{ fontSize: 12, fontWeight: '700', color: editTargetId === d._id ? Colors.white : Colors.primary }}>
+                              {d.full_name.charAt(0).toUpperCase()}
+                            </Text>
+                          </View>
+                          <Text style={[E.dropText, editTargetId === d._id && E.dropTextActive]}>
+                            {d.full_name}
+                          </Text>
+                          {editTargetId === d._id && <Text style={E.checkMark}>✓</Text>}
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
                 </View>
 
                 {/* Tiêu đề */}
@@ -758,7 +805,20 @@ const E = StyleSheet.create({
   textarea: { minHeight: 120, textAlignVertical: 'top', paddingTop: 10 },
   charCount:{ fontSize: 11, color: Colors.gray400, textAlign: 'right', marginTop: 3 },
 
-  footer:          { flexDirection: 'row', gap: 12, padding: 16, borderTopWidth: 1, borderTopColor: Colors.gray100 },
+  picker:      { borderWidth: 1.5, borderColor: Colors.gray200, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 12, backgroundColor: Colors.white, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  pickerLeft:  { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
+  pickerIcon:  { fontSize: 16 },
+  pickerText:  { fontSize: 14, color: Colors.gray900, flex: 1 },
+  pickerArrow: { fontSize: 12, color: Colors.gray500 },
+  dropdown:       { borderWidth: 1, borderColor: Colors.gray200, borderRadius: 10, backgroundColor: Colors.white, marginTop: 4, maxHeight: 220, overflow: 'hidden', elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 6 },
+  dropItem:       { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12, paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: Colors.gray100 },
+  dropItemActive: { backgroundColor: Colors.primary + '0d' },
+  dropAvatar:     { width: 28, height: 28, borderRadius: 14, backgroundColor: Colors.primary + '18', justifyContent: 'center', alignItems: 'center', flexShrink: 0 },
+  dropText:       { fontSize: 14, color: Colors.gray800, flex: 1 },
+  dropTextActive: { color: Colors.primary, fontWeight: '600' },
+  checkMark:      { fontSize: 14, color: Colors.primary, fontWeight: '700' },
+
+  footer:      { flexDirection: 'row', gap: 12, padding: 16, borderTopWidth: 1, borderTopColor: Colors.gray100 },
   cancelBtn:       { flex: 1, height: 46, borderRadius: 12, borderWidth: 1, borderColor: Colors.border, justifyContent: 'center', alignItems: 'center' },
   cancelBtnText:   { fontSize: 14, fontWeight: '600', color: Colors.gray600 },
   sendBtn:         { flex: 2, height: 46, borderRadius: 12, backgroundColor: Colors.primary, justifyContent: 'center', alignItems: 'center' },
