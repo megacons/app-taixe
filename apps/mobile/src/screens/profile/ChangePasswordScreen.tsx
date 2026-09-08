@@ -25,6 +25,7 @@ export default function ChangePasswordScreen() {
     const e: Record<string, string> = {};
     if (!currentPassword) e.currentPassword = 'Nhập mật khẩu hiện tại';
     if (!newPassword || newPassword.length < 6) e.newPassword = 'Mật khẩu mới tối thiểu 6 ký tự';
+    if (newPassword === currentPassword) e.newPassword = 'Mật khẩu mới phải khác mật khẩu hiện tại';
     if (newPassword !== confirmPassword) e.confirmPassword = 'Mật khẩu không khớp';
     setErrors(e);
     return Object.keys(e).length === 0;

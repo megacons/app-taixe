@@ -261,6 +261,15 @@ router.put(
         });
       }
 
+      // Không cho đặt mật khẩu mới giống mật khẩu cũ
+      const isSame = await bcrypt.compare(newPassword, user.password);
+      if (isSame) {
+        return res.status(400).json({
+          success: false,
+          message: 'Mật khẩu mới phải khác mật khẩu hiện tại',
+        });
+      }
+
       const salt = await bcrypt.genSalt(12);
       user.password = await bcrypt.hash(newPassword, salt);
       await user.save();
