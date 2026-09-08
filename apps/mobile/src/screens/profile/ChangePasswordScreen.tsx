@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   Alert, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform,
@@ -98,12 +98,21 @@ export default function ChangePasswordScreen() {
 }
 
 function PasswordField({ label, placeholder, value, onChange, show, onToggle, error, isLast }: any) {
+  const inputRef = useRef<any>(null);
+
+  const handleToggle = () => {
+    // Blur trước, toggle state, rồi re-focus — trick iOS nhận secureTextEntry mới
+    inputRef.current?.blur();
+    onToggle();
+    setTimeout(() => inputRef.current?.focus(), 10);
+  };
+
   return (
     <View style={[pStyles.group, !isLast && pStyles.groupBorder]}>
       <Text style={pStyles.label}>{label}</Text>
       <View style={pStyles.inputRow}>
         <TextInput
-          key={show ? `${label}-show` : `${label}-hide`}
+          ref={inputRef}
           style={pStyles.input}
           value={value}
           onChangeText={onChange}
@@ -115,7 +124,7 @@ function PasswordField({ label, placeholder, value, onChange, show, onToggle, er
           placeholderTextColor={Colors.gray400}
         />
         <TouchableOpacity
-          onPress={onToggle}
+          onPress={handleToggle}
           style={pStyles.eye}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           activeOpacity={0.6}
