@@ -155,7 +155,7 @@ export default function AdminProfile() {
           <Text style={S.logoutText}>🚪 Đăng xuất</Text>
         </TouchableOpacity>
 
-        <Text style={S.version}>v1.0.0</Text>
+
       </ScrollView>
     </SafeAreaView>
   );
