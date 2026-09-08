@@ -290,16 +290,35 @@ router.get('/broadcast/history', authenticate, async (req, res, next) => {
       let sent_to_names = null;
       try {
         const { ObjectId } = require('mongoose').Types;
+        const { Driver } = require('../models');
         const toObjIds = (arr) => arr.map(id => {
-          try { return new ObjectId(id); } catch { return id; }
-        });
+          try { return new ObjectId(String(id)); } catch { return null; }
+        }).filter(Boolean);
 
-        if (h.target_ids && h.target_ids.length > 0 && h.target_ids.length <= 50) {
-          const users = await User.find({ _id: { $in: toObjIds(h.target_ids) } }).select('name').lean();
-          sent_to_names = users.map(u => u.name);
-        } else if (h.user_ids && h.user_ids.length > 0 && h.user_ids.length <= 50) {
-          const users = await User.find({ _id: { $in: h.user_ids } }).select('name').lean();
-          sent_to_names = users.map(u => u.name);
+        // Lấy user_ids thực tế từ notifications đã gửi
+        const actualUserIds = h.user_ids && h.user_ids.length > 0 ? h.user_ids : [];
+
+        if (actualUserIds.length > 0 && actualUserIds.length <= 50) {
+          // Tìm tên qua User trực tiếp
+          const users = await User.find({ _id: { $in: actualUserIds } }).select('name').lean();
+          if (users.length > 0) {
+            sent_to_names = users.map(u => u.name);
+          } else {
+            // Thử tìm qua Driver (user_id field)
+            const drivers = await Driver.find({ user_id: { $in: actualUserIds } }).select('full_name').lean();
+            if (drivers.length > 0) {
+              sent_to_names = drivers.map(d => d.full_name);
+            }
+          }
+        } else if (h.target_ids && h.target_ids.length > 0 && h.target_ids.length <= 50) {
+          const ids = toObjIds(h.target_ids);
+          const users = await User.find({ _id: { $in: ids } }).select('name').lean();
+          if (users.length > 0) {
+            sent_to_names = users.map(u => u.name);
+          } else {
+            const drivers = await Driver.find({ user_id: { $in: ids } }).select('full_name').lean();
+            if (drivers.length > 0) sent_to_names = drivers.map(d => d.full_name);
+          }
         }
       } catch (_) {}
       return { ...h, sent_to_names };
