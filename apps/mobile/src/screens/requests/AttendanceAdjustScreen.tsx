@@ -22,7 +22,7 @@ export default function AttendanceAdjustScreen() {
 
   const [changeType, setChangeType]     = useState('');
   const [showTypePicker, setShowTypePicker] = useState(false);
-  const [date, setDate]                 = useState(new Date());
+  const [date, setDate]                 = useState<Date | null>(null);
   const [checkInTime, setCheckInTime]   = useState('');
   const [checkOutTime, setCheckOutTime] = useState('');
   const [reason, setReason]             = useState('');
@@ -44,6 +44,7 @@ export default function AttendanceAdjustScreen() {
   const validate = () => {
     const e: Record<string, string> = {};
     if (!changeType)          e.changeType   = 'Vui lòng chọn loại đổi giờ';
+    if (!date)                e.date         = 'Vui lòng chọn ngày';
     if (!checkInTime)         e.checkInTime  = 'Vui lòng chọn giờ vào';
     if (!reason.trim())       e.reason       = 'Vui lòng nhập lý do';
     setErrors(e);
@@ -60,7 +61,7 @@ export default function AttendanceAdjustScreen() {
         title: `Điều chỉnh giờ - ${typeLabel}`,
         payload: {
           change_type:    changeType,
-          date:           date.toISOString().slice(0, 10),
+          date:           date!.toISOString().slice(0, 10),
           check_in_time:  checkInTime,
           check_out_time: checkOutTime,
           reason,
@@ -139,8 +140,9 @@ export default function AttendanceAdjustScreen() {
             <DatePickerField
               label="Ngày"
               value={date}
-              onChange={setDate}
+              onChange={(d) => { setDate(d); setErrors((e: any) => ({ ...e, date: '' })); }}
               required
+              error={errors.date}
             />
 
             {/* Giờ vào + Giờ ra — 2 cột */}

@@ -201,7 +201,7 @@ export default function FinanceScreen() {
 
 /* ─── ExpenseForm modal ──────────────────────────────── */
 function ExpenseForm({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
-  const [date,    setDate]    = useState(new Date());
+  const [date,    setDate]    = useState<Date | null>(null);
   const [amount,  setAmount]  = useState('');
   const [note,    setNote]    = useState('');
   const [loading, setLoading] = useState(false);
@@ -211,8 +211,9 @@ function ExpenseForm({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
 
   const validate = () => {
     const e: Record<string, string> = {};
-    if (!amount || rawAmount() <= 0) e.amount = 'Vui lòng nhập số tiền';
-    if (!note.trim())                e.note   = 'Ghi chú là bắt buộc';
+    if (!date)                           e.date   = 'Vui lòng chọn ngày';
+    if (!amount || rawAmount() <= 0)     e.amount = 'Vui lòng nhập số tiền';
+    if (!note.trim())                    e.note   = 'Ghi chú là bắt buộc';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -223,9 +224,9 @@ function ExpenseForm({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
     try {
       await api.post('/requests', {
         type:  'expense',
-        title: `Chi phí - ${format(date, 'dd/MM/yyyy')}`,
+        title: `Chi phí - ${format(date!, 'dd/MM/yyyy')}`,
         payload: {
-          date:         format(date, 'yyyy-MM-dd'),
+          date:         format(date!, 'yyyy-MM-dd'),
           amount:       rawAmount(),
           note:         note.trim(),
           expense_type: 'Chi phí vận hành',
@@ -259,7 +260,7 @@ function ExpenseForm({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
             </View>
 
             <ScrollView contentContainerStyle={F.content} keyboardShouldPersistTaps="handled">
-              <DatePickerField label="Ngày" value={date} onChange={setDate} required />
+              <DatePickerField label="Ngày" value={date} onChange={(d) => { setDate(d); setErrors(e => ({ ...e, date: '' })); }} required error={errors.date} />
 
               <View style={F.fieldGroup}>
                 <Text style={F.label}>Số tiền cần chi <Text style={F.req}>*</Text></Text>

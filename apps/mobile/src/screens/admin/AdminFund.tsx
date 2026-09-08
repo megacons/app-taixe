@@ -171,18 +171,19 @@ export default function AdminFund() {
 
 /* ─── AddFundModal ──────────────────────────────────────── */
 function AddFundModal({ driver, month, onClose, onSuccess }: any) {
-  const [date,    setDate]    = useState(new Date());
+  const [date,    setDate]    = useState<Date | null>(null);
   const [advance, setAdvance] = useState('');
   const [note,    setNote]    = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
     const amt = Number(advance.replace(/\./g, '').replace(/[^0-9]/g, '')) || 0;
+    if (!date)    { Alert.alert('Lỗi', 'Vui lòng chọn ngày'); return; }
     if (amt <= 0) { Alert.alert('Lỗi', 'Vui lòng nhập số tiền'); return; }
     setLoading(true);
     try {
       await api.post(`/fund/${driver.driver_id}/entries`, {
-        date: format(date, 'yyyy-MM-dd'),
+        date: format(date!, 'yyyy-MM-dd'),
         advance: amt,
         expense: 0,
         note,

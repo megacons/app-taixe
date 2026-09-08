@@ -23,7 +23,7 @@ const parseNumber = (display: string): number =>
 export default function SalaryAdvanceScreen() {
   const navigation = useNavigation();
   const [form, setForm] = useState({
-    date: new Date() as Date,
+    date: null as Date | null,
     title: '',
     type: TYPES[0],
     amount: '',
@@ -36,9 +36,10 @@ export default function SalaryAdvanceScreen() {
 
   const validate = () => {
     const e: any = {};
-    if (!form.title.trim()) e.title = 'Vui lòng nhập tiêu đề';
+    if (!form.date)             e.date   = 'Vui lòng chọn ngày';
+    if (!form.title.trim())     e.title  = 'Vui lòng nhập tiêu đề';
     if (!form.amount || Number(form.amount) <= 0) e.amount = 'Vui lòng nhập số tiền hợp lệ';
-    if (!form.reason.trim()) e.reason = 'Vui lòng nhập lý do';
+    if (!form.reason.trim())    e.reason = 'Vui lòng nhập lý do';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -49,7 +50,7 @@ export default function SalaryAdvanceScreen() {
       await api.post('/requests', {
         type: 'salary_advance',
         title: form.title,
-        payload: { date: format(form.date, 'dd/MM/yyyy'), type: form.type, amount: Number(form.amount), reason: form.reason },
+        payload: { date: format(form.date!, 'dd/MM/yyyy'), type: form.type, amount: Number(form.amount), reason: form.reason },
       });
       Alert.alert('✅ Đã gửi', 'Yêu cầu tạm ứng đã được gửi, chờ duyệt.', [
         { text: 'OK', onPress: () => navigation.goBack() },
@@ -75,8 +76,9 @@ export default function SalaryAdvanceScreen() {
           <DatePickerField
             label="Ngày"
             value={form.date}
-            onChange={(d) => setForm(x => ({ ...x, date: d }))}
+            onChange={(d) => { setForm(x => ({ ...x, date: d })); setErrors((e: any) => ({ ...e, date: '' })); }}
             required
+            error={errors.date}
           />
 
           <Field label="Tiêu đề *" value={form.title} onChangeText={f('title')} placeholder="Nhập tiêu đề yêu cầu" error={errors.title} />
