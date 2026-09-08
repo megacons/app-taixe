@@ -39,6 +39,11 @@ interface Notif {
   type: string;
   is_read: boolean;
   created_at: string;
+  data?: {
+    sent_by_name?: string;
+    sent_by?: string;
+    [key: string]: any;
+  } | null;
   attachment?: {
     url: string;
     original_name: string;
@@ -204,10 +209,17 @@ export default function NotificationsScreen() {
                 {/* Tiêu đề */}
                 <Text style={D.title}>{selected.title}</Text>
 
-                {/* Thời gian */}
+                {/* Thời gian + người gửi */}
                 <Text style={D.time}>
                   🕐 {format(parseISO(selected.created_at), 'HH:mm - dd/MM/yyyy (EEEE)', { locale: vi })}
                 </Text>
+                {selected.data?.sent_by_name && (
+                  <View style={D.senderRow}>
+                    <Text style={D.senderIcon}>👤</Text>
+                    <Text style={D.senderLabel}>Gửi bởi: </Text>
+                    <Text style={D.senderName}>{selected.data.sent_by_name}</Text>
+                  </View>
+                )}
 
                 {/* Divider */}
                 <View style={D.divider} />
@@ -316,6 +328,10 @@ const D = StyleSheet.create({
   content:  { padding: 20 },
   title:    { fontSize: 18, fontWeight: '800', color: Colors.gray900, lineHeight: 26 },
   time:     { fontSize: 12, color: Colors.gray400, marginTop: 8 },
+  senderRow:  { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
+  senderIcon: { fontSize: 12, marginRight: 4 },
+  senderLabel:{ fontSize: 12, color: Colors.gray400 },
+  senderName: { fontSize: 12, color: Colors.primary, fontWeight: '600' },
   divider:  { height: 1, backgroundColor: Colors.gray100, marginVertical: 16 },
   message:  { fontSize: 15, color: Colors.gray700, lineHeight: 24 },
 
