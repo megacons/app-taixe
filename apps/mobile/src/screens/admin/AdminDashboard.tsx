@@ -38,6 +38,7 @@ export default function AdminDashboard() {
   const [filterDay,   setFilterDay]   = useState(new Date().getDate());
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [filterDateValue, setFilterDateValue] = useState<Date>(new Date());
+  const [filterDateSelected, setFilterDateSelected] = useState(false);
 
   const fetchRecentTrips = async (date?: string, month?: number, year?: number) => {
     try {
@@ -245,7 +246,7 @@ export default function AdminDashboard() {
                   <View style={S.modeRow}>
                     {(['month', 'day'] as const).map(m => (
                       <TouchableOpacity key={m} style={[S.modeBtn, filterMode === m && S.modeBtnActive]}
-                        onPress={() => setFilterMode(m)}>
+                        onPress={() => { setFilterMode(m); setFilterDateSelected(false); }}>
                         <Text style={[S.modeBtnText, filterMode === m && S.modeBtnTextActive]}>
                           {m === 'month' ? '📆 Theo tháng' : '📅 Ngày cụ thể'}
                         </Text>
@@ -256,10 +257,12 @@ export default function AdminDashboard() {
                   {/* Dùng DatePickerField cho cả 2 mode */}
                   <DatePickerField
                     label={filterMode === 'month' ? 'Chọn tháng' : 'Chọn ngày'}
-                    value={filterDateValue}
+                    value={filterDateSelected ? filterDateValue : null}
+                    placeholder={filterMode === 'month' ? 'Chọn tháng...' : 'Chọn ngày...'}
                     monthOnly={filterMode === 'month'}
                     onChange={(d) => {
                       setFilterDateValue(d);
+                      setFilterDateSelected(true);
                       setFilterMonth(d.getMonth() + 1);
                       setFilterYear(d.getFullYear());
                       setFilterDay(d.getDate());
