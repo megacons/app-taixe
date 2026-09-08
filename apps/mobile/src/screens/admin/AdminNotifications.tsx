@@ -437,7 +437,7 @@ export default function AdminNotifications() {
       {/* ════════════════════════════════
           DETAIL BOTTOM SHEET
           ════════════════════════════════ */}
-      <Modal visible={!!detailItem} transparent animationType="slide">
+      <Modal visible={!!detailItem} transparent animationType="fade">
         <View style={D.overlay}>
           <TouchableOpacity style={D.backdrop} activeOpacity={1} onPress={() => setDetailItem(null)} />
           <View style={D.sheet}>
@@ -754,11 +754,11 @@ const S = StyleSheet.create({
 
 /* ── Detail sheet styles ── */
 const D = StyleSheet.create({
-  overlay:  { flex: 1, justifyContent: 'flex-end' },
-  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' },
-  sheet:    { backgroundColor: Colors.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '88%' },
+  overlay:  { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: 'rgba(0,0,0,0.65)' },
+  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'transparent' },
+  sheet:    { backgroundColor: Colors.white, borderRadius: 20, width: '100%', maxHeight: '88%', overflow: 'hidden' },
 
-  header:     { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: Colors.primary, borderTopLeftRadius: 20, borderTopRightRadius: 20 },
+  header:     { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: Colors.primary },
   headerIcon: { fontSize: 20 },
   headerType: { fontSize: 14, fontWeight: '600', color: 'rgba(255,255,255,0.9)', flex: 1 },
   closeBtn:   { width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
@@ -784,8 +784,8 @@ const D = StyleSheet.create({
 
 /* ── Edit modal styles ── */
 const E = StyleSheet.create({
-  overlay:    { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
-  backdrop:   { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' },
+  overlay:    { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: 'rgba(0,0,0,0.65)' },
+  backdrop:   { ...StyleSheet.absoluteFillObject, backgroundColor: 'transparent' },
   kavWrapper: { width: '100%' },
   sheet:      { backgroundColor: Colors.white, borderRadius: 20, width: '100%', maxHeight: '85%', overflow: 'hidden' },
 
