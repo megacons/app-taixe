@@ -564,12 +564,6 @@ const F = StyleSheet.create({
     overflow: 'hidden',
   },
   sheetHeader: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingVertical: 16,
-    backgroundColor: Colors.primary,
-
-  /* Sheet header — deep navy, matches screenshot */
-  sheetHeader: {
     backgroundColor: DEEP_NAVY,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingVertical: 15,
