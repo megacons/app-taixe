@@ -427,9 +427,17 @@ function AdvanceHistoryModal({ driver, month, year, onClose }: any) {
     (async () => {
       try {
         const driverId = driver.driver_id ?? driver._id;
-        const res = await api.get(`/fund/${driverId}/advances`, { params: { month, year } });
-        setAdvances(res.data.data?.advances ?? []);
-        setTotal(res.data.data?.total ?? 0);
+        // Dùng /entries endpoint đã có data, lọc rows có advance > 0
+        const res = await api.get(`/fund/${driverId}/entries`, { params: { month, year } });
+        const rows: any[] = res.data.data?.rows ?? [];
+        const advRows = rows.filter((r: any) => r.advance > 0);
+        setAdvances(advRows.map((r: any) => ({
+          _id:     r.entry_id ?? r.date,
+          date:    r.date,
+          advance: r.advance,
+          note:    r.note ?? '',
+        })));
+        setTotal(res.data.data?.totals?.advance ?? 0);
       } catch (e: any) {
         console.warn('[AdvanceHistory] Error:', e?.response?.data ?? e?.message);
       }
