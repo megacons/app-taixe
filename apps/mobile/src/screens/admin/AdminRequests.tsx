@@ -277,7 +277,7 @@ const S = StyleSheet.create({
   headerTitle: { fontSize: 18, fontWeight: '700', color: Colors.white, flex: 1 },
   filterBar:   { backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.border },
   filterContent:{ paddingHorizontal: 12, paddingVertical: 6, gap: 8, paddingRight: 20 },
-  chip:        { paddingHorizontal: 14, paddingVertical: 5, borderRadius: 8, borderWidth: 1.5, borderColor: Colors.gray200, backgroundColor: Colors.white },
+  chip:        { height: 32, paddingHorizontal: 14, justifyContent: 'center', borderRadius: 8, borderWidth: 1.5, borderColor: Colors.gray200, backgroundColor: Colors.white },
   chipActive:  { borderColor: Colors.primary, backgroundColor: Colors.primary + '10' },
   chipText:    { fontSize: 12, fontWeight: '600', color: Colors.gray600 },
   chipTextActive:{ color: Colors.primary },

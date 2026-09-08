@@ -317,7 +317,7 @@ export default function AdminNotifications() {
                     <Text style={S.sentBadgeText}>✓ {h.sent_count}</Text>
                   </View>
                 </View>
-                <Text style={S.histMsg} numberOfLines={2}>{h.message}</Text>
+                <Text style={S.histMsg} numberOfLines={2}>{h.message ? h.message.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim() : ''}</Text>
                 <Text style={S.histTime}>
                   🕐 {h.created_at
                     ? format(parseISO(h.created_at), 'HH:mm - dd/MM/yyyy', { locale: vi })
