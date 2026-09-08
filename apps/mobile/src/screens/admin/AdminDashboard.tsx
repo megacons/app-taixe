@@ -39,10 +39,15 @@ export default function AdminDashboard() {
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [filterDateValue, setFilterDateValue] = useState<Date>(new Date());
 
-  const fetchRecentTrips = async (date?: string) => {
+  const fetchRecentTrips = async (date?: string, month?: number, year?: number) => {
     try {
-      const params: any = { limit: 10, sort: '-trip_date' };
-      if (date) params.date = date;
+      const params: any = { limit: 200, sort: '-trip_date' };
+      if (date) {
+        params.date = date;
+      } else if (month && year) {
+        params.month = month;
+        params.year  = year;
+      }
       const res = await api.get('/trips', { params });
       setRecentTrips(res.data.data?.trips ?? []);
     } catch (_) {}
@@ -58,15 +63,8 @@ export default function AdminDashboard() {
       setFilterDate('');
       fetchRecentTrips();
     } else if (mode === 'month') {
-      const dateStr = `${dy}-${String(dm).padStart(2, '0')}-01`; // dùng month+year
       setFilterDate(`T${dm}/${dy}`);
-      // gọi API với month+year
-      (async () => {
-        try {
-          const res = await api.get('/trips', { params: { limit: 50, sort: '-trip_date', month: dm, year: dy } });
-          setRecentTrips(res.data.data?.trips ?? []);
-        } catch (_) {}
-      })();
+      fetchRecentTrips(undefined, dm, dy);
     } else {
       const dateStr = `${dy}-${String(dm).padStart(2, '0')}-${String(dd).padStart(2, '0')}`;
       setFilterDate(`${String(dd).padStart(2, '0')}/${String(dm).padStart(2, '0')}/${dy}`);
@@ -282,38 +280,87 @@ export default function AdminDashboard() {
             </Modal>
             {recentTrips.length === 0 ? (
               <Text style={{ color: Colors.gray500, fontSize: 13, marginBottom: 16 }}>Chưa có chuyến nào</Text>
-            ) : (
-              recentTrips.map(t => (
-                <TouchableOpacity
-                  key={t._id}
-                  style={S.tripCard}
-                  onPress={() => navigation.navigate('TripDetail', { tripId: t._id })}
-                  activeOpacity={0.75}
-                >
-                  <View style={S.tripLeft}>
-                    <View style={S.tripTopRow}>
-                      <Text style={S.tripDriver}>{t.driver_id?.full_name ?? '—'}</Text>
-                      {t.trip_date && (
-                        <Text style={S.tripDate}>
-                          {(() => {
-                            const d = new Date(t.trip_date);
-                            return d.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false });
-                          })()}
-                        </Text>
-                      )}
+            ) : (() => {
+                // Group trips theo ngày (mới nhất trên đầu)
+                const map: Record<string, any[]> = {};
+                recentTrips.forEach(t => {
+                  const d = t.trip_date
+                    ? new Date(t.trip_date).toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' })
+                    : 'unknown';
+                  if (!map[d]) map[d] = [];
+                  map[d].push(t);
+                });
+                const sections = Object.entries(map)
+                  .sort(([a], [b]) => b.localeCompare(a))
+                  .map(([dateKey, trips]) => {
+                    const d = new Date(dateKey + 'T00:00:00');
+                    const DAY = ['CN','T2','T3','T4','T5','T6','T7'];
+                    const label = isNaN(d.getTime()) ? dateKey
+                      : `${DAY[d.getDay()]} ${dateKey.split('-').reverse().join('/')}`;
+                    const total = trips.length;
+                    const otCount = Math.max(0, total - 4);
+                    return { label, trips, total, otCount };
+                  });
+                return sections.map(({ label, trips, total, otCount }) => (
+                  <View key={label} style={{ marginBottom: 12 }}>
+                    {/* Day header */}
+                    <View style={S.dayHeader}>
+                      <Text style={S.dayLabel}>{label}</Text>
+                      <View style={{ flexDirection: 'row', gap: 6 }}>
+                        <View style={S.dayBadge}>
+                          <Text style={S.dayBadgeText}>{total} chuyến</Text>
+                        </View>
+                        {otCount > 0 && (
+                          <View style={[S.dayBadge, { backgroundColor: Colors.accentDark + '20' }]}>
+                            <Text style={[S.dayBadgeText, { color: Colors.accentDark }]}>🔥 {otCount} TC</Text>
+                          </View>
+                        )}
+                      </View>
                     </View>
-                    <Text style={S.tripRoute} numberOfLines={1}>
-                      {t.pickup_location} → {t.drop_location}
-                    </Text>
-                    <Text style={S.tripMaterial}>{t.material_name}</Text>
+                    {/* Trips in day — sort cũ nhất trước để STT đúng */}
+                    {[...trips].sort((a, b) =>
+                      new Date(a.trip_date).getTime() - new Date(b.trip_date).getTime()
+                    ).map((t, idx) => {
+                      const stt = idx + 1;
+                      const isOT = stt > 4;
+                      return (
+                        <TouchableOpacity
+                          key={t._id}
+                          style={[S.tripCard, isOT && S.tripCardOT]}
+                          onPress={() => navigation.navigate('TripDetail', { tripId: t._id })}
+                          activeOpacity={0.75}
+                        >
+                          <View style={[S.sttBadge, isOT && { backgroundColor: Colors.accentDark }]}>
+                            <Text style={S.sttText}>{stt}</Text>
+                          </View>
+                          <View style={S.tripLeft}>
+                            <View style={S.tripTopRow}>
+                              <Text style={S.tripDriver}>{t.driver_id?.full_name ?? '—'}</Text>
+                              {t.trip_date && (
+                                <Text style={S.tripDate}>
+                                  {new Date(t.trip_date).toLocaleTimeString('vi-VN', {
+                                    timeZone: 'Asia/Ho_Chi_Minh',
+                                    hour: '2-digit', minute: '2-digit', hour12: false,
+                                  })}
+                                </Text>
+                              )}
+                            </View>
+                            <Text style={S.tripRoute} numberOfLines={1}>
+                              {t.pickup_location} → {t.drop_location}
+                            </Text>
+                            <Text style={S.tripMaterial}>{t.material_name}</Text>
+                          </View>
+                          <View style={S.tripRight}>
+                            <Text style={S.tripPlate}>{t.vehicle_id?.license_plate ?? '—'}</Text>
+                            {isOT && <Text style={S.otBadge}>🔥 TC</Text>}
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    })}
                   </View>
-                  <View style={S.tripRight}>
-                    <Text style={S.tripPlate}>{t.vehicle_id?.license_plate ?? '—'}</Text>
-                    {t.is_overtime && <Text style={S.otBadge}>🔥 TC</Text>}
-                  </View>
-                </TouchableOpacity>
-              ))
-            )}
+                ));
+              })()
+            }
           </>
         )}
       </ScrollView>
@@ -373,7 +420,14 @@ const S = StyleSheet.create({
   monthLabel:{ fontSize: 14, color: Colors.gray600 },
   monthValue:{ fontSize: 16, fontWeight: '700' },
   divider:  { height: 1, backgroundColor: Colors.gray100 },
-  tripCard: { backgroundColor: Colors.white, borderRadius: 12, padding: 12, marginBottom: 8, flexDirection: 'row', justifyContent: 'space-between', borderWidth: 1, borderColor: Colors.border },
+  tripCard: { backgroundColor: Colors.white, borderRadius: 12, padding: 12, marginBottom: 6, flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: Colors.border },
+  tripCardOT: { borderColor: Colors.accentDark + '40', backgroundColor: '#fffbf0' },
+  sttBadge: { width: 24, height: 24, borderRadius: 12, backgroundColor: Colors.primary, justifyContent: 'center', alignItems: 'center', flexShrink: 0 },
+  sttText:  { fontSize: 10, fontWeight: '800', color: Colors.white },
+  dayHeader:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, marginTop: 4 },
+  dayLabel:     { fontSize: 13, fontWeight: '700', color: Colors.gray700 },
+  dayBadge:     { backgroundColor: Colors.primary + '18', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 },
+  dayBadgeText: { fontSize: 11, color: Colors.primary, fontWeight: '600' },
   tripLeft: { flex: 1 },
   tripTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 },
   tripDriver:{ fontSize: 13, fontWeight: '700', color: Colors.gray900 },
