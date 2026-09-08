@@ -321,7 +321,6 @@ export default function ProfileScreen() {
             </TouchableOpacity>
             <Text style={S.driverName}>{user?.name ?? 'Tài xế'}</Text>
             <View style={S.badgesRow}>
-              <View style={S.badgeGray}><Text style={S.badgeGrayText}>{employeeId}</Text></View>
               <View style={S.badgeOrange}>
                 <Text style={S.badgeOrangeIcon}>🚛</Text>
                 <Text style={S.badgeOrangeText}>{licensePlate}</Text>
