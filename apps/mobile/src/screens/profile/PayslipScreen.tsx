@@ -184,7 +184,7 @@ export default function PayslipScreen() {
       )}
 
       {/* Modal chi tiết tiền ứng */}
-      <Modal visible={showAdvance} transparent animationType="slide">
+      <Modal visible={showAdvance} transparent animationType="fade">
         <View style={M.overlay}>
           <View style={M.sheet}>
             <View style={M.sheetHeader}>
@@ -250,8 +250,8 @@ const R = StyleSheet.create({
 });
 
 const M = StyleSheet.create({
-  overlay:     { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  sheet:       { backgroundColor: Colors.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '75%' },
+  overlay:     { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: 'rgba(0,0,0,0.65)' },
+  sheet:       { backgroundColor: Colors.white, borderRadius: 20, width: '100%', maxHeight: '75%', overflow: 'hidden' },
   sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: Colors.gray100 },
   sheetTitle:  { fontSize: 16, fontWeight: '700', color: Colors.gray900 },
   closeBtn:    { width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.gray100, justifyContent: 'center', alignItems: 'center' },

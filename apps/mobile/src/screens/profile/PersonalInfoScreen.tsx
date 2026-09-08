@@ -298,7 +298,7 @@ export default function PersonalInfoScreen() {
       )}
 
       {/* Edit modal */}
-      <Modal visible={editField !== null} transparent animationType="slide">
+      <Modal visible={editField !== null} transparent animationType="fade">
         <View style={M.overlay}>
           <TouchableOpacity style={M.backdrop} onPress={() => setEditField(null)} activeOpacity={1} />
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ width: '100%' }}>
@@ -383,9 +383,9 @@ const S = StyleSheet.create({
 });
 
 const M = StyleSheet.create({
-  overlay:  { flex: 1, justifyContent: 'flex-end' },
-  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' },
-  sheet:    { backgroundColor: Colors.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: Platform.OS === 'ios' ? 34 : 16 },
+  overlay:  { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: 'rgba(0,0,0,0.65)' },
+  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'transparent' },
+  sheet:    { backgroundColor: Colors.white, borderRadius: 20, width: '100%', paddingBottom: 16, overflow: 'hidden' },
   mHeader:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.gray200 },
   mTitle:   { fontSize: 16, fontWeight: '700', color: Colors.gray900 },
   cancel:   { fontSize: 15, color: Colors.gray500 },

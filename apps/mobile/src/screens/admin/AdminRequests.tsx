@@ -219,7 +219,7 @@ export default function AdminRequests() {
     <Modal
       visible={!!rejectTarget}
       transparent
-      animationType="slide"
+      animationType="fade"
       onRequestClose={() => setRejectTarget(null)}
     >
       <KeyboardAvoidingView
@@ -303,8 +303,8 @@ const S = StyleSheet.create({
 });
 
 const M = StyleSheet.create({
-  overlay:   { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  sheet:     { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 36 },
+  overlay:   { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: 'rgba(0,0,0,0.65)' },
+  sheet:     { backgroundColor: '#fff', borderRadius: 20, width: '100%', padding: 20, paddingBottom: 24 },
   title:     { fontSize: 17, fontWeight: '800', color: Colors.gray900, marginBottom: 6 },
   subtitle:  { fontSize: 13, color: Colors.gray500, marginBottom: 14, fontStyle: 'italic' },
   input:     { borderWidth: 1.5, borderColor: Colors.gray200, borderRadius: 10, padding: 12, fontSize: 14, color: Colors.gray900, minHeight: 80, textAlignVertical: 'top', backgroundColor: '#fafafa', marginBottom: 16 },

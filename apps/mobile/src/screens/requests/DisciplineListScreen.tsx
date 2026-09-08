@@ -196,10 +196,10 @@ export default function DisciplineListScreen() {
       )}
       {/* Modal chi tiết thông báo kỷ luật */}
       {selectedNotif && (
-        <Modal visible transparent animationType="slide">
-          <View style={{ flex: 1, justifyContent: 'flex-end' }}>
+        <Modal visible transparent animationType="fade">
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: 'rgba(0,0,0,0.65)' }}>
             <TouchableOpacity
-              style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' }}
+              style={{ ...StyleSheet.absoluteFillObject, backgroundColor: 'transparent' } as any}
               onPress={() => setSelectedNotif(null)}
               activeOpacity={1}
             />
@@ -549,17 +549,24 @@ const S = StyleSheet.create({
 const F = StyleSheet.create({
   overlay: {
     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    zIndex: 100, justifyContent: 'flex-end',
+    zIndex: 100, justifyContent: 'center', alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.65)', padding: 20,
   },
   backdrop: {
     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: 'transparent',
   },
   sheet: {
     backgroundColor: Colors.gray50,
-    borderTopLeftRadius: 0, borderTopRightRadius: 0,
-    maxHeight: '96%', flex: 0,
+    borderRadius: 20, width: '100%',
+    maxHeight: '92%',
+    paddingBottom: 8,
+    overflow: 'hidden',
   },
+  sheetHeader: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 20, paddingVertical: 16,
+    backgroundColor: Colors.primary,
 
   /* Sheet header — deep navy, matches screenshot */
   sheetHeader: {
@@ -650,8 +657,8 @@ const F = StyleSheet.create({
 
 /* ─────────────────── Notification Detail Modal Styles ─────────────────── */
 const N = StyleSheet.create({
-  sheet:   { backgroundColor: Colors.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '80%', minHeight: '50%' },
-  header:  { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: DEEP_NAVY, borderTopLeftRadius: 20, borderTopRightRadius: 20 },
+  sheet:   { backgroundColor: Colors.white, borderRadius: 20, width: '100%', maxHeight: '80%', overflow: 'hidden' },
+  header:  { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: DEEP_NAVY },
   headerIcon: { fontSize: 20 },
   headerTitle:{ flex: 1, fontSize: 16, fontWeight: '700', color: Colors.white },
   closeBtn:   { width: 30, height: 30, borderRadius: 15, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },

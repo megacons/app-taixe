@@ -379,23 +379,24 @@ const S = StyleSheet.create({
 const F = StyleSheet.create({
   overlay: {
     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    zIndex: 100, justifyContent: 'flex-end',
+    zIndex: 100, justifyContent: 'center', alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.65)', padding: 20,
   },
   backdrop: {
     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: 'transparent',
   },
   sheet: {
     backgroundColor: '#f4f5f9',
-    borderTopLeftRadius: 20, borderTopRightRadius: 20,
+    borderRadius: 20, width: '100%',
     maxHeight: '92%',
     paddingBottom: 8,
+    overflow: 'hidden',
   },
   sheetHeader: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingVertical: 16,
     backgroundColor: Colors.primary,
-    borderTopLeftRadius: 20, borderTopRightRadius: 20,
   },
   sheetTitle:  { fontSize: 17, fontWeight: '600', color: Colors.white },
   closeBtn:    { width: 32, height: 32, justifyContent: 'center', alignItems: 'flex-end' },

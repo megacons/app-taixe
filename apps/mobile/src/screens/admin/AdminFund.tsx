@@ -309,7 +309,7 @@ function FundEntriesModal({ driver, month, year, onClose }: any) {
   }, [driver.driver_id, month, year]);
 
   return (
-    <Modal visible transparent animationType="slide">
+    <Modal visible transparent animationType="fade">
       <View style={T.overlay}>
         <TouchableOpacity style={T.backdrop} onPress={onClose} activeOpacity={1} />
         <View style={T.sheet}>
@@ -447,7 +447,7 @@ const M = StyleSheet.create({
   overlay:    { flex: 1, justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.45)', padding: 16 },
   backdrop:   { ...StyleSheet.absoluteFillObject, backgroundColor: 'transparent' },
   sheet:      { backgroundColor: Colors.white, borderRadius: 20, maxHeight: '90%' },
-  header:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14, backgroundColor: Colors.primary, borderTopLeftRadius: 20, borderTopRightRadius: 20 },
+  header:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14, backgroundColor: Colors.primary },
   title:      { fontSize: 16, fontWeight: '700', color: Colors.white },
   cancel:     { fontSize: 14, color: 'rgba(255,255,255,0.8)' },
   content:    { padding: 20 },
@@ -467,10 +467,10 @@ const M = StyleSheet.create({
 });
 
 const T = StyleSheet.create({
-  overlay:    { flex: 1, justifyContent: 'flex-end' },
-  backdrop:   { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' },
-  sheet:      { backgroundColor: Colors.background, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '90%', minHeight: '70%' },
-  header:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: Colors.primary, borderTopLeftRadius: 20, borderTopRightRadius: 20 },
+  overlay:    { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 16, backgroundColor: 'rgba(0,0,0,0.65)' },
+  backdrop:   { ...StyleSheet.absoluteFillObject, backgroundColor: 'transparent' },
+  sheet:      { backgroundColor: Colors.background, borderRadius: 20, width: '100%', maxHeight: '90%', overflow: 'hidden' },
+  header:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: Colors.primary },
   title:     { flex: 1, fontSize: 16, fontWeight: '700', color: Colors.white, textAlign: 'center' },
   cancel:    { fontSize: 13, color: 'rgba(255,255,255,0.85)', width: 60 },
   subHeader: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: Colors.primary + '18', paddingHorizontal: 16, paddingVertical: 8 },

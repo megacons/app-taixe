@@ -158,7 +158,7 @@ export default function LeaveBalanceScreen() {
       )}
 
       {/* ── Modal chi tiết yêu cầu ── */}
-      <Modal visible={!!selected} transparent animationType="slide" onRequestClose={() => setSelected(null)}>
+      <Modal visible={!!selected} transparent animationType="fade" onRequestClose={() => setSelected(null)}>
         <View style={S.modalOverlay}>
           <View style={S.modalSheet}>
             {/* Handle bar */}
@@ -266,9 +266,9 @@ const S = StyleSheet.create({
   emptyText: { fontSize: 14, color: Colors.gray500 },
 
   // Modal
-  modalOverlay:     { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalSheet:       { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20, paddingBottom: 40, maxHeight: '85%' },
-  modalHandle:      { width: 40, height: 4, backgroundColor: Colors.gray200, borderRadius: 2, alignSelf: 'center', marginTop: 12, marginBottom: 4 },
+  modalOverlay:     { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: 'rgba(0,0,0,0.65)' },
+  modalSheet:       { backgroundColor: '#fff', borderRadius: 20, width: '100%', paddingHorizontal: 20, paddingBottom: 24, maxHeight: '85%' },
+  modalHandle:      { display: 'none' } as any,
   modalHeader:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12 },
   modalTitle:       { fontSize: 16, fontWeight: '800', color: Colors.gray900 },
   modalClose:       { width: 32, height: 32, justifyContent: 'center', alignItems: 'center' },

@@ -236,7 +236,7 @@ export default function AdminDashboard() {
             </View>
 
             {/* Filter modal */}
-            <Modal visible={showFilterModal} transparent animationType="slide">
+            <Modal visible={showFilterModal} transparent animationType="fade">
               <TouchableOpacity style={S.modalOverlay} activeOpacity={1} onPress={() => setShowFilterModal(false)}>
                 <View style={S.filterModal}>
                   <Text style={S.filterTitle}>Lọc chuyến theo</Text>
@@ -387,8 +387,8 @@ const S = StyleSheet.create({
   filterBtnText: { fontSize: 14, color: Colors.primary, fontWeight: '700' },
   clearBtn:      { backgroundColor: Colors.error + '15', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 },
   clearBtnText:  { fontSize: 13, color: Colors.error, fontWeight: '700' },
-  modalOverlay:  { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  filterModal:   { backgroundColor: Colors.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 36 },
+  modalOverlay:  { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: 'rgba(0,0,0,0.65)' },
+  filterModal:   { backgroundColor: Colors.white, borderRadius: 20, width: '100%', padding: 20, paddingBottom: 24 },
   filterTitle:   { fontSize: 16, fontWeight: '700', color: Colors.gray900, marginBottom: 16, textAlign: 'center' },
   modeRow:       { flexDirection: 'row', gap: 10, marginBottom: 16 },
   modeBtn:       { flex: 1, paddingVertical: 10, borderRadius: 10, borderWidth: 1.5, borderColor: Colors.border, alignItems: 'center' },

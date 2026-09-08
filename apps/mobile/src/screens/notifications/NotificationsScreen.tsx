@@ -187,7 +187,7 @@ export default function NotificationsScreen() {
 
       {/* Detail modal */}
       {selected && (
-        <Modal visible transparent animationType="slide">
+        <Modal visible transparent animationType="fade">
           <View style={D.overlay}>
             <TouchableOpacity style={D.backdrop} onPress={() => setSelected(null)} activeOpacity={1} />
             <View style={D.sheet}>
@@ -314,11 +314,11 @@ const S = StyleSheet.create({
 });
 
 const D = StyleSheet.create({
-  overlay:  { flex: 1, justifyContent: 'flex-end' },
-  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' },
-  sheet:    { backgroundColor: Colors.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '92%', minHeight: '60%' },
+  overlay:  { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: 'rgba(0,0,0,0.65)' },
+  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'transparent' },
+  sheet:    { backgroundColor: Colors.white, borderRadius: 20, width: '100%', maxHeight: '90%', overflow: 'hidden' },
 
-  header:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: Colors.primary, borderTopLeftRadius: 20, borderTopRightRadius: 20 },
+  header:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: Colors.primary },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
   headerIcon: { fontSize: 20 },
   headerType: { fontSize: 13, fontWeight: '600', color: 'rgba(255,255,255,0.85)' },
