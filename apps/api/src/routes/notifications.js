@@ -193,8 +193,8 @@ router.post('/broadcast', authenticate, async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Không tìm thấy người nhận' });
     }
 
-    const { v4: uuidv4 } = require('uuid');
-    const batchId = uuidv4(); // mỗi lần broadcast có ID riêng
+    const { v4: uuidv4_broadcast } = require('uuid');
+    const batchId = uuidv4_broadcast();
 
     const notifications = userIds.map(uid => ({
       user_id:    uid,
