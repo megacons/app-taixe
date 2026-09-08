@@ -1,5 +1,5 @@
 import {
-  View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Image, ActivityIndicator,
+  View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Image, ActivityIndicator, Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -80,7 +80,12 @@ export default function AdminProfile() {
     {
       title: 'Hệ thống',
       items: [
-        { icon: '🌐', label: 'Web Admin', sub: 'localhost:3000', onPress: () => {} },
+        {
+          icon: '🌐',
+          label: 'Web Admin',
+          sub: 'app-taixe-web.vercel.app',
+          onPress: () => Linking.openURL('https://app-taixe-web.vercel.app'),
+        },
       ],
     },
   ];
