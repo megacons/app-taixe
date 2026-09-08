@@ -288,8 +288,13 @@ router.get('/broadcast/history', authenticate, async (req, res, next) => {
     const { User } = require('../models');
     const result = await Promise.all(history.map(async h => {
       let sent_to_names = null;
+      // Ưu tiên target_ids (thông báo mới có batch_id)
       if (h.target_ids && h.target_ids.length > 0 && h.target_ids.length <= 50) {
         const users = await User.find({ _id: { $in: h.target_ids } }).select('name').lean();
+        sent_to_names = users.map(u => u.name);
+      } else if (h.user_ids && h.user_ids.length > 0 && h.user_ids.length <= 50) {
+        // Fallback: dùng user_ids thực tế từ notifications (thông báo cũ)
+        const users = await User.find({ _id: { $in: h.user_ids } }).select('name').lean();
         sent_to_names = users.map(u => u.name);
       }
       return { ...h, sent_to_names };
