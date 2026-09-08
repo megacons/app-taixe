@@ -20,14 +20,23 @@ const TYPE_OPTIONS = [
   { value: 'holiday',       label: '🎉 Nghỉ lễ' },
 ];
 
+const TYPE_ICON: Record<string, string> = {
+  announcement: '📢', system: '🔔', payment: '💰',
+  trip_reminder: '🚛', discipline: '⚠️', holiday: '🎉',
+  salary: '💵', birthday: '🎂',
+};
+
+const stripHtml = (s: string) =>
+  s ? s.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim() : '';
+
 interface HistoryItem {
-  title: string;
-  message: string;
-  sent_count: number;
-  created_at: string;
-  type?: string;
-  sent_by?: string;
-  target_ids?: string[] | null;
+  title:         string;
+  message:       string;
+  sent_count:    number;
+  created_at:    string;
+  type?:         string;
+  sent_by?:      string;
+  target_ids?:   string[] | null;
   sent_to_names?: string[] | null;
 }
 
@@ -39,24 +48,38 @@ interface Driver {
 
 export default function AdminNotifications() {
   const navigation = useNavigation<any>();
-  /* ── form ── */
+
+  /* ── compose form ── */
   const [title,    setTitle]    = useState('');
   const [message,  setMessage]  = useState('');
   const [type,     setType]     = useState('announcement');
-  const [targetId, setTargetId] = useState('');   // '' = tất cả
+  const [targetId, setTargetId] = useState('');
   const [sending,  setSending]  = useState(false);
 
   /* ── data ── */
-  const [drivers,  setDrivers]  = useState<Driver[]>([]);
-  const [history,  setHistory]  = useState<HistoryItem[]>([]);
-  const [histLoad, setHistLoad] = useState(true);
+  const [drivers,    setDrivers]    = useState<Driver[]>([]);
+  const [history,    setHistory]    = useState<HistoryItem[]>([]);
+  const [histLoad,   setHistLoad]   = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  /* ── pickers ── */
+  /* ── compose pickers ── */
   const [showTypePicker,   setShowTypePicker]   = useState(false);
   const [showDriverPicker, setShowDriverPicker] = useState(false);
-  /* ── recipients modal ── */
+
+  /* ── detail bottom sheet ── */
+  const [detailItem, setDetailItem] = useState<HistoryItem | null>(null);
+
+  /* ── edit modal ── */
+  const [editItem,    setEditItem]    = useState<HistoryItem | null>(null);
+  const [editTitle,   setEditTitle]   = useState('');
+  const [editMessage, setEditMessage] = useState('');
+  const [resending,   setResending]   = useState(false);
+
+  /* ── recipients modal (từ detail) ── */
   const [recipientsOf, setRecipientsOf] = useState<HistoryItem | null>(null);
+
+  /* ── delete ── */
+  const [deleting, setDeleting] = useState(false);
 
   const loadHistory = useCallback(async () => {
     try {
@@ -81,47 +104,111 @@ export default function AdminNotifications() {
     setRefreshing(false);
   };
 
+  /* ── Gửi mới ── */
   const handleSend = async () => {
     if (!title.trim())   { Alert.alert('Lỗi', 'Vui lòng nhập tiêu đề'); return; }
     if (!message.trim()) { Alert.alert('Lỗi', 'Vui lòng nhập nội dung'); return; }
-
     if (type === 'discipline' && !targetId) {
-      Alert.alert('Lỗi', 'Kỷ luật phải chỉ định 1 tài xế cụ thể');
-      return;
+      Alert.alert('Lỗi', 'Kỷ luật phải chỉ định 1 tài xế cụ thể'); return;
     }
-
     const targetName = targetId
       ? drivers.find(d => d._id === targetId)?.full_name ?? 'tài xế đã chọn'
       : `tất cả ${drivers.length} tài xế`;
 
+    Alert.alert('Xác nhận gửi', `Gửi thông báo tới ${targetName}?`, [
+      { text: 'Hủy', style: 'cancel' },
+      {
+        text: 'Gửi', onPress: async () => {
+          setSending(true);
+          try {
+            const payload: any = { title: title.trim(), message: message.trim(), type };
+            if (targetId) payload.target_driver_id = targetId;
+            const res = await api.post('/notifications/broadcast', payload);
+            Alert.alert('✅ Thành công', res.data.message ?? 'Đã gửi thông báo');
+            setTitle(''); setMessage(''); setType('announcement'); setTargetId('');
+            loadHistory();
+          } catch (e: any) {
+            Alert.alert('Lỗi', e?.response?.data?.message ?? 'Gửi thất bại');
+          } finally { setSending(false); }
+        },
+      },
+    ]);
+  };
+
+  /* ── Mở edit modal ── */
+  const openEdit = (h: HistoryItem) => {
+    setEditItem(h);
+    setEditTitle(h.title);
+    setEditMessage(stripHtml(h.message));
+    setDetailItem(null);
+  };
+
+  /* ── Gửi lại sau khi sửa ── */
+  const handleResend = async () => {
+    if (!editItem) return;
+    if (!editTitle.trim())   { Alert.alert('Lỗi', 'Vui lòng nhập tiêu đề'); return; }
+    if (!editMessage.trim()) { Alert.alert('Lỗi', 'Vui lòng nhập nội dung'); return; }
+
+    const recipientLabel = editItem.sent_to_names?.length
+      ? editItem.sent_to_names.join(', ')
+      : editItem.target_ids?.length
+        ? `${editItem.target_ids.length} người đã chọn`
+        : `tất cả tài xế`;
+
+    Alert.alert('Xác nhận gửi lại', `Gửi lại tới: ${recipientLabel}?`, [
+      { text: 'Hủy', style: 'cancel' },
+      {
+        text: 'Gửi lại', onPress: async () => {
+          setResending(true);
+          try {
+            const payload: any = {
+              title:   editTitle.trim(),
+              message: editMessage.trim(),
+              type:    editItem.type ?? 'announcement',
+            };
+            // Giữ nguyên người nhận gốc
+            if (editItem.target_ids && editItem.target_ids.length > 0) {
+              payload.target_ids = editItem.target_ids.join(',');
+            }
+            const res = await api.post('/notifications/broadcast', payload);
+            Alert.alert('✅ Thành công', res.data.message ?? 'Đã gửi lại thông báo');
+            setEditItem(null);
+            loadHistory();
+          } catch (e: any) {
+            Alert.alert('Lỗi', e?.response?.data?.message ?? 'Gửi lại thất bại');
+          } finally { setResending(false); }
+        },
+      },
+    ]);
+  };
+
+  /* ── Xóa thông báo ── */
+  const handleDelete = (h: HistoryItem) => {
     Alert.alert(
-      'Xác nhận gửi',
-      `Gửi thông báo tới ${targetName}?`,
+      'Xóa thông báo',
+      `Xóa thông báo "${h.title}"?\n\nHành động này sẽ xóa toàn bộ thông báo đã gửi cho tất cả người nhận.`,
       [
         { text: 'Hủy', style: 'cancel' },
         {
-          text: 'Gửi',
-          onPress: async () => {
-            setSending(true);
+          text: 'Xóa', style: 'destructive', onPress: async () => {
+            setDeleting(true);
+            setDetailItem(null);
             try {
-              const payload: any = { title: title.trim(), message: message.trim(), type };
-              if (targetId) payload.target_driver_id = targetId;
-              const res = await api.post('/notifications/broadcast', payload);
-              Alert.alert('✅ Thành công', res.data.message ?? 'Đã gửi thông báo');
-              setTitle(''); setMessage(''); setType('announcement'); setTargetId('');
+              await api.delete('/notifications/broadcast/recall', {
+                data: { title: h.title, message: h.message, created_at: h.created_at },
+              });
+              Alert.alert('✅ Đã xóa', 'Thông báo đã được xóa');
               loadHistory();
             } catch (e: any) {
-              Alert.alert('Lỗi', e?.response?.data?.message ?? 'Gửi thất bại');
-            } finally {
-              setSending(false);
-            }
+              Alert.alert('Lỗi', e?.response?.data?.message ?? 'Xóa thất bại');
+            } finally { setDeleting(false); }
           },
         },
       ]
     );
   };
 
-  const selectedType = TYPE_OPTIONS.find(t => t.value === type);
+  const selectedType   = TYPE_OPTIONS.find(t => t.value === type);
   const selectedDriver = drivers.find(d => d._id === targetId);
 
   return (
@@ -171,15 +258,12 @@ export default function AdminNotifications() {
               </TouchableOpacity>
               {showDriverPicker && (
                 <View style={S.dropdown}>
-                  {/* Option: Tất cả — ẩn khi loại là kỷ luật */}
                   {type !== 'discipline' && (
                     <TouchableOpacity
                       style={[S.dropItem, !targetId && S.dropItemActive]}
                       onPress={() => { setTargetId(''); setShowDriverPicker(false); }}
                     >
-                      <View style={S.dropAvatar}>
-                        <Text style={{ fontSize: 14 }}>👥</Text>
-                      </View>
+                      <View style={S.dropAvatar}><Text style={{ fontSize: 14 }}>👥</Text></View>
                       <Text style={[S.dropText, !targetId && S.dropTextActive]}>
                         Tất cả tài xế ({drivers.length})
                       </Text>
@@ -193,8 +277,6 @@ export default function AdminNotifications() {
                       </Text>
                     </View>
                   )}
-
-                  {/* Từng tài xế — chỉ hiển thị tên */}
                   {drivers.map(d => (
                     <TouchableOpacity
                       key={d._id}
@@ -206,9 +288,7 @@ export default function AdminNotifications() {
                           {d.full_name.charAt(0).toUpperCase()}
                         </Text>
                       </View>
-                      <Text style={[S.dropText, targetId === d._id && S.dropTextActive]}>
-                        {d.full_name}
-                      </Text>
+                      <Text style={[S.dropText, targetId === d._id && S.dropTextActive]}>{d.full_name}</Text>
                       {targetId === d._id && <Text style={S.checkMark}>✓</Text>}
                     </TouchableOpacity>
                   ))}
@@ -316,28 +396,34 @@ export default function AdminNotifications() {
             </View>
           ) : (
             history.map((h, i) => (
-              <View key={i} style={S.histItem}>
+              <TouchableOpacity
+                key={i}
+                style={S.histItem}
+                onPress={() => setDetailItem(h)}
+                activeOpacity={0.75}
+              >
                 <View style={S.histTop}>
+                  <Text style={S.histIcon}>{TYPE_ICON[h.type ?? ''] ?? '🔔'}</Text>
                   <Text style={S.histTitle} numberOfLines={1}>{h.title}</Text>
                   <TouchableOpacity
                     style={S.sentBadge}
-                    onPress={() => setRecipientsOf(h)}
+                    onPress={(e) => { e.stopPropagation(); setRecipientsOf(h); }}
                     activeOpacity={0.7}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   >
                     <Text style={S.sentBadgeText}>
-                      ✓ {(!h.target_ids || h.target_ids.length === 0)
-                        ? 'Tất cả'
-                        : `${h.sent_count} người`}
+                      ✓ {(!h.target_ids || h.target_ids.length === 0) ? 'Tất cả' : `${h.sent_count} người`}
                     </Text>
                   </TouchableOpacity>
                 </View>
-                <Text style={S.histMsg} numberOfLines={2}>{h.message ? h.message.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim() : ''}</Text>
-                <Text style={S.histTime}>
-                  🕐 {h.created_at
-                    ? format(parseISO(h.created_at), 'HH:mm - dd/MM/yyyy', { locale: vi })
-                    : '—'}
-                </Text>
-              </View>
+                <Text style={S.histMsg} numberOfLines={2}>{stripHtml(h.message)}</Text>
+                <View style={S.histFooter}>
+                  <Text style={S.histTime}>
+                    🕐 {h.created_at ? format(parseISO(h.created_at), 'HH:mm - dd/MM/yyyy', { locale: vi }) : '—'}
+                  </Text>
+                  <Text style={S.histDetail}>Xem chi tiết ›</Text>
+                </View>
+              </TouchableOpacity>
             ))
           )}
 
@@ -345,28 +431,185 @@ export default function AdminNotifications() {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* ── Modal danh sách người nhận ── */}
-      <Modal visible={!!recipientsOf} transparent animationType="fade">
-        <TouchableOpacity
-          style={RM.overlay}
-          activeOpacity={1}
-          onPress={() => setRecipientsOf(null)}
-        >
-          <View style={RM.sheet} onStartShouldSetResponder={() => true}>
+      {/* ════════════════════════════════
+          DETAIL BOTTOM SHEET
+          ════════════════════════════════ */}
+      <Modal visible={!!detailItem} transparent animationType="slide">
+        <View style={D.overlay}>
+          <TouchableOpacity style={D.backdrop} activeOpacity={1} onPress={() => setDetailItem(null)} />
+          <View style={D.sheet}>
             {/* Header */}
+            <View style={D.header}>
+              <Text style={D.headerIcon}>{TYPE_ICON[detailItem?.type ?? ''] ?? '🔔'}</Text>
+              <Text style={D.headerType} numberOfLines={1}>
+                {TYPE_OPTIONS.find(t => t.value === detailItem?.type)?.label?.split(' ').slice(1).join(' ') ?? 'Thông báo'}
+              </Text>
+              <TouchableOpacity onPress={() => setDetailItem(null)} style={D.closeBtn}>
+                <Text style={D.closeIcon}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView contentContainerStyle={D.content} showsVerticalScrollIndicator={false}>
+              {/* Tiêu đề */}
+              <Text style={D.title}>{detailItem?.title}</Text>
+
+              {/* Thời gian + người gửi */}
+              <Text style={D.time}>
+                🕐 {detailItem?.created_at
+                  ? format(parseISO(detailItem.created_at), 'HH:mm - dd/MM/yyyy (EEEE)', { locale: vi })
+                  : '—'}
+              </Text>
+              {detailItem?.sent_by && (
+                <Text style={D.sender}>👤 Gửi bởi: <Text style={{ color: Colors.primary, fontWeight: '600' }}>{detailItem.sent_by}</Text></Text>
+              )}
+
+              {/* Người nhận */}
+              <TouchableOpacity
+                style={D.recipientRow}
+                onPress={() => { setRecipientsOf(detailItem); setDetailItem(null); }}
+                activeOpacity={0.7}
+              >
+                <Text style={D.recipientIcon}>👥</Text>
+                <Text style={D.recipientText}>
+                  {(!detailItem?.target_ids || detailItem.target_ids.length === 0)
+                    ? `Tất cả (${detailItem?.sent_count ?? 0} người)`
+                    : detailItem?.sent_to_names?.length
+                      ? detailItem.sent_to_names.join(', ')
+                      : `${detailItem?.sent_count ?? 0} người`}
+                </Text>
+                <Text style={D.recipientArrow}>›</Text>
+              </TouchableOpacity>
+
+              <View style={D.divider} />
+
+              {/* Nội dung */}
+              <Text style={D.message}>{stripHtml(detailItem?.message ?? '')}</Text>
+            </ScrollView>
+
+            {/* Action buttons */}
+            <View style={D.actions}>
+              <TouchableOpacity
+                style={D.deleteBtn}
+                onPress={() => detailItem && handleDelete(detailItem)}
+                disabled={deleting}
+                activeOpacity={0.8}
+              >
+                {deleting
+                  ? <ActivityIndicator color={Colors.error} size="small" />
+                  : <Text style={D.deleteBtnText}>🗑 Xóa</Text>
+                }
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={D.editBtn}
+                onPress={() => detailItem && openEdit(detailItem)}
+                activeOpacity={0.8}
+              >
+                <Text style={D.editBtnText}>✏️ Sửa & gửi lại</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ════════════════════════════════
+          EDIT & RESEND MODAL
+          ════════════════════════════════ */}
+      <Modal visible={!!editItem} transparent animationType="slide">
+        <View style={E.overlay}>
+          <TouchableOpacity style={E.backdrop} activeOpacity={1} onPress={() => setEditItem(null)} />
+          <KeyboardAvoidingView
+            style={E.kavWrapper}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          >
+            <View style={E.sheet}>
+              {/* Header */}
+              <View style={E.header}>
+                <Text style={E.headerTitle}>✏️ Sửa & gửi lại</Text>
+                <TouchableOpacity onPress={() => setEditItem(null)} style={E.closeBtn}>
+                  <Text style={E.closeIcon}>✕</Text>
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView contentContainerStyle={E.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+                {/* Người nhận (readonly) */}
+                <View style={E.recipientBox}>
+                  <Text style={E.recipientLabel}>Gửi lại tới:</Text>
+                  <Text style={E.recipientValue}>
+                    {editItem?.sent_to_names?.length
+                      ? editItem.sent_to_names.join(', ')
+                      : editItem?.target_ids?.length
+                        ? `${editItem.target_ids.length} người đã chọn`
+                        : 'Tất cả mọi người'}
+                  </Text>
+                </View>
+
+                {/* Tiêu đề */}
+                <View style={E.field}>
+                  <Text style={E.label}>Tiêu đề <Text style={{ color: Colors.error }}>*</Text></Text>
+                  <TextInput
+                    style={E.input}
+                    value={editTitle}
+                    onChangeText={setEditTitle}
+                    placeholder="Tiêu đề..."
+                    placeholderTextColor={Colors.gray400}
+                    maxLength={100}
+                  />
+                  <Text style={E.charCount}>{editTitle.length}/100</Text>
+                </View>
+
+                {/* Nội dung */}
+                <View style={E.field}>
+                  <Text style={E.label}>Nội dung <Text style={{ color: Colors.error }}>*</Text></Text>
+                  <TextInput
+                    style={[E.input, E.textarea]}
+                    value={editMessage}
+                    onChangeText={setEditMessage}
+                    placeholder="Nội dung..."
+                    placeholderTextColor={Colors.gray400}
+                    multiline
+                    textAlignVertical="top"
+                    maxLength={5000}
+                  />
+                  <Text style={E.charCount}>{editMessage.length}/5000</Text>
+                </View>
+              </ScrollView>
+
+              {/* Footer */}
+              <View style={E.footer}>
+                <TouchableOpacity style={E.cancelBtn} onPress={() => setEditItem(null)}>
+                  <Text style={E.cancelBtnText}>Hủy</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[E.sendBtn, (resending || !editTitle.trim() || !editMessage.trim()) && E.sendBtnDisabled]}
+                  onPress={handleResend}
+                  disabled={resending || !editTitle.trim() || !editMessage.trim()}
+                  activeOpacity={0.8}
+                >
+                  {resending
+                    ? <ActivityIndicator color={Colors.white} size="small" />
+                    : <Text style={E.sendBtnText}>📨 Gửi lại</Text>
+                  }
+                </TouchableOpacity>
+              </View>
+            </View>
+          </KeyboardAvoidingView>
+        </View>
+      </Modal>
+
+      {/* ════════════════════════════════
+          RECIPIENTS MODAL
+          ════════════════════════════════ */}
+      <Modal visible={!!recipientsOf} transparent animationType="fade">
+        <TouchableOpacity style={RM.overlay} activeOpacity={1} onPress={() => setRecipientsOf(null)}>
+          <View style={RM.sheet} onStartShouldSetResponder={() => true}>
             <View style={RM.header}>
               <Text style={RM.headerTitle}>Đã gửi tới</Text>
               <TouchableOpacity onPress={() => setRecipientsOf(null)} style={RM.closeBtn}>
                 <Text style={RM.closeIcon}>✕</Text>
               </TouchableOpacity>
             </View>
+            <Text style={RM.notifTitle} numberOfLines={2}>"{recipientsOf?.title}"</Text>
 
-            {/* Tiêu đề thông báo */}
-            <Text style={RM.notifTitle} numberOfLines={2}>
-              "{recipientsOf?.title}"
-            </Text>
-
-            {/* Danh sách */}
             {recipientsOf?.sent_to_names && recipientsOf.sent_to_names.length > 0 ? (
               <ScrollView style={RM.list} showsVerticalScrollIndicator={false}>
                 {recipientsOf.sent_to_names.map((name, i) => (
@@ -388,11 +631,8 @@ export default function AdminNotifications() {
               </View>
             )}
 
-            {/* Footer tổng */}
             <View style={RM.footer}>
-              <Text style={RM.footerText}>
-                Tổng: {recipientsOf?.sent_count ?? 0} người nhận
-              </Text>
+              <Text style={RM.footerText}>Tổng: {recipientsOf?.sent_count ?? 0} người nhận</Text>
             </View>
           </View>
         </TouchableOpacity>
@@ -401,6 +641,7 @@ export default function AdminNotifications() {
   );
 }
 
+/* ── Compose styles ── */
 const S = StyleSheet.create({
   safe:        { flex: 1, backgroundColor: Colors.background },
   header:      { backgroundColor: Colors.primary, paddingHorizontal: 16, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -426,56 +667,121 @@ const S = StyleSheet.create({
   pickerText:  { fontSize: 14, color: Colors.gray900, flex: 1 },
   pickerArrow: { fontSize: 12, color: Colors.gray500 },
 
-  dropdown:    { borderWidth: 1, borderColor: Colors.gray200, borderRadius: 10, backgroundColor: Colors.white, marginTop: 4, maxHeight: 240, overflow: 'hidden', elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 6 },
-  dropItem:    { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12, paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: Colors.gray100 },
+  dropdown:       { borderWidth: 1, borderColor: Colors.gray200, borderRadius: 10, backgroundColor: Colors.white, marginTop: 4, maxHeight: 240, overflow: 'hidden', elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 6 },
+  dropItem:       { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12, paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: Colors.gray100 },
   dropItemActive: { backgroundColor: Colors.primary + '0d' },
-  dropAvatar:  { width: 28, height: 28, borderRadius: 14, backgroundColor: Colors.primary + '18', justifyContent: 'center', alignItems: 'center', flexShrink: 0 },
-  dropText:    { fontSize: 14, color: Colors.gray800, flex: 1 },
+  dropAvatar:     { width: 28, height: 28, borderRadius: 14, backgroundColor: Colors.primary + '18', justifyContent: 'center', alignItems: 'center', flexShrink: 0 },
+  dropText:       { fontSize: 14, color: Colors.gray800, flex: 1 },
   dropTextActive: { color: Colors.primary, fontWeight: '600' },
-  dropSub:     { fontSize: 11, color: Colors.gray400, marginTop: 1 },
-  checkMark:   { fontSize: 14, color: Colors.primary, fontWeight: '700' },
+  dropSub:        { fontSize: 11, color: Colors.gray400, marginTop: 1 },
+  checkMark:      { fontSize: 14, color: Colors.primary, fontWeight: '700' },
 
-  preview:     { marginHorizontal: 16, marginTop: 12, backgroundColor: Colors.primary + '08', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: Colors.primary + '25' },
-  previewLabel:{ fontSize: 10, fontWeight: '700', color: Colors.primary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
-  previewContent:{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
-  previewIcon: { fontSize: 22 },
-  previewTitle:{ fontSize: 13, fontWeight: '700', color: Colors.gray900 },
-  previewMsg:  { fontSize: 12, color: Colors.gray600, marginTop: 2 },
+  preview:        { marginHorizontal: 16, marginTop: 12, backgroundColor: Colors.primary + '08', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: Colors.primary + '25' },
+  previewLabel:   { fontSize: 10, fontWeight: '700', color: Colors.primary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
+  previewContent: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
+  previewIcon:    { fontSize: 22 },
+  previewTitle:   { fontSize: 13, fontWeight: '700', color: Colors.gray900 },
+  previewMsg:     { fontSize: 12, color: Colors.gray600, marginTop: 2 },
 
-  sendBtn:     { margin: 16, marginTop: 14, backgroundColor: Colors.primary, borderRadius: 12, height: 50, justifyContent: 'center', alignItems: 'center' },
+  sendBtn:         { margin: 16, marginTop: 14, backgroundColor: Colors.primary, borderRadius: 12, height: 50, justifyContent: 'center', alignItems: 'center' },
   sendBtnDisabled: { opacity: 0.45 },
-  sendBtnText: { fontSize: 15, fontWeight: '700', color: Colors.white },
+  sendBtnText:     { fontSize: 15, fontWeight: '700', color: Colors.white },
 
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, marginTop: 4 },
   sectionTitle:  { fontSize: 14, fontWeight: '700', color: Colors.gray700, textTransform: 'uppercase', letterSpacing: 0.5 },
 
-  histItem:  { backgroundColor: Colors.white, borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: Colors.border },
-  histTop:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  histTitle: { fontSize: 14, fontWeight: '700', color: Colors.gray900, flex: 1, marginRight: 8 },
-  sentBadge: { backgroundColor: Colors.success + '20', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 },
-  sentBadgeText: { fontSize: 11, color: Colors.success, fontWeight: '700' },
-  histMsg:   { fontSize: 13, color: Colors.gray600, lineHeight: 18 },
-  histTime:  { fontSize: 11, color: Colors.gray400, marginTop: 6 },
+  histItem:     { backgroundColor: Colors.white, borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: Colors.border },
+  histTop:      { flexDirection: 'row', alignItems: 'center', marginBottom: 4, gap: 6 },
+  histIcon:     { fontSize: 16 },
+  histTitle:    { fontSize: 14, fontWeight: '700', color: Colors.gray900, flex: 1 },
+  sentBadge:    { backgroundColor: Colors.success + '20', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
+  sentBadgeText:{ fontSize: 11, color: Colors.success, fontWeight: '700' },
+  histMsg:      { fontSize: 13, color: Colors.gray600, lineHeight: 18 },
+  histFooter:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 },
+  histTime:     { fontSize: 11, color: Colors.gray400 },
+  histDetail:   { fontSize: 11, color: Colors.primary, fontWeight: '600' },
 
   empty:     { alignItems: 'center', paddingTop: 32, gap: 8 },
   emptyText: { fontSize: 14, color: Colors.gray500 },
 });
 
-const RM = StyleSheet.create({
-  overlay:   { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 },
-  sheet:     { backgroundColor: Colors.white, borderRadius: 20, width: '100%', maxHeight: '75%', overflow: 'hidden' },
-  header:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: Colors.gray100 },
+/* ── Detail sheet styles ── */
+const D = StyleSheet.create({
+  overlay:  { flex: 1, justifyContent: 'flex-end' },
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' },
+  sheet:    { backgroundColor: Colors.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '88%' },
+
+  header:     { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: Colors.primary, borderTopLeftRadius: 20, borderTopRightRadius: 20 },
+  headerIcon: { fontSize: 20 },
+  headerType: { fontSize: 14, fontWeight: '600', color: 'rgba(255,255,255,0.9)', flex: 1 },
+  closeBtn:   { width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
+  closeIcon:  { color: Colors.white, fontSize: 14, fontWeight: '700' },
+
+  content:      { padding: 20 },
+  title:        { fontSize: 18, fontWeight: '800', color: Colors.gray900, lineHeight: 26, marginBottom: 8 },
+  time:         { fontSize: 12, color: Colors.gray400, marginBottom: 4 },
+  sender:       { fontSize: 12, color: Colors.gray400, marginBottom: 10 },
+  recipientRow: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: Colors.primary + '0a', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 4 },
+  recipientIcon:{ fontSize: 16 },
+  recipientText:{ fontSize: 13, color: Colors.gray700, flex: 1, fontWeight: '500' },
+  recipientArrow:{ fontSize: 16, color: Colors.primary, fontWeight: '700' },
+  divider:      { height: 1, backgroundColor: Colors.gray100, marginVertical: 16 },
+  message:      { fontSize: 15, color: Colors.gray700, lineHeight: 24 },
+
+  actions:       { flexDirection: 'row', gap: 12, padding: 16, borderTopWidth: 1, borderTopColor: Colors.gray100 },
+  deleteBtn:     { flex: 1, height: 46, borderRadius: 12, borderWidth: 1.5, borderColor: Colors.error, justifyContent: 'center', alignItems: 'center' },
+  deleteBtnText: { fontSize: 14, fontWeight: '700', color: Colors.error },
+  editBtn:       { flex: 2, height: 46, borderRadius: 12, backgroundColor: Colors.primary, justifyContent: 'center', alignItems: 'center' },
+  editBtnText:   { fontSize: 14, fontWeight: '700', color: Colors.white },
+});
+
+/* ── Edit modal styles ── */
+const E = StyleSheet.create({
+  overlay:    { flex: 1, justifyContent: 'flex-end' },
+  backdrop:   { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' },
+  kavWrapper: { justifyContent: 'flex-end' },
+  sheet:      { backgroundColor: Colors.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '90%' },
+
+  header:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: Colors.gray100 },
   headerTitle: { fontSize: 16, fontWeight: '700', color: Colors.gray900 },
-  closeBtn:  { width: 28, height: 28, borderRadius: 14, backgroundColor: Colors.gray100, justifyContent: 'center', alignItems: 'center' },
-  closeIcon: { fontSize: 12, fontWeight: '700', color: Colors.gray600 },
-  notifTitle:{ fontSize: 12, color: Colors.gray500, fontStyle: 'italic', paddingHorizontal: 20, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: Colors.gray100 },
-  list:      { maxHeight: 300 },
-  row:       { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Colors.gray50 },
-  avatar:    { width: 34, height: 34, borderRadius: 17, backgroundColor: Colors.primary + '18', justifyContent: 'center', alignItems: 'center', flexShrink: 0 },
-  avatarText:{ fontSize: 13, fontWeight: '700', color: Colors.primary },
-  name:      { fontSize: 14, color: Colors.gray800, fontWeight: '500', flex: 1 },
-  emptyBox:  { padding: 24, alignItems: 'center' },
-  emptyText: { fontSize: 14, color: Colors.gray500, textAlign: 'center' },
-  footer:    { paddingHorizontal: 20, paddingVertical: 12, borderTopWidth: 1, borderTopColor: Colors.gray100, alignItems: 'center' },
-  footerText:{ fontSize: 12, color: Colors.gray400 },
+  closeBtn:    { width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.gray100, justifyContent: 'center', alignItems: 'center' },
+  closeIcon:   { fontSize: 12, fontWeight: '700', color: Colors.gray600 },
+
+  content:        { padding: 16 },
+  recipientBox:   { flexDirection: 'row', alignItems: 'flex-start', gap: 6, backgroundColor: '#eff6ff', borderRadius: 10, padding: 12, marginBottom: 4 },
+  recipientLabel: { fontSize: 13, fontWeight: '700', color: '#1e40af' },
+  recipientValue: { fontSize: 13, color: '#1d4ed8', flex: 1, flexWrap: 'wrap' },
+
+  field:    { marginTop: 14 },
+  label:    { fontSize: 13, fontWeight: '600', color: Colors.gray700, marginBottom: 6 },
+  input:    { borderWidth: 1.5, borderColor: Colors.gray200, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11, fontSize: 14, color: Colors.gray900, backgroundColor: Colors.white },
+  textarea: { minHeight: 120, textAlignVertical: 'top', paddingTop: 10 },
+  charCount:{ fontSize: 11, color: Colors.gray400, textAlign: 'right', marginTop: 3 },
+
+  footer:          { flexDirection: 'row', gap: 12, padding: 16, borderTopWidth: 1, borderTopColor: Colors.gray100 },
+  cancelBtn:       { flex: 1, height: 46, borderRadius: 12, borderWidth: 1, borderColor: Colors.border, justifyContent: 'center', alignItems: 'center' },
+  cancelBtnText:   { fontSize: 14, fontWeight: '600', color: Colors.gray600 },
+  sendBtn:         { flex: 2, height: 46, borderRadius: 12, backgroundColor: Colors.primary, justifyContent: 'center', alignItems: 'center' },
+  sendBtnDisabled: { opacity: 0.45 },
+  sendBtnText:     { fontSize: 14, fontWeight: '700', color: Colors.white },
+});
+
+/* ── Recipients modal styles ── */
+const RM = StyleSheet.create({
+  overlay:     { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 },
+  sheet:       { backgroundColor: Colors.white, borderRadius: 20, width: '100%', maxHeight: '75%', overflow: 'hidden' },
+  header:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: Colors.gray100 },
+  headerTitle: { fontSize: 16, fontWeight: '700', color: Colors.gray900 },
+  closeBtn:    { width: 28, height: 28, borderRadius: 14, backgroundColor: Colors.gray100, justifyContent: 'center', alignItems: 'center' },
+  closeIcon:   { fontSize: 12, fontWeight: '700', color: Colors.gray600 },
+  notifTitle:  { fontSize: 12, color: Colors.gray500, fontStyle: 'italic', paddingHorizontal: 20, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: Colors.gray100 },
+  list:        { maxHeight: 300 },
+  row:         { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Colors.gray50 },
+  avatar:      { width: 34, height: 34, borderRadius: 17, backgroundColor: Colors.primary + '18', justifyContent: 'center', alignItems: 'center', flexShrink: 0 },
+  avatarText:  { fontSize: 13, fontWeight: '700', color: Colors.primary },
+  name:        { fontSize: 14, color: Colors.gray800, fontWeight: '500', flex: 1 },
+  emptyBox:    { padding: 24, alignItems: 'center' },
+  emptyText:   { fontSize: 14, color: Colors.gray500, textAlign: 'center' },
+  footer:      { paddingHorizontal: 20, paddingVertical: 12, borderTopWidth: 1, borderTopColor: Colors.gray100, alignItems: 'center' },
+  footerText:  { fontSize: 12, color: Colors.gray400 },
 });
