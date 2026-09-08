@@ -109,8 +109,8 @@ function PasswordField({ label, value, onChange, show, onToggle, error, isLast }
           placeholder="••••••"
           placeholderTextColor={Colors.gray400}
         />
-        <TouchableOpacity onPress={onToggle} style={pStyles.eye}>
-          <Text style={{ fontSize: 18 }}>{show ? '🙈' : '👁️'}</Text>
+        <TouchableOpacity onPress={onToggle} style={pStyles.eye} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <Text style={{ fontSize: 20 }}>{show ? '🙈' : '👁️'}</Text>
         </TouchableOpacity>
       </View>
       {error && <Text style={pStyles.error}>{error}</Text>}
@@ -122,9 +122,9 @@ const pStyles = StyleSheet.create({
   group: { marginBottom: 4 },
   groupBorder: { paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: Colors.gray100 },
   label: { fontSize: 13, fontWeight: '600', color: Colors.gray600, marginBottom: 6, marginTop: 12 },
-  inputRow: { flexDirection: 'row', borderWidth: 1, borderColor: Colors.gray200, borderRadius: 10, alignItems: 'center', backgroundColor: Colors.white },
+  inputRow: { flexDirection: 'row', borderWidth: 1, borderColor: Colors.gray200, borderRadius: 10, alignItems: 'center', backgroundColor: Colors.white, overflow: 'visible' },
   input: { flex: 1, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: Colors.gray900 },
-  eye: { paddingHorizontal: 12 },
+  eye: { paddingHorizontal: 14, paddingVertical: 12 },
   error: { fontSize: 12, color: Colors.error, marginTop: 4 },
 });
 
