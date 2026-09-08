@@ -193,6 +193,9 @@ router.post('/broadcast', authenticate, async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Không tìm thấy người nhận' });
     }
 
+    const { v4: uuidv4 } = require('uuid');
+    const batchId = uuidv4(); // mỗi lần broadcast có ID riêng
+
     const notifications = userIds.map(uid => ({
       user_id:    uid,
       title:      title.trim(),
@@ -202,7 +205,8 @@ router.post('/broadcast', authenticate, async (req, res, next) => {
       data: {
         sent_by:      req.user._id,
         sent_by_name: req.user.name,
-        target_ids:   idsArray ?? null, // lưu danh sách user_id đã gửi (null = tất cả)
+        target_ids:   idsArray ?? null,
+        batch_id:     batchId, // group key cho history
       },
     }));
     await Notification.insertMany(notifications);
@@ -263,7 +267,7 @@ router.get('/broadcast/history', authenticate, async (req, res, next) => {
       { $sort: { created_at: -1 } },
       {
         $group: {
-          _id:        { title: '$title', message: '$message', minute: { $dateToString: { format: '%Y-%m-%dT%H:%M', date: '$created_at' } } },
+          _id:        { $ifNull: ['$data.batch_id', { title: '$title', message: '$message', minute: { $dateToString: { format: '%Y-%m-%dT%H:%M', date: '$created_at' } } }] },
           sent_count: { $sum: 1 },
           created_at: { $first: '$created_at' },
           title:      { $first: '$title' },
@@ -284,7 +288,7 @@ router.get('/broadcast/history', authenticate, async (req, res, next) => {
     const { User } = require('../models');
     const result = await Promise.all(history.map(async h => {
       let sent_to_names = null;
-      if (h.target_ids && h.target_ids.length > 0 && h.target_ids.length <= 10) {
+      if (h.target_ids && h.target_ids.length > 0 && h.target_ids.length <= 50) {
         const users = await User.find({ _id: { $in: h.target_ids } }).select('name').lean();
         sent_to_names = users.map(u => u.name);
       }

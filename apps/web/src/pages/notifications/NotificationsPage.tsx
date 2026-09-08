@@ -123,6 +123,7 @@ export default function NotificationsPage() {
   const [editItem, setEditItem]     = useState<HistoryItem | null>(null);
   const [editTitle, setEditTitle]   = useState('');
   const [editMessage, setEditMessage] = useState('');
+  const [showRecipientsOf, setShowRecipientsOf] = useState<HistoryItem | null>(null);
   const [editFile, setEditFile]     = useState<File | null>(null);
   const [editSending, setEditSending] = useState(false);
 
@@ -661,12 +662,15 @@ Công ty TNHH Vận tải Nam Thành`;
                         {/* Title + badge */}
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <span className="font-semibold text-gray-900 text-sm">{h.title}</span>
-                          <span className="inline-flex items-center gap-1 text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-medium flex-shrink-0">
+                          <button
+                            onClick={() => setShowRecipientsOf(h)}
+                            className="inline-flex items-center gap-1 text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-medium flex-shrink-0 hover:bg-emerald-200 transition-colors cursor-pointer"
+                          >
                             <CheckCircleIcon className="w-3 h-3" />
                             {h.sent_to_names && h.sent_to_names.length > 0
                               ? h.sent_to_names.join(', ')
                               : `${h.sent_count} người`}
-                          </span>
+                          </button>
                           {h.type && h.type !== 'announcement' && (
                             <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full flex-shrink-0">
                               {TYPE_OPTIONS.find(t => t.value === h.type)?.label ?? h.type}
@@ -903,6 +907,43 @@ Công ty TNHH Vận tải Nam Thành`;
                 </div>
               </object>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal xem danh sách người nhận ── */}
+      {showRecipientsOf && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50"
+          onClick={() => setShowRecipientsOf(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6"
+            onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-gray-900">Đã gửi tới</h3>
+              <button onClick={() => setShowRecipientsOf(null)}
+                className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 font-bold">✕</button>
+            </div>
+            <p className="text-xs text-gray-500 mb-3 italic">"{showRecipientsOf.title}"</p>
+            {showRecipientsOf.sent_to_names && showRecipientsOf.sent_to_names.length > 0 ? (
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {showRecipientsOf.sent_to_names.map((name, i) => (
+                  <div key={i} className="flex items-center gap-2 py-1.5 border-b border-gray-50 last:border-0">
+                    <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+                      {name.charAt(0).toUpperCase()}
+                    </div>
+                    <span className="text-sm text-gray-700">{name}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500 text-center py-4">
+                {showRecipientsOf.sent_count > 0
+                  ? `Đã gửi tới ${showRecipientsOf.sent_count} người (tất cả)`
+                  : 'Không có thông tin người nhận'}
+              </p>
+            )}
+            <div className="mt-4 pt-3 border-t border-gray-100 text-xs text-gray-400 text-center">
+              Tổng: {showRecipientsOf.sent_count} người nhận
+            </div>
           </div>
         </div>
       )}
