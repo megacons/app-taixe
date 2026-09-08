@@ -200,9 +200,8 @@ router.delete('/:id', authenticate, authorize('coordinator', 'manager'), async (
     if (user.role === 'driver') {
       return res.status(403).json({ success: false, message: 'Dùng trang Tài xế để xóa tài xế' });
     }
-    user.is_deleted = true;
-    user.status     = 'inactive';
-    await user.save();
+    // Hard delete — xóa hẳn khỏi DB để tránh trùng SĐT khi tạo lại
+    await user.deleteOne();
     res.json({ success: true, message: 'Đã xóa tài khoản' });
   } catch (err) { next(err); }
 });

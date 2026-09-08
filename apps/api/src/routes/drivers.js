@@ -305,14 +305,18 @@ router.delete(
         return res.status(404).json({ success: false, message: 'Không tìm thấy tài xế' });
       }
 
-      await driver.softDelete(req.user._id);
+      // Hard delete driver và user liên kết để tránh trùng SĐT khi tạo lại
+      const userId = driver.user_id;
 
-      // Deactivate user account
-      await User.findByIdAndUpdate(driver.user_id, { status: 'inactive' });
-
-      // Release vehicle
+      // Release vehicle trước
       if (driver.vehicle_id) {
         await Vehicle.findByIdAndUpdate(driver.vehicle_id, { assigned_driver: null });
+      }
+
+      // Xóa hẳn driver và user khỏi DB
+      await driver.deleteOne();
+      if (userId) {
+        await User.findByIdAndDelete(userId);
       }
 
       res.json({
