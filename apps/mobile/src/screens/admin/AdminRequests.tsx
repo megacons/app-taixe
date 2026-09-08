@@ -275,7 +275,7 @@ const S = StyleSheet.create({
   backBtn:     { width: 36, height: 36, justifyContent: 'center' },
   backIcon:    { fontSize: 22, color: Colors.white, fontWeight: '700' },
   headerTitle: { fontSize: 18, fontWeight: '700', color: Colors.white, flex: 1 },
-  filterBar:   { backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.border },
+  filterBar:   { backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.border, maxHeight: 52 },
   filterContent:{ paddingHorizontal: 12, paddingVertical: 6, gap: 8, paddingRight: 20 },
   chip:        { height: 32, paddingHorizontal: 14, justifyContent: 'center', borderRadius: 8, borderWidth: 1.5, borderColor: Colors.gray200, backgroundColor: Colors.white },
   chipActive:  { borderColor: Colors.primary, backgroundColor: Colors.primary + '10' },
