@@ -310,6 +310,7 @@ function FundEntriesModal({ driver, month, year, onClose }: any) {
   }, [driver.driver_id, month, year]);
 
   return (
+    <>
     <Modal visible transparent animationType="fade">
       <View style={T.overlay}>
         <TouchableOpacity style={T.backdrop} onPress={onClose} activeOpacity={1} />
@@ -412,6 +413,7 @@ function FundEntriesModal({ driver, month, year, onClose }: any) {
         onClose={() => setShowAdvHistory(false)}
       />
     )}
+  </>
   );
 }
 
