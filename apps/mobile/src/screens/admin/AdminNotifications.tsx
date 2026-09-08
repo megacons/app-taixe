@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
   TextInput, ActivityIndicator, Alert, KeyboardAvoidingView,
-  Platform, RefreshControl,
+  Platform, RefreshControl, Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -25,6 +25,10 @@ interface HistoryItem {
   message: string;
   sent_count: number;
   created_at: string;
+  type?: string;
+  sent_by?: string;
+  target_ids?: string[] | null;
+  sent_to_names?: string[] | null;
 }
 
 interface Driver {
@@ -51,6 +55,8 @@ export default function AdminNotifications() {
   /* ── pickers ── */
   const [showTypePicker,   setShowTypePicker]   = useState(false);
   const [showDriverPicker, setShowDriverPicker] = useState(false);
+  /* ── recipients modal ── */
+  const [recipientsOf, setRecipientsOf] = useState<HistoryItem | null>(null);
 
   const loadHistory = useCallback(async () => {
     try {
@@ -313,9 +319,17 @@ export default function AdminNotifications() {
               <View key={i} style={S.histItem}>
                 <View style={S.histTop}>
                   <Text style={S.histTitle} numberOfLines={1}>{h.title}</Text>
-                  <View style={S.sentBadge}>
-                    <Text style={S.sentBadgeText}>✓ {h.sent_count}</Text>
-                  </View>
+                  <TouchableOpacity
+                    style={S.sentBadge}
+                    onPress={() => setRecipientsOf(h)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={S.sentBadgeText}>
+                      ✓ {(!h.target_ids || h.target_ids.length === 0)
+                        ? 'Tất cả'
+                        : `${h.sent_count} người`}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
                 <Text style={S.histMsg} numberOfLines={2}>{h.message ? h.message.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim() : ''}</Text>
                 <Text style={S.histTime}>
@@ -330,6 +344,59 @@ export default function AdminNotifications() {
           <View style={{ height: 32 }} />
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* ── Modal danh sách người nhận ── */}
+      <Modal visible={!!recipientsOf} transparent animationType="fade">
+        <TouchableOpacity
+          style={RM.overlay}
+          activeOpacity={1}
+          onPress={() => setRecipientsOf(null)}
+        >
+          <View style={RM.sheet} onStartShouldSetResponder={() => true}>
+            {/* Header */}
+            <View style={RM.header}>
+              <Text style={RM.headerTitle}>Đã gửi tới</Text>
+              <TouchableOpacity onPress={() => setRecipientsOf(null)} style={RM.closeBtn}>
+                <Text style={RM.closeIcon}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Tiêu đề thông báo */}
+            <Text style={RM.notifTitle} numberOfLines={2}>
+              "{recipientsOf?.title}"
+            </Text>
+
+            {/* Danh sách */}
+            {recipientsOf?.sent_to_names && recipientsOf.sent_to_names.length > 0 ? (
+              <ScrollView style={RM.list} showsVerticalScrollIndicator={false}>
+                {recipientsOf.sent_to_names.map((name, i) => (
+                  <View key={i} style={RM.row}>
+                    <View style={RM.avatar}>
+                      <Text style={RM.avatarText}>{name.charAt(0).toUpperCase()}</Text>
+                    </View>
+                    <Text style={RM.name}>{name}</Text>
+                  </View>
+                ))}
+              </ScrollView>
+            ) : (
+              <View style={RM.emptyBox}>
+                <Text style={RM.emptyText}>
+                  {recipientsOf && recipientsOf.sent_count > 0
+                    ? `Đã gửi tới ${recipientsOf.sent_count} người (tất cả)`
+                    : 'Không có thông tin người nhận'}
+                </Text>
+              </View>
+            )}
+
+            {/* Footer tổng */}
+            <View style={RM.footer}>
+              <Text style={RM.footerText}>
+                Tổng: {recipientsOf?.sent_count ?? 0} người nhận
+              </Text>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -392,4 +459,23 @@ const S = StyleSheet.create({
 
   empty:     { alignItems: 'center', paddingTop: 32, gap: 8 },
   emptyText: { fontSize: 14, color: Colors.gray500 },
+});
+
+const RM = StyleSheet.create({
+  overlay:   { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 },
+  sheet:     { backgroundColor: Colors.white, borderRadius: 20, width: '100%', maxHeight: '75%', overflow: 'hidden' },
+  header:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: Colors.gray100 },
+  headerTitle: { fontSize: 16, fontWeight: '700', color: Colors.gray900 },
+  closeBtn:  { width: 28, height: 28, borderRadius: 14, backgroundColor: Colors.gray100, justifyContent: 'center', alignItems: 'center' },
+  closeIcon: { fontSize: 12, fontWeight: '700', color: Colors.gray600 },
+  notifTitle:{ fontSize: 12, color: Colors.gray500, fontStyle: 'italic', paddingHorizontal: 20, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: Colors.gray100 },
+  list:      { maxHeight: 300 },
+  row:       { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Colors.gray50 },
+  avatar:    { width: 34, height: 34, borderRadius: 17, backgroundColor: Colors.primary + '18', justifyContent: 'center', alignItems: 'center', flexShrink: 0 },
+  avatarText:{ fontSize: 13, fontWeight: '700', color: Colors.primary },
+  name:      { fontSize: 14, color: Colors.gray800, fontWeight: '500', flex: 1 },
+  emptyBox:  { padding: 24, alignItems: 'center' },
+  emptyText: { fontSize: 14, color: Colors.gray500, textAlign: 'center' },
+  footer:    { paddingHorizontal: 20, paddingVertical: 12, borderTopWidth: 1, borderTopColor: Colors.gray100, alignItems: 'center' },
+  footerText:{ fontSize: 12, color: Colors.gray400 },
 });
