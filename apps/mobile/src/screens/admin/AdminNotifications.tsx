@@ -517,7 +517,7 @@ export default function AdminNotifications() {
       {/* ════════════════════════════════
           EDIT & RESEND MODAL
           ════════════════════════════════ */}
-      <Modal visible={!!editItem} transparent animationType="slide">
+      <Modal visible={!!editItem} transparent animationType="fade">
         <View style={E.overlay}>
           <TouchableOpacity style={E.backdrop} activeOpacity={1} onPress={() => setEditItem(null)} />
           <KeyboardAvoidingView
@@ -556,7 +556,7 @@ export default function AdminNotifications() {
                   </TouchableOpacity>
 
                   {showEditDriverPicker && (
-                    <View style={E.dropdown}>
+                    <ScrollView style={E.dropdown} nestedScrollEnabled showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
                       {/* Tất cả */}
                       <TouchableOpacity
                         style={[E.dropItem, !editTargetId && E.dropItemActive]}
@@ -586,7 +586,7 @@ export default function AdminNotifications() {
                           {editTargetId === d._id && <Text style={E.checkMark}>✓</Text>}
                         </TouchableOpacity>
                       ))}
-                    </View>
+                    </ScrollView>
                   )}
                 </View>
 
@@ -784,10 +784,10 @@ const D = StyleSheet.create({
 
 /* ── Edit modal styles ── */
 const E = StyleSheet.create({
-  overlay:    { flex: 1, justifyContent: 'flex-end' },
-  backdrop:   { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' },
-  kavWrapper: { justifyContent: 'flex-end' },
-  sheet:      { backgroundColor: Colors.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '90%' },
+  overlay:    { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
+  backdrop:   { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' },
+  kavWrapper: { width: '100%' },
+  sheet:      { backgroundColor: Colors.white, borderRadius: 20, width: '100%', maxHeight: '85%', overflow: 'hidden' },
 
   header:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: Colors.gray100 },
   headerTitle: { fontSize: 16, fontWeight: '700', color: Colors.gray900 },
@@ -810,7 +810,7 @@ const E = StyleSheet.create({
   pickerIcon:  { fontSize: 16 },
   pickerText:  { fontSize: 14, color: Colors.gray900, flex: 1 },
   pickerArrow: { fontSize: 12, color: Colors.gray500 },
-  dropdown:       { borderWidth: 1, borderColor: Colors.gray200, borderRadius: 10, backgroundColor: Colors.white, marginTop: 4, maxHeight: 220, overflow: 'hidden', elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 6 },
+  dropdown:       { borderWidth: 1, borderColor: Colors.gray200, borderRadius: 10, backgroundColor: Colors.white, marginTop: 4, maxHeight: 200, elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 6 },
   dropItem:       { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12, paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: Colors.gray100 },
   dropItemActive: { backgroundColor: Colors.primary + '0d' },
   dropAvatar:     { width: 28, height: 28, borderRadius: 14, backgroundColor: Colors.primary + '18', justifyContent: 'center', alignItems: 'center', flexShrink: 0 },
