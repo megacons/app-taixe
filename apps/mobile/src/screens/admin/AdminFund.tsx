@@ -30,6 +30,7 @@ export default function AdminFund() {
   const [showAdd, setShowAdd]     = useState(false);
   const [showEntries, setShowEntries] = useState(false);
   const [selDriver, setSelDriver] = useState<any>(null);
+  const [showAdvances, setShowAdvances] = useState(false);
 
   const fetchDrivers = useCallback(async () => {
     try {
@@ -151,6 +152,17 @@ export default function AdminFund() {
           month={month}
           year={year}
           onClose={() => { setShowEntries(false); setSelDriver(null); }}
+          onShowAdvances={() => { setShowEntries(false); setShowAdvances(true); }}
+        />
+      )}
+
+      {/* Xem lịch sử cấp tiền — render ở cấp cao nhất tránh modal lồng nhau */}
+      {showAdvances && selDriver && (
+        <AdvanceHistoryModal
+          driver={selDriver}
+          month={month}
+          year={year}
+          onClose={() => { setShowAdvances(false); setShowEntries(true); }}
         />
       )}
     </SafeAreaView>
@@ -261,11 +273,10 @@ function AddFundModal({ driver, month, onClose, onSuccess }: any) {
 }
 
 /* ─── FundEntriesModal — các lần chi tiền trong tháng ──── */
-function FundEntriesModal({ driver, month, year, onClose }: any) {
+function FundEntriesModal({ driver, month, year, onClose, onShowAdvances }: any) {
   const [entries, setEntries] = useState<any[]>([]);
   const [totals,  setTotals]  = useState({ advance: 0, expense: 0, remaining: 0 });
   const [loading, setLoading] = useState(true);
-  const [showAdvHistory, setShowAdvHistory] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -310,7 +321,6 @@ function FundEntriesModal({ driver, month, year, onClose }: any) {
   }, [driver.driver_id, month, year]);
 
   return (
-    <>
     <Modal visible transparent animationType="fade">
       <View style={T.overlay}>
         <TouchableOpacity style={T.backdrop} onPress={onClose} activeOpacity={1} />
@@ -336,7 +346,7 @@ function FundEntriesModal({ driver, month, year, onClose }: any) {
             <>
               {/* Stats */}
               <View style={T.statsBar}>
-                <TouchableOpacity style={T.statItem} onPress={() => setShowAdvHistory(true)} activeOpacity={0.7}>
+                <TouchableOpacity style={T.statItem} onPress={onShowAdvances} activeOpacity={0.7}>
                   <Text style={[T.statValue, { color: '#3b82f6' }]}>{fmtVND(totals.advance)}đ</Text>
                   <Text style={T.statLabel}>Đã cấp</Text>
                 </TouchableOpacity>
@@ -403,16 +413,6 @@ function FundEntriesModal({ driver, month, year, onClose }: any) {
         </View>
       </View>
     </Modal>
-
-    {/* Lịch sử các lần cấp tiền */}
-    {showAdvHistory && (
-      <AdvanceHistoryModal
-        driver={driver}
-        month={month}
-        year={year}
-        onClose={() => setShowAdvHistory(false)}
-      />
-    )}
   </>
   );
 }
@@ -430,7 +430,6 @@ function AdvanceHistoryModal({ driver, month, year, onClose }: any) {
         const res = await api.get(`/fund/${driverId}/entries`, { params: { month, year } });
         const rows: any[] = res.data.data?.rows ?? [];
         const advRows = rows.filter((r: any) => (r.advance ?? 0) > 0);
-        Alert.alert('Debug', `driverId: ${driverId}\nrows: ${rows.length}\nadvRows: ${advRows.length}\ntotal: ${res.data.data?.totals?.advance}`);
         setAdvances(advRows.map((r: any) => ({
           _id:     r.entry_id ?? r.date,
           date:    r.date,
@@ -439,7 +438,7 @@ function AdvanceHistoryModal({ driver, month, year, onClose }: any) {
         })));
         setTotal(res.data.data?.totals?.advance ?? 0);
       } catch (e: any) {
-        Alert.alert('Error', e?.response?.data?.message ?? e?.message ?? 'Unknown error');
+        console.warn('[AdvanceHistory]', e?.response?.data ?? e?.message);
       }
       finally { setLoading(false); }
     })();
