@@ -1,10 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuthStore } from '@/stores/authStore';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Colors } from '@/constants/colors';
-import { useEffect, useRef } from 'react';
 import * as Notifications from 'expo-notifications';
 import { registerForPushNotifications } from '@/lib/notifications';
 import api from '@/lib/api';
