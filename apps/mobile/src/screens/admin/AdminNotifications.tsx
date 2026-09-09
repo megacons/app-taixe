@@ -33,11 +33,14 @@ interface HistoryItem {
   title:         string;
   message:       string;
   sent_count:    number;
+  read_count?:   number;
   created_at:    string;
   type?:         string;
   sent_by?:      string;
   target_ids?:   string[] | null;
   sent_to_names?: string[] | null;
+  _id?:          any;
+  batch_id?:     string | null;
 }
 
 interface Driver {
@@ -80,6 +83,11 @@ export default function AdminNotifications() {
   /* ── recipients modal (từ detail) ── */
   const [recipientsOf, setRecipientsOf] = useState<HistoryItem | null>(null);
 
+  /* ── read status modal ── */
+  const [readStatusOf,      setReadStatusOf]      = useState<HistoryItem | null>(null);
+  const [readStatusData,    setReadStatusData]    = useState<{ user_id: string; name: string; is_read: boolean; read_at: string | null }[]>([]);
+  const [readStatusLoading, setReadStatusLoading] = useState(false);
+
   /* ── delete ── */
   const [deleting, setDeleting] = useState(false);
 
@@ -99,6 +107,50 @@ export default function AdminNotifications() {
   }, []);
 
   useEffect(() => { loadHistory(); loadDrivers(); }, []);
+
+  /* ── Mở modal read status ── */
+  const openReadStatus = async (h: HistoryItem) => {
+    setReadStatusOf(h);
+    setReadStatusData([]);
+    setReadStatusLoading(true);
+    try {
+      const batchId = h._id && typeof h._id === 'string' ? h._id : h.batch_id;
+      const params: any = batchId
+        ? { batchId }
+        : { title: h.title, created_at: h.created_at };
+      const res = await api.get('/notifications/broadcast/read-status', { params });
+      setReadStatusData(res.data.data?.recipients ?? []);
+    } catch (_) { setReadStatusData([]); }
+    finally { setReadStatusLoading(false); }
+  };
+
+  /* ── Socket: lắng nghe notification:read realtime ── */
+  useEffect(() => {
+    let socket: any = null;
+    try {
+      const { io } = require('socket.io-client');
+      const BASE_URL = process.env.API_URL || 'http://192.168.88.181:5000';
+      socket = io(BASE_URL, { transports: ['polling', 'websocket'], reconnectionAttempts: 5 });
+      socket.on('connect', () => { socket.emit('join:admin'); });
+      socket.on('notification:read', (data: any) => {
+        // Cập nhật read_count trong history
+        setHistory(prev => prev.map((h: HistoryItem) => {
+          const hId = h._id && typeof h._id === 'string' ? h._id : null;
+          if (data.batch_id && hId === data.batch_id) {
+            return { ...h, read_count: (h.read_count ?? 0) + 1 };
+          }
+          return h;
+        }));
+        // Nếu modal đang mở → cập nhật luôn
+        setReadStatusData(prev => prev.map(r =>
+          r.user_id === data.user_id
+            ? { ...r, is_read: true, read_at: data.read_at }
+            : r
+        ));
+      });
+    } catch (_) {}
+    return () => { if (socket) socket.disconnect(); };
+  }, []);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -418,6 +470,16 @@ export default function AdminNotifications() {
                       ✓ {(!h.target_ids || h.target_ids.length === 0) ? 'Tất cả' : `${h.sent_count} người`}
                     </Text>
                   </TouchableOpacity>
+                  <TouchableOpacity
+                    style={S.readBadge}
+                    onPress={(e) => { e.stopPropagation(); openReadStatus(h); }}
+                    activeOpacity={0.7}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Text style={S.readBadgeText}>
+                      👁 {h.read_count ?? 0}/{h.sent_count}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
                 <Text style={S.histMsg} numberOfLines={2}>{stripHtml(h.message)}</Text>
                 <View style={S.histFooter}>
@@ -684,6 +746,83 @@ export default function AdminNotifications() {
           </View>
         </TouchableOpacity>
       </Modal>
+
+      {/* ════════════════════════════════
+          READ STATUS MODAL
+          ════════════════════════════════ */}
+      <Modal visible={!!readStatusOf} transparent animationType="fade">
+        <TouchableOpacity style={RS.overlay} activeOpacity={1} onPress={() => setReadStatusOf(null)}>
+          <View style={RS.sheet} onStartShouldSetResponder={() => true}>
+            {/* Header */}
+            <View style={RS.header}>
+              <Text style={RS.headerTitle}>Trạng thái đã đọc</Text>
+              <TouchableOpacity onPress={() => setReadStatusOf(null)} style={RS.closeBtn}>
+                <Text style={RS.closeIcon}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={RS.notifTitle} numberOfLines={2}>"{readStatusOf?.title}"</Text>
+
+            {readStatusLoading ? (
+              <View style={RS.loadBox}>
+                <ActivityIndicator color={Colors.primary} />
+                <Text style={RS.loadText}>Đang tải...</Text>
+              </View>
+            ) : readStatusData.length === 0 ? (
+              <View style={RS.loadBox}>
+                <Text style={RS.loadText}>Không có dữ liệu</Text>
+              </View>
+            ) : (
+              <>
+                {/* Progress bar */}
+                <View style={RS.progressBox}>
+                  <View style={RS.progressHeader}>
+                    <Text style={RS.progressLabel}>Đã đọc</Text>
+                    <Text style={RS.progressCount}>
+                      {readStatusData.filter(r => r.is_read).length}/{readStatusData.length}
+                    </Text>
+                  </View>
+                  <View style={RS.progressTrack}>
+                    <View style={[RS.progressBar, {
+                      width: `${readStatusData.length > 0
+                        ? (readStatusData.filter(r => r.is_read).length / readStatusData.length) * 100
+                        : 0}%` as any,
+                    }]} />
+                  </View>
+                </View>
+
+                {/* Danh sách */}
+                <ScrollView style={RS.list} showsVerticalScrollIndicator={false}>
+                  {[...readStatusData]
+                    .sort((a, b) => (b.is_read ? 1 : 0) - (a.is_read ? 1 : 0))
+                    .map((r, i) => (
+                      <View key={i} style={RS.row}>
+                        <View style={[RS.avatar, r.is_read && { backgroundColor: '#dbeafe' }]}>
+                          <Text style={[RS.avatarText, r.is_read && { color: '#1d4ed8' }]}>
+                            {r.name.charAt(0).toUpperCase()}
+                          </Text>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={RS.name}>{r.name}</Text>
+                          {r.is_read && r.read_at && (
+                            <Text style={RS.readTime}>
+                              {format(parseISO(r.read_at), 'HH:mm dd/MM', { locale: vi })}
+                            </Text>
+                          )}
+                        </View>
+                        <View style={[RS.statusBadge, r.is_read ? RS.statusRead : RS.statusUnread]}>
+                          <Text style={[RS.statusText, r.is_read ? RS.statusReadText : RS.statusUnreadText]}>
+                            {r.is_read ? '👁 Đã đọc' : 'Chưa đọc'}
+                          </Text>
+                        </View>
+                      </View>
+                    ))}
+                  <View style={{ height: 16 }} />
+                </ScrollView>
+              </>
+            )}
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -743,6 +882,8 @@ const S = StyleSheet.create({
   histTitle:    { fontSize: 14, fontWeight: '700', color: Colors.gray900, flex: 1 },
   sentBadge:    { backgroundColor: Colors.success + '20', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
   sentBadgeText:{ fontSize: 11, color: Colors.success, fontWeight: '700' },
+  readBadge:    { backgroundColor: '#dbeafe', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
+  readBadgeText:{ fontSize: 11, color: '#1d4ed8', fontWeight: '700' },
   histMsg:      { fontSize: 13, color: Colors.gray600, lineHeight: 18 },
   histFooter:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 },
   histTime:     { fontSize: 11, color: Colors.gray400 },
@@ -844,4 +985,35 @@ const RM = StyleSheet.create({
   emptyText:   { fontSize: 14, color: Colors.gray500, textAlign: 'center' },
   footer:      { paddingHorizontal: 20, paddingVertical: 12, borderTopWidth: 1, borderTopColor: Colors.gray100, alignItems: 'center' },
   footerText:  { fontSize: 12, color: Colors.gray400 },
+});
+
+/* ── Read Status modal styles ── */
+const RS = StyleSheet.create({
+  overlay:       { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 },
+  sheet:         { backgroundColor: Colors.white, borderRadius: 20, width: '100%', maxHeight: '80%', overflow: 'hidden' },
+  header:        { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: Colors.gray100 },
+  headerTitle:   { fontSize: 16, fontWeight: '700', color: Colors.gray900 },
+  closeBtn:      { width: 28, height: 28, borderRadius: 14, backgroundColor: Colors.gray100, justifyContent: 'center', alignItems: 'center' },
+  closeIcon:     { fontSize: 12, fontWeight: '700', color: Colors.gray600 },
+  notifTitle:    { fontSize: 12, color: Colors.gray500, fontStyle: 'italic', paddingHorizontal: 20, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: Colors.gray100 },
+  loadBox:       { padding: 32, alignItems: 'center', gap: 8 },
+  loadText:      { fontSize: 14, color: Colors.gray400 },
+  progressBox:   { paddingHorizontal: 20, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Colors.gray100 },
+  progressHeader:{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
+  progressLabel: { fontSize: 12, fontWeight: '600', color: Colors.gray600 },
+  progressCount: { fontSize: 12, fontWeight: '700', color: '#1d4ed8' },
+  progressTrack: { height: 6, backgroundColor: Colors.gray100, borderRadius: 3 },
+  progressBar:   { height: 6, backgroundColor: '#3b82f6', borderRadius: 3 },
+  list:          { maxHeight: 320 },
+  row:           { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Colors.gray50 },
+  avatar:        { width: 34, height: 34, borderRadius: 17, backgroundColor: Colors.gray100, justifyContent: 'center', alignItems: 'center', flexShrink: 0 },
+  avatarText:    { fontSize: 13, fontWeight: '700', color: Colors.gray600 },
+  name:          { fontSize: 14, color: Colors.gray800, fontWeight: '500' },
+  readTime:      { fontSize: 11, color: Colors.gray400, marginTop: 1 },
+  statusBadge:   { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3, flexShrink: 0 },
+  statusRead:    { backgroundColor: '#dbeafe' },
+  statusUnread:  { backgroundColor: Colors.gray100 },
+  statusText:    { fontSize: 11, fontWeight: '600' },
+  statusReadText:{ color: '#1d4ed8' },
+  statusUnreadText: { color: Colors.gray500 },
 });
