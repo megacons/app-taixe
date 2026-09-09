@@ -174,10 +174,10 @@ export default function RequestHistoryScreen() {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={S.chipBar}
-        style={{ flexGrow: 0 }}
-        keyboardShouldPersistTaps="handled"
+        style={S.filterBar}
+        contentContainerStyle={S.filterContent}
         bounces={false}
+        keyboardShouldPersistTaps="handled"
       >
         {CHIPS.map(chip => {
           const active = statusFilter === chip.key;
@@ -188,7 +188,7 @@ export default function RequestHistoryScreen() {
               onPress={() => setStatusFilter(chip.key)}
               activeOpacity={0.8}
             >
-              <Text style={[S.chipText, active && S.chipTextActive]} numberOfLines={1}>
+              <Text style={[S.chipText, active && S.chipTextActive]}>
                 {chip.label}
               </Text>
             </TouchableOpacity>
@@ -325,28 +325,13 @@ const S = StyleSheet.create({
   searchInput: { flex: 1, fontSize: 15, color: Colors.gray900 },
 
   /* Filter chips */
-  chipBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    gap: 8,
-    paddingEnd: 16,
-  },
-  chip: {
-    paddingHorizontal: 16, paddingVertical: 7,
-    borderRadius: 50, borderWidth: 1.5, borderColor: Colors.gray200,
-    backgroundColor: Colors.white,
-    flexShrink: 0,
-    flexGrow: 0,
-    minWidth: 80,
-    alignItems: 'center',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04, shadowRadius: 4, elevation: 1,
-  },
-  chipActive:     { backgroundColor: PRIMARY_C, borderColor: PRIMARY_C },
-  chipText:       { fontSize: 13, fontWeight: '600', color: Colors.gray600, textAlign: 'center' },
-  chipTextActive: { color: Colors.white },
+  filterBar:     { backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.border, maxHeight: 52 },
+  filterContent: { paddingHorizontal: 12, paddingVertical: 6, gap: 8, paddingRight: 20, flexDirection: 'row', alignItems: 'center' },
+  chipBar:       {}, // unused
+  chip:          { height: 32, paddingHorizontal: 14, justifyContent: 'center', borderRadius: 8, borderWidth: 1.5, borderColor: Colors.gray200, backgroundColor: Colors.white },
+  chipActive:    { borderColor: PRIMARY_C, backgroundColor: PRIMARY_C + '10' },
+  chipText:      { fontSize: 12, fontWeight: '600', color: Colors.gray600 },
+  chipTextActive:{ color: PRIMARY_C },
 
   /* List */
   listContent:    { padding: 16, paddingBottom: 32 },
