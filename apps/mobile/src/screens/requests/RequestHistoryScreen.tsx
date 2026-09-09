@@ -339,11 +339,13 @@ const S = StyleSheet.create({
     backgroundColor: Colors.white,
     flexShrink: 0,
     flexGrow: 0,
+    minWidth: 80,
+    alignItems: 'center',
     shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04, shadowRadius: 4, elevation: 1,
   },
   chipActive:     { backgroundColor: PRIMARY_C, borderColor: PRIMARY_C },
-  chipText:       { fontSize: 13, fontWeight: '600', color: Colors.gray600 },
+  chipText:       { fontSize: 13, fontWeight: '600', color: Colors.gray600, textAlign: 'center' },
   chipTextActive: { color: Colors.white },
 
   /* List */
