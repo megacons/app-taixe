@@ -72,10 +72,25 @@ router.get('/', authenticate, async (req, res, next) => {
  */
 router.put('/:id/read', authenticate, async (req, res, next) => {
   try {
-    await Notification.findOneAndUpdate(
+    const notif = await Notification.findOneAndUpdate(
       { _id: req.params.id, user_id: req.user._id },
-      { $set: { is_read: true, read_at: new Date() } }
+      { $set: { is_read: true, read_at: new Date() } },
+      { new: true }
     );
+
+    // Emit realtime cho admin biết người dùng đã đọc
+    if (notif) {
+      const io = req.app.get('io');
+      if (io) {
+        io.to('admin').emit('notification:read', {
+          notification_id: String(notif._id),
+          user_id:         String(notif.user_id),
+          batch_id:        notif.data?.batch_id ?? null,
+          read_at:         notif.read_at,
+        });
+      }
+    }
+
     res.json({ success: true, message: 'Đã đọc thông báo' });
   } catch (err) {
     next(err);
@@ -280,6 +295,7 @@ router.get('/broadcast/history', authenticate, async (req, res, next) => {
         $group: {
           _id:        { $ifNull: ['$data.batch_id', { title: '$title', message: '$message', minute: { $dateToString: { format: '%Y-%m-%dT%H:%M', date: '$created_at' } } }] },
           sent_count: { $sum: 1 },
+          read_count: { $sum: { $cond: ['$is_read', 1, 0] } },
           created_at: { $first: '$created_at' },
           title:      { $first: '$title' },
           message:    { $first: '$message' },
@@ -336,6 +352,62 @@ router.get('/broadcast/history', authenticate, async (req, res, next) => {
     }));
 
     res.json({ success: true, data: { history: result } });
+  } catch (err) { next(err); }
+});
+
+/**
+ * GET /notifications/broadcast/read-status?batchId=xxx
+ * Lấy danh sách người nhận + trạng thái đã đọc/chưa đọc
+ */
+router.get('/broadcast/read-status', authenticate, async (req, res, next) => {
+  try {
+    if (!['manager', 'coordinator', 'accountant'].includes(req.user.role)) {
+      return res.status(403).json({ success: false, message: 'Không có quyền' });
+    }
+
+    const { batchId, title, created_at } = req.query;
+    if (!batchId && !title) {
+      return res.status(400).json({ success: false, message: 'Cần batchId hoặc title' });
+    }
+
+    let filter = {};
+    if (batchId) {
+      filter = { 'data.batch_id': batchId, 'data.sent_by': { $exists: true } };
+    } else {
+      // Fallback: tìm theo title + thời gian gần nhau (±1 phút)
+      const dt = created_at ? new Date(created_at) : new Date();
+      const from = new Date(dt); from.setSeconds(0, 0);
+      const to   = new Date(dt); to.setSeconds(59, 999);
+      filter = { title, created_at: { $gte: from, $lte: to }, 'data.sent_by': { $exists: true } };
+    }
+
+    const notifs = await Notification.find(filter)
+      .select('user_id is_read read_at')
+      .lean();
+
+    const { User } = require('../models');
+    const { Driver } = require('../models');
+
+    const userIds = notifs.map(n => n.user_id);
+    const users   = await User.find({ _id: { $in: userIds } }).select('name').lean();
+    const drivers = await Driver.find({ user_id: { $in: userIds } }).select('full_name user_id').lean();
+
+    const nameMap: Record<string, string> = {};
+    users.forEach(u  => { nameMap[u._id.toString()] = u.name; });
+    drivers.forEach(d => {
+      if (d.user_id) nameMap[d.user_id.toString()] = d.full_name;
+    });
+
+    const recipients = notifs.map(n => ({
+      user_id: String(n.user_id),
+      name:    nameMap[String(n.user_id)] ?? 'Không rõ',
+      is_read: n.is_read,
+      read_at: n.read_at ?? null,
+    }));
+
+    const read_count = recipients.filter(r => r.is_read).length;
+
+    res.json({ success: true, data: { recipients, read_count, sent_count: recipients.length } });
   } catch (err) { next(err); }
 });
 

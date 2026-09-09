@@ -3,6 +3,7 @@ import {
   BellIcon, PaperAirplaneIcon, UserGroupIcon,
   ClockIcon, CheckCircleIcon, PaperClipIcon, XMarkIcon,
   PencilIcon, TrashIcon, ArrowPathIcon, CurrencyDollarIcon,
+  EyeIcon,
 } from '@heroicons/react/24/outline';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
@@ -45,11 +46,13 @@ interface HistoryItem {
   title:          string;
   message:        string;
   sent_count:     number;
+  read_count?:    number;
   created_at:     string;
   type?:          string;
   sent_by?:       string;
   target_ids?:    string[] | null;
   sent_to_names?: string[] | null;
+  batch_id?:      string | null;
   attachment?: {
     url:           string;
     original_name: string;
@@ -133,6 +136,11 @@ export default function NotificationsPage() {
   // Recall state
   const [recalling, setRecalling] = useState<string | null>(null); // created_at của item đang recall
 
+  // Read status modal
+  const [showReadStatusOf, setShowReadStatusOf] = useState<HistoryItem | null>(null);
+  const [readStatusData, setReadStatusData]     = useState<{ user_id: string; name: string; is_read: boolean; read_at: string | null }[]>([]);
+  const [readStatusLoading, setReadStatusLoading] = useState(false);
+
   // File preview lightbox
   const [lightbox, setLightbox] = useState<string | null>(null);
   const [filePreview, setFilePreview] = useState<{ url: string; mime: string; name: string } | null>(null);
@@ -153,6 +161,51 @@ export default function NotificationsPage() {
       setHistory(res.data.data?.history ?? []);
     } catch { /* silent */ }
     finally { setHistLoading(false); }
+  }, []);
+
+  /* ── Mở modal read status ── */
+  const openReadStatus = async (h: HistoryItem) => {
+    setShowReadStatusOf(h);
+    setReadStatusLoading(true);
+    try {
+      const batchId = (h as any)._id ?? (h as any).batch_id;
+      const params: any = batchId && typeof batchId === 'string'
+        ? { batchId }
+        : { title: h.title, created_at: h.created_at };
+      const res = await api.get('/notifications/broadcast/read-status', { params });
+      setReadStatusData(res.data.data?.recipients ?? []);
+    } catch { setReadStatusData([]); }
+    finally { setReadStatusLoading(false); }
+  };
+
+  /* ── Socket: lắng nghe notification:read realtime ── */
+  useEffect(() => {
+    let socket: any = null;
+    try {
+      const { io } = require('socket.io-client');
+      const BASE_URL = process.env.REACT_APP_API_URL || (window as any).__API_URL__ || 'https://namthanhapi-production.up.railway.app';
+      socket = io(BASE_URL, { transports: ['polling', 'websocket'], reconnectionAttempts: 5 });
+      socket.on('connect', () => {
+        socket.emit('join:admin');
+      });
+      socket.on('notification:read', (data: any) => {
+        // Cập nhật read_count trong history realtime
+        setHistory(prev => prev.map(h => {
+          const hBatchId = (h as any)._id ?? (h as any).batch_id;
+          if (data.batch_id && hBatchId === data.batch_id) {
+            return { ...h, read_count: (h.read_count ?? 0) + 1 };
+          }
+          return h;
+        }));
+        // Nếu modal read status đang mở → cập nhật luôn
+        setReadStatusData(prev => prev.map(r =>
+          r.user_id === data.user_id
+            ? { ...r, is_read: true, read_at: data.read_at }
+            : r
+        ));
+      });
+    } catch (_) {}
+    return () => { if (socket) socket.disconnect(); };
   }, []);
 
   useEffect(() => {
@@ -682,6 +735,15 @@ Công ty TNHH Vận tải Nam Thành`;
                               ? 'Tất cả'
                               : `${h.sent_count} người`}
                           </button>
+                          {/* Badge đã đọc */}
+                          <button
+                            onClick={() => openReadStatus(h)}
+                            className="inline-flex items-center gap-1 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium flex-shrink-0 hover:bg-blue-200 transition-colors cursor-pointer"
+                            title="Xem chi tiết ai đã đọc"
+                          >
+                            <EyeIcon className="w-3 h-3" />
+                            {h.read_count ?? 0}/{h.sent_count} đã đọc
+                          </button>
                           {h.type && h.type !== 'announcement' && (
                             <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full flex-shrink-0">
                               {TYPE_OPTIONS.find(t => t.value === h.type)?.label ?? h.type}
@@ -928,6 +990,75 @@ Công ty TNHH Vận tải Nam Thành`;
           </div>
         </div>
       </Modal>
+
+      {/* ── Modal xem trạng thái đã đọc ── */}
+      {showReadStatusOf && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50"
+          onClick={() => setShowReadStatusOf(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6"
+            onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-bold text-gray-900">Trạng thái đã đọc</h3>
+              <button onClick={() => setShowReadStatusOf(null)}
+                className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 font-bold">✕</button>
+            </div>
+            <p className="text-xs text-gray-500 mb-4 italic">"{showReadStatusOf.title}"</p>
+
+            {readStatusLoading ? (
+              <div className="py-8 text-center text-gray-400 text-sm">Đang tải...</div>
+            ) : readStatusData.length === 0 ? (
+              <div className="py-8 text-center text-gray-400 text-sm">Không có dữ liệu</div>
+            ) : (
+              <>
+                {/* Progress bar */}
+                <div className="mb-4">
+                  <div className="flex justify-between text-xs text-gray-500 mb-1">
+                    <span>Đã đọc</span>
+                    <span className="font-semibold text-blue-600">
+                      {readStatusData.filter(r => r.is_read).length}/{readStatusData.length}
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-2">
+                    <div
+                      className="bg-blue-500 h-2 rounded-full transition-all duration-500"
+                      style={{ width: `${readStatusData.length > 0 ? (readStatusData.filter(r => r.is_read).length / readStatusData.length) * 100 : 0}%` }}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1 max-h-64 overflow-y-auto">
+                  {readStatusData
+                    .sort((a, b) => (b.is_read ? 1 : 0) - (a.is_read ? 1 : 0))
+                    .map((r, i) => (
+                      <div key={i} className="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0">
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${r.is_read ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'}`}>
+                          {r.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-800 truncate">{r.name}</p>
+                          {r.is_read && r.read_at && (
+                            <p className="text-xs text-gray-400">
+                              {format(parseISO(r.read_at), 'HH:mm dd/MM', { locale: vi })}
+                            </p>
+                          )}
+                        </div>
+                        {r.is_read ? (
+                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium flex-shrink-0 flex items-center gap-1">
+                            <EyeIcon className="w-3 h-3" /> Đã đọc
+                          </span>
+                        ) : (
+                          <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full flex-shrink-0">
+                            Chưa đọc
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ── Lightbox xem ảnh ── */}
       {lightbox && (
