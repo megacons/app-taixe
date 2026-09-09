@@ -444,7 +444,7 @@ export default function DashboardScreen() {
             ).map((item, i) => {
               const isToday  = item.dateStr === new Date().toISOString().slice(0, 10);
               const isFuture = (item as any).isFuture;
-              const barH = Math.max(item.height, 6);
+              const barH = Math.max(item.height, 20);
               return (
                 <TouchableOpacity
                   key={i}
@@ -886,7 +886,7 @@ const styles = StyleSheet.create({
   weekNavLabel:    { fontSize: 12, fontWeight: '600', color: Colors.gray600, minWidth: 76, textAlign: 'center' },
   chartLabelRow: { flexDirection: 'row', marginBottom: 2 },
   chartLabelCell: { flex: 1, alignItems: 'center' },
-  chartBody: { flexDirection: 'row', alignItems: 'flex-end', height: 70, gap: 4, marginTop: 0 },
+  chartBody: { flexDirection: 'row', alignItems: 'flex-end', height: 90, gap: 4, marginTop: 0 },
   barWrapper: { flex: 1, alignItems: 'center', height: '100%', justifyContent: 'flex-end', gap: 2 },
   bar: { width: '100%', backgroundColor: Colors.primary, borderRadius: 4, opacity: 0.75, overflow: 'hidden' },
   barActive: { opacity: 1, backgroundColor: Colors.accent },
