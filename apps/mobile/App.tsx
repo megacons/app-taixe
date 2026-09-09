@@ -10,24 +10,11 @@ import { useAuthStore } from './src/stores/authStore';
 import ErrorBoundary from './src/components/ErrorBoundary';
 import {
   registerForPushNotifications,
-  showLocalNotification,
 } from './src/lib/notifications';
 
 SplashScreen.preventAutoHideAsync();
 
 const BASE_URL = process.env.API_URL || 'http://192.168.88.181:5000';
-
-const TYPE_LABEL: Record<string, string> = {
-  salary_advance:          'Tạm ứng lương',
-  expense:                 'Chi phí',
-  leave:                   'Nghỉ phép',
-  purchase:                'Mua hàng',
-  additional_trip:         'Thêm chuyến',
-  attendance_adjustment:   'Điều chỉnh công',
-  announcement:            'Thông báo',
-  discipline:              'Kỷ luật',
-  holiday:                 'Nghỉ lễ',
-};
 
 export default function App() {
   const logout    = useAuthStore(s => s.logout);
@@ -80,17 +67,9 @@ export default function App() {
     });
 
     // ── ADMIN: nhận yêu cầu mới từ tài xế ──
-    socket.on('new:request', async (data: any) => {
+    socket.on('new:request', (data: any) => {
       if (user.role === 'driver') return;
-      // Chỉ show local khi foreground — background đã có Expo Push
-      if (AppState.currentState === 'active') {
-        const typeName = TYPE_LABEL[data.type] ?? data.type ?? 'Yêu cầu';
-        await showLocalNotification(
-          `🔔 Yêu cầu mới — ${typeName}`,
-          `${data.driver_name ?? 'Tài xế'}: ${data.title}`,
-          { type: 'new_request', ...data }
-        );
-      }
+      // Expo Push đã gửi notification từ server — socket chỉ update UI
       DeviceEventEmitter.emit('NEW_REQUEST', data);
     });
 
@@ -99,38 +78,19 @@ export default function App() {
     });
 
     // ── DRIVER: nhận kết quả duyệt ──
-    socket.on('request:approved', async (data: any) => {
-      // Chỉ show local notification khi app foreground — background đã có Expo Push
-      if (AppState.currentState === 'active') {
-        await showLocalNotification(
-          '✅ Yêu cầu được duyệt',
-          `"${data.title}" đã được duyệt.`,
-          { type: 'request_approved', ...data }
-        );
-      }
+    socket.on('request:approved', (data: any) => {
+      // Expo Push đã gửi notification từ server — socket chỉ update UI
       DeviceEventEmitter.emit('REQUEST_UPDATED', data);
     });
 
-    socket.on('request:rejected', async (data: any) => {
-      if (AppState.currentState === 'active') {
-        await showLocalNotification(
-          '❌ Yêu cầu bị từ chối',
-          `"${data.title}" bị từ chối.${data.reason ? ` Lý do: ${data.reason}` : ''}`,
-          { type: 'request_rejected', ...data }
-        );
-      }
+    socket.on('request:rejected', (data: any) => {
+      // Expo Push đã gửi notification từ server — socket chỉ update UI
       DeviceEventEmitter.emit('REQUEST_UPDATED', data);
     });
 
     // ── TẤT CẢ: nhận thông báo broadcast từ admin ──
-    socket.on('notification', async (data: any) => {
-      // Chỉ show khi foreground — background đã có Expo Push từ server
-      if (AppState.currentState !== 'active') return;
-      const title = data?.title ?? 'Thông báo mới';
-      const body  = data?.message
-        ? String(data.message).replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim().slice(0, 120)
-        : 'Bạn có thông báo mới';
-      await showLocalNotification(title, body, { type: data?.type ?? 'announcement', ...data });
+    socket.on('notification', (data: any) => {
+      // Expo Push đã gửi notification từ server — socket chỉ update badge/list
       DeviceEventEmitter.emit('REQUEST_UPDATED', {});
     });
 
