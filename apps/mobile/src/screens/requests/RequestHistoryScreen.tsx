@@ -177,6 +177,7 @@ export default function RequestHistoryScreen() {
         contentContainerStyle={S.chipBar}
         style={{ flexGrow: 0 }}
         keyboardShouldPersistTaps="handled"
+        bounces={false}
       >
         {CHIPS.map(chip => {
           const active = statusFilter === chip.key;
@@ -187,7 +188,7 @@ export default function RequestHistoryScreen() {
               onPress={() => setStatusFilter(chip.key)}
               activeOpacity={0.8}
             >
-              <Text style={[S.chipText, active && S.chipTextActive]}>
+              <Text style={[S.chipText, active && S.chipTextActive]} numberOfLines={1}>
                 {chip.label}
               </Text>
             </TouchableOpacity>
@@ -326,15 +327,18 @@ const S = StyleSheet.create({
   /* Filter chips */
   chipBar: {
     flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 8,
     gap: 8,
+    paddingEnd: 16,
   },
   chip: {
     paddingHorizontal: 16, paddingVertical: 7,
     borderRadius: 50, borderWidth: 1.5, borderColor: Colors.gray200,
     backgroundColor: Colors.white,
     flexShrink: 0,
+    flexGrow: 0,
     shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04, shadowRadius: 4, elevation: 1,
   },
