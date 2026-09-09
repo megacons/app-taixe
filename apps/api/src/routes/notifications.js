@@ -392,7 +392,7 @@ router.get('/broadcast/read-status', authenticate, async (req, res, next) => {
     const users   = await User.find({ _id: { $in: userIds } }).select('name').lean();
     const drivers = await Driver.find({ user_id: { $in: userIds } }).select('full_name user_id').lean();
 
-    const nameMap: Record<string, string> = {};
+    const nameMap = {};
     users.forEach(u  => { nameMap[u._id.toString()] = u.name; });
     drivers.forEach(d => {
       if (d.user_id) nameMap[d.user_id.toString()] = d.full_name;
