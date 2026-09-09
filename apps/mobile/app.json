@@ -67,7 +67,6 @@
           "enableBackgroundRemoteNotifications": true
         }
       ],
-      "expo-device",
       "expo-secure-store",
       "expo-splash-screen",
       "expo-status-bar"
