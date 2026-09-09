@@ -422,7 +422,8 @@ Công ty TNHH Vận tải Nam Thành`;
               <h2 className="font-semibold text-gray-900">Soạn thông báo</h2>
             </div>
 
-            {/* Người nhận */}
+            {/* Người nhận — ẩn khi type là salary (lương gửi cá nhân riêng ở section bên dưới) */}
+            {type !== 'salary' && (
             <div>
               <label className="form-label">
                 Người nhận
@@ -536,6 +537,7 @@ Công ty TNHH Vận tải Nam Thành`;
                 </div>
               )}
             </div>
+            )} {/* end type !== salary */}
 
             {/* Loại */}
             <div>
