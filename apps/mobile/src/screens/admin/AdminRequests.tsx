@@ -227,6 +227,7 @@ export default function AdminRequests() {
         style={{ flex: 1 }}
       >
         <View style={M.overlay}>
+          <TouchableOpacity style={M.backdrop} onPress={() => setRejectTarget(null)} activeOpacity={1} />
           <View style={M.sheet}>
             <Text style={M.title}>Lý do từ chối</Text>
             <Text style={M.subtitle} numberOfLines={2}>
@@ -304,6 +305,7 @@ const S = StyleSheet.create({
 
 const M = StyleSheet.create({
   overlay:   { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: 'rgba(0,0,0,0.65)' },
+  backdrop:  { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.01)' },
   sheet:     { backgroundColor: '#fff', borderRadius: 20, width: '100%', padding: 20, paddingBottom: 24 },
   title:     { fontSize: 17, fontWeight: '800', color: Colors.gray900, marginBottom: 6 },
   subtitle:  { fontSize: 13, color: Colors.gray500, marginBottom: 14, fontStyle: 'italic' },

@@ -315,7 +315,7 @@ const S = StyleSheet.create({
 
 const D = StyleSheet.create({
   overlay:  { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: 'rgba(0,0,0,0.65)' },
-  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'transparent' },
+  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.01)' },
   sheet:    { backgroundColor: Colors.white, borderRadius: 20, width: '100%', maxHeight: '90%', overflow: 'hidden' },
 
   header:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: Colors.primary },

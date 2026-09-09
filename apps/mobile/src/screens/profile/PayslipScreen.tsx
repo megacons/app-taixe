@@ -186,6 +186,7 @@ export default function PayslipScreen() {
       {/* Modal chi tiết tiền ứng */}
       <Modal visible={showAdvance} transparent animationType="fade">
         <View style={M.overlay}>
+          <TouchableOpacity style={M.backdrop} onPress={() => setShowAdvance(false)} activeOpacity={1} />
           <View style={M.sheet}>
             <View style={M.sheetHeader}>
               <Text style={M.sheetTitle}>Chi tiết tiền ứng</Text>
@@ -251,6 +252,7 @@ const R = StyleSheet.create({
 
 const M = StyleSheet.create({
   overlay:     { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: 'rgba(0,0,0,0.65)' },
+  backdrop:    { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.01)' },
   sheet:       { backgroundColor: Colors.white, borderRadius: 20, width: '100%', maxHeight: '75%', overflow: 'hidden' },
   sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: Colors.gray100 },
   sheetTitle:  { fontSize: 16, fontWeight: '700', color: Colors.gray900 },

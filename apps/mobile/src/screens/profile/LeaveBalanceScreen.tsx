@@ -160,6 +160,7 @@ export default function LeaveBalanceScreen() {
       {/* ── Modal chi tiết yêu cầu ── */}
       <Modal visible={!!selected} transparent animationType="fade" onRequestClose={() => setSelected(null)}>
         <View style={S.modalOverlay}>
+          <TouchableOpacity style={S.modalBackdrop} onPress={() => setSelected(null)} activeOpacity={1} />
           <View style={S.modalSheet}>
             {/* Handle bar */}
             <View style={S.modalHandle} />
@@ -267,6 +268,7 @@ const S = StyleSheet.create({
 
   // Modal
   modalOverlay:     { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: 'rgba(0,0,0,0.65)' },
+  modalBackdrop:    { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.01)' },
   modalSheet:       { backgroundColor: '#fff', borderRadius: 20, width: '100%', paddingHorizontal: 20, paddingBottom: 24, maxHeight: '85%' },
   modalHandle:      { display: 'none' } as any,
   modalHeader:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12 },

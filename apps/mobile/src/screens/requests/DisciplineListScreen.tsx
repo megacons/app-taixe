@@ -199,7 +199,7 @@ export default function DisciplineListScreen() {
         <Modal visible transparent animationType="fade">
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: 'rgba(0,0,0,0.65)' }}>
             <TouchableOpacity
-              style={{ ...StyleSheet.absoluteFillObject, backgroundColor: 'transparent' } as any}
+              style={{ ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.01)' } as any}
               onPress={() => setSelectedNotif(null)}
               activeOpacity={1}
             />

@@ -384,7 +384,7 @@ const S = StyleSheet.create({
 
 const M = StyleSheet.create({
   overlay:  { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: 'rgba(0,0,0,0.65)' },
-  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'transparent' },
+  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.01)' },
   sheet:    { backgroundColor: Colors.white, borderRadius: 20, width: '100%', paddingBottom: 16, overflow: 'hidden' },
   mHeader:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.gray200 },
   mTitle:   { fontSize: 16, fontWeight: '700', color: Colors.gray900 },
