@@ -82,12 +82,15 @@ export default function App() {
     // ── ADMIN: nhận yêu cầu mới từ tài xế ──
     socket.on('new:request', async (data: any) => {
       if (user.role === 'driver') return;
-      const typeName = TYPE_LABEL[data.type] ?? data.type ?? 'Yêu cầu';
-      await showLocalNotification(
-        `🔔 Yêu cầu mới — ${typeName}`,
-        `${data.driver_name ?? 'Tài xế'}: ${data.title}`,
-        { type: 'new_request', ...data }
-      );
+      // Chỉ show local khi foreground — background đã có Expo Push
+      if (AppState.currentState === 'active') {
+        const typeName = TYPE_LABEL[data.type] ?? data.type ?? 'Yêu cầu';
+        await showLocalNotification(
+          `🔔 Yêu cầu mới — ${typeName}`,
+          `${data.driver_name ?? 'Tài xế'}: ${data.title}`,
+          { type: 'new_request', ...data }
+        );
+      }
       DeviceEventEmitter.emit('NEW_REQUEST', data);
     });
 
@@ -97,25 +100,32 @@ export default function App() {
 
     // ── DRIVER: nhận kết quả duyệt ──
     socket.on('request:approved', async (data: any) => {
-      await showLocalNotification(
-        '✅ Yêu cầu được duyệt',
-        `"${data.title}" đã được duyệt.`,
-        { type: 'request_approved', ...data }
-      );
+      // Chỉ show local notification khi app foreground — background đã có Expo Push
+      if (AppState.currentState === 'active') {
+        await showLocalNotification(
+          '✅ Yêu cầu được duyệt',
+          `"${data.title}" đã được duyệt.`,
+          { type: 'request_approved', ...data }
+        );
+      }
       DeviceEventEmitter.emit('REQUEST_UPDATED', data);
     });
 
     socket.on('request:rejected', async (data: any) => {
-      await showLocalNotification(
-        '❌ Yêu cầu bị từ chối',
-        `"${data.title}" bị từ chối.${data.reason ? ` Lý do: ${data.reason}` : ''}`,
-        { type: 'request_rejected', ...data }
-      );
+      if (AppState.currentState === 'active') {
+        await showLocalNotification(
+          '❌ Yêu cầu bị từ chối',
+          `"${data.title}" bị từ chối.${data.reason ? ` Lý do: ${data.reason}` : ''}`,
+          { type: 'request_rejected', ...data }
+        );
+      }
       DeviceEventEmitter.emit('REQUEST_UPDATED', data);
     });
 
     // ── TẤT CẢ: nhận thông báo broadcast từ admin ──
     socket.on('notification', async (data: any) => {
+      // Chỉ show khi foreground — background đã có Expo Push từ server
+      if (AppState.currentState !== 'active') return;
       const title = data?.title ?? 'Thông báo mới';
       const body  = data?.message
         ? String(data.message).replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim().slice(0, 120)
