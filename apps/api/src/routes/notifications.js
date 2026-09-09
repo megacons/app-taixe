@@ -8,7 +8,18 @@ const https = require('https');
 async function sendExpoPush(tokens, title, body, data = {}) {
   const valid = (tokens || []).filter(t => t && String(t).startsWith('ExponentPushToken'));
   if (valid.length === 0) return;
-  const messages = valid.map(to => ({ to, title, body, data, sound: 'default', priority: 'high', channelId: 'default' }));
+  const messages = valid.map(to => ({
+    to,
+    title,
+    body,
+    data,
+    sound:     'default',
+    priority:  'high',
+    channelId: 'requests',  // Android channel với lockscreenVisibility PUBLIC
+    ttl:       0,
+    badge:     1,
+    _contentAvailable: true,
+  }));
   const payload = JSON.stringify(messages);
   const options = {
     hostname: 'exp.host', path: '/--/api/v2/push/send', method: 'POST',

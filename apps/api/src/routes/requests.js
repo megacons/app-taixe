@@ -12,8 +12,16 @@ async function sendExpoPush(tokens, title, body, data = {}) {
   if (valid.length === 0) return;
 
   const messages = valid.map(to => ({
-    to, title, body, data, sound: 'default', priority: 'high',
-    channelId: 'default',
+    to,
+    title,
+    body,
+    data,
+    sound:     'default',
+    priority:  'high',
+    channelId: 'requests',  // Android channel với lockscreenVisibility PUBLIC
+    ttl:       0,           // Gửi ngay, không cache
+    badge:     1,
+    _contentAvailable: true, // iOS background fetch
   }));
 
   const payload = JSON.stringify(messages);

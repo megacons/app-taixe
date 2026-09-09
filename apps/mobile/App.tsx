@@ -114,6 +114,16 @@ export default function App() {
       DeviceEventEmitter.emit('REQUEST_UPDATED', data);
     });
 
+    // ── TẤT CẢ: nhận thông báo broadcast từ admin ──
+    socket.on('notification', async (data: any) => {
+      const title = data?.title ?? 'Thông báo mới';
+      const body  = data?.message
+        ? String(data.message).replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim().slice(0, 120)
+        : 'Bạn có thông báo mới';
+      await showLocalNotification(title, body, { type: data?.type ?? 'announcement', ...data });
+      DeviceEventEmitter.emit('REQUEST_UPDATED', {});
+    });
+
     // Re-join khi app về foreground
     const appStateSub = AppState.addEventListener('change', state => {
       if (state === 'active' && socket.connected) {
