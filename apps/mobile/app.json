@@ -22,7 +22,8 @@
         "NSLocationWhenInUseUsageDescription": "Ứng dụng cần truy cập vị trí để ghi nhận địa điểm chuyến hàng",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Ứng dụng cần truy cập vị trí nền để theo dõi GPS",
         "NSCameraUsageDescription": "Ứng dụng cần truy cập camera để chụp ảnh biên nhận",
-        "NSPhotoLibraryUsageDescription": "Ứng dụng cần truy cập thư viện ảnh để tải lên biên nhận"
+        "NSPhotoLibraryUsageDescription": "Ứng dụng cần truy cập thư viện ảnh để tải lên biên nhận",
+        "UIBackgroundModes": ["remote-notification", "fetch"]
       }
     },
     "android": {
@@ -45,7 +46,10 @@
         "android.permission.INTERNET",
         "android.permission.RECEIVE_BOOT_COMPLETED",
         "android.permission.VIBRATE",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.RECORD_AUDIO",
+        "android.permission.USE_FULL_SCREEN_INTENT",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.WAKE_LOCK"
       ],
       "versionCode": 1
     },
@@ -59,9 +63,11 @@
           "icon": "./assets/icon.png",
           "color": "#163797",
           "defaultChannel": "default",
-          "sounds": []
+          "sounds": [],
+          "enableBackgroundRemoteNotifications": true
         }
       ],
+      "expo-device",
       "expo-secure-store",
       "expo-splash-screen",
       "expo-status-bar"

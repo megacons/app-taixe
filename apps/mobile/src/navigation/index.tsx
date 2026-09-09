@@ -1,9 +1,13 @@
 import { useEffect } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuthStore } from '@/stores/authStore';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Colors } from '@/constants/colors';
+import { useEffect, useRef } from 'react';
+import * as Notifications from 'expo-notifications';
+import { registerForPushNotifications } from '@/lib/notifications';
+import api from '@/lib/api';
 
 // Auth
 import LoginScreen from '@/screens/auth/LoginScreen';
@@ -74,13 +78,56 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function Navigation() {
   const { isAuthenticated, loadStoredAuth, user } = useAuthStore();
+  const navigationRef = useNavigationContainerRef<RootStackParamList>();
+  const notifListener = useRef<any>(null);
+  const responseListener = useRef<any>(null);
 
   useEffect(() => {
     loadStoredAuth();
   }, []);
 
+  // Đăng ký push token sau khi authenticated
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    (async () => {
+      try {
+        const token = await registerForPushNotifications();
+        if (token) {
+          await api.post('/notifications/push-token', { token });
+          console.log('[Notif] Token registered on server');
+        }
+      } catch (err) {
+        console.warn('[Notif] Token registration failed:', err);
+      }
+    })();
+
+    // Listener: notification nhận được khi app foreground
+    notifListener.current = Notifications.addNotificationReceivedListener(notification => {
+      console.log('[Notif] Received (foreground):', notification.request.content.title);
+    });
+
+    // Listener: user tap vào notification (từ lock screen hoặc background)
+    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+      const data = response.notification.request.content.data as any;
+      console.log('[Notif] Tapped:', data);
+      // Navigate tới màn hình phù hợp khi tap notification
+      if (!navigationRef.isReady()) return;
+      if (data?.type === 'request_approved' || data?.type === 'request_rejected') {
+        navigationRef.navigate('Notifications');
+      } else if (data?.type === 'broadcast' || data?.type) {
+        navigationRef.navigate('Notifications');
+      }
+    });
+
+    return () => {
+      notifListener.current?.remove();
+      responseListener.current?.remove();
+    };
+  }, [isAuthenticated]);
+
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!isAuthenticated ? (
           <>
