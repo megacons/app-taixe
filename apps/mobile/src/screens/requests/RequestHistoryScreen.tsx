@@ -334,6 +334,7 @@ const S = StyleSheet.create({
     paddingHorizontal: 16, paddingVertical: 7,
     borderRadius: 50, borderWidth: 1.5, borderColor: Colors.gray200,
     backgroundColor: Colors.white,
+    flexShrink: 0,
     shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04, shadowRadius: 4, elevation: 1,
   },
