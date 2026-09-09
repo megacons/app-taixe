@@ -171,7 +171,13 @@ export default function RequestHistoryScreen() {
       </View>
 
       {/* ── Filter chips ── */}
-      <View style={S.chipBar}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={S.chipBar}
+        style={{ flexGrow: 0 }}
+        keyboardShouldPersistTaps="handled"
+      >
         {CHIPS.map(chip => {
           const active = statusFilter === chip.key;
           return (
@@ -187,7 +193,7 @@ export default function RequestHistoryScreen() {
             </TouchableOpacity>
           );
         })}
-      </View>
+      </ScrollView>
 
       {/* ── List ── */}
       {loading ? (
@@ -320,7 +326,6 @@ const S = StyleSheet.create({
   /* Filter chips */
   chipBar: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     paddingHorizontal: 16,
     paddingVertical: 8,
     gap: 8,
