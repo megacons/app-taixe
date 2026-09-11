@@ -591,7 +591,11 @@ export default function DashboardPage() {
                       textAnchor={chartMode === 'month' ? 'end' : 'middle'}
                       height={chartMode === 'month' ? 50 : 20}
                     />
-                    <YAxis tickFormatter={v => fmtMoney(v)} tick={{ fontSize: 11 }} width={50} />
+                    <YAxis tickFormatter={v => {
+                      if (v >= 1000000) return (v / 1000000).toFixed(v % 1000000 === 0 ? 0 : 1) + 'M';
+                      if (v >= 1000) return (v / 1000).toFixed(0) + 'K';
+                      return String(v);
+                    }} tick={{ fontSize: 11 }} width={55} />
                     <Tooltip content={<CustomTooltip />} />
                     <Legend wrapperStyle={{ fontSize: 11 }} />
                     <Bar dataKey="advance" name="Quỹ đã cấp" fill="#163797" radius={[4, 4, 0, 0]} />
