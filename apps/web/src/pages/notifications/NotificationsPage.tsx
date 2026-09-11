@@ -96,8 +96,6 @@ const TYPE_OPTIONS = [
   { value: 'announcement',  label: '📢 Thông báo chung' },
   { value: 'salary',        label: '💵 Thông báo lương' },
   { value: 'system',        label: '🔔 Hệ thống' },
-  { value: 'payment',       label: '💰 Thanh toán' },
-  { value: 'trip_reminder', label: '🚛 Nhắc chuyến xe' },
   { value: 'discipline',    label: '⚠️ Kỷ luật' },
   { value: 'holiday',       label: '🎉 Nghỉ lễ' },
   { value: 'birthday',      label: '🎂 Sinh nhật' },
