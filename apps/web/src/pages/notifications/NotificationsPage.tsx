@@ -98,7 +98,6 @@ const TYPE_OPTIONS = [
   { value: 'system',        label: '🔔 Hệ thống' },
   { value: 'discipline',    label: '⚠️ Kỷ luật' },
   { value: 'holiday',       label: '🎉 Nghỉ lễ' },
-  { value: 'birthday',      label: '🎂 Sinh nhật' },
 ];
 
 export default function NotificationsPage() {
