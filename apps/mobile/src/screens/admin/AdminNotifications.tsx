@@ -10,12 +10,12 @@ import { Colors } from '@/constants/colors';
 import api from '@/lib/api';
 import { format, parseISO } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import MonthYearPicker from '@/components/MonthYearPicker';
 
 const TYPE_OPTIONS = [
   { value: 'announcement',  label: '📢 Thông báo chung' },
+  { value: 'salary',        label: '💵 Thông báo lương' },
   { value: 'system',        label: '🔔 Hệ thống' },
-  { value: 'payment',       label: '💰 Thanh toán' },
-  { value: 'trip_reminder', label: '🚛 Nhắc chuyến xe' },
   { value: 'discipline',    label: '⚠️ Kỷ luật' },
   { value: 'holiday',       label: '🎉 Nghỉ lễ' },
 ];
@@ -91,6 +91,15 @@ export default function AdminNotifications() {
   /* ── delete ── */
   const [deleting, setDeleting] = useState(false);
 
+  /* ── salary ── */
+  const now2 = new Date();
+  const [salaryMonth,   setSalaryMonth]   = useState(now2.getMonth() + 1);
+  const [salaryYear,    setSalaryYear]    = useState(now2.getFullYear());
+  const [salaryDriverId, setSalaryDriverId] = useState('');
+  const [salaryPreview,  setSalaryPreview]  = useState<any>(null);
+  const [salaryLoading,  setSalaryLoading]  = useState(false);
+  const [salarySending,  setSalarySending]  = useState(false);
+
   const loadHistory = useCallback(async () => {
     try {
       const res = await api.get('/notifications/broadcast/history');
@@ -156,6 +165,64 @@ export default function AdminNotifications() {
     setRefreshing(true);
     await Promise.all([loadHistory(), loadDrivers()]);
     setRefreshing(false);
+  };
+
+  /* ── Load salary preview ── */
+  const loadSalaryPreview = async (driverId: string, month: number, year: number) => {
+    if (!driverId) { setSalaryPreview(null); return; }
+    setSalaryLoading(true);
+    try {
+      const res = await api.get('/drivers/salary/list', { params: { month, year } });
+      const list: any[] = res.data.data?.drivers ?? [];
+      const d = list.find((x: any) => x._id === driverId);
+      setSalaryPreview(d ?? null);
+    } catch { setSalaryPreview(null); }
+    finally { setSalaryLoading(false); }
+  };
+
+  /* ── Gửi thông báo lương ── */
+  const handleSendSalary = async () => {
+    if (!salaryDriverId) { Alert.alert('Lỗi', 'Vui lòng chọn tài xế'); return; }
+    if (!salaryPreview)  { Alert.alert('Lỗi', 'Chưa có dữ liệu lương để gửi'); return; }
+
+    const fmtVND = (v: number) => new Intl.NumberFormat('vi-VN').format(Math.round(v ?? 0));
+    const base = (salaryPreview.base_salary ?? 0) + (salaryPreview.position_allowance ?? 0) + (salaryPreview.fuel_allowance ?? 0);
+    const total = base + (salaryPreview.overtime_pay_month ?? 0);
+    const advance = salaryPreview.advance_month ?? 0;
+
+    const salaryTitle = `💵 Thông báo lương tháng ${salaryMonth}/${salaryYear}`;
+    const salaryMessage =
+      `Xin chào ${salaryPreview.full_name},\n\n` +
+      `Thông tin lương tháng ${salaryMonth}/${salaryYear}:\n\n` +
+      `💼 Lương cơ bản + phụ cấp: ${fmtVND(base)}đ\n` +
+      `🔥 Chuyến tăng ca: ${salaryPreview.overtime_trips_month ?? 0} chuyến\n` +
+      `💰 Tiền tăng ca: ${fmtVND(salaryPreview.overtime_pay_month ?? 0)}đ\n` +
+      `💳 Tiền ứng: -${fmtVND(advance)}đ\n` +
+      `──────────────────\n` +
+      `🏆 Tổng lương thực nhận: ${fmtVND(total - advance)}đ\n\n` +
+      `Mọi thắc mắc liên hệ bộ phận kế toán.\nCông ty TNHH Vận tải Nam Thành`;
+
+    Alert.alert('Xác nhận', `Gửi thông báo lương tháng ${salaryMonth}/${salaryYear} cho ${salaryPreview.full_name}?`, [
+      { text: 'Hủy', style: 'cancel' },
+      {
+        text: 'Gửi', onPress: async () => {
+          setSalarySending(true);
+          try {
+            await api.post('/notifications/broadcast', {
+              title:            salaryTitle,
+              message:          salaryMessage,
+              type:             'payment',
+              target_driver_id: salaryDriverId,
+            });
+            Alert.alert('✅ Thành công', `Đã gửi thông báo lương cho ${salaryPreview.full_name}`);
+            setSalaryDriverId(''); setSalaryPreview(null);
+            loadHistory();
+          } catch (e: any) {
+            Alert.alert('Lỗi', e?.response?.data?.message ?? 'Gửi thất bại');
+          } finally { setSalarySending(false); }
+        },
+      },
+    ]);
   };
 
   /* ── Gửi mới ── */
@@ -292,7 +359,8 @@ export default function AdminNotifications() {
               <Text style={S.cardTitle}>📨 Soạn thông báo</Text>
             </View>
 
-            {/* Người nhận */}
+            {/* Người nhận — ẩn khi type là salary */}
+            {type !== 'salary' && (
             <View style={S.field}>
               <Text style={S.label}>Người nhận</Text>
               <TouchableOpacity
@@ -350,6 +418,7 @@ export default function AdminNotifications() {
                 </View>
               )}
             </View>
+            )} {/* end type !== salary - Người nhận */}
 
             {/* Loại */}
             <View style={S.field}>
@@ -377,6 +446,8 @@ export default function AdminNotifications() {
               )}
             </View>
 
+            {/* Tiêu đề + Nội dung + Preview — ẩn khi type là salary */}
+            {type !== 'salary' && (<>
             {/* Tiêu đề */}
             <View style={S.field}>
               <Text style={S.label}>Tiêu đề *</Text>
@@ -422,19 +493,136 @@ export default function AdminNotifications() {
                 </View>
               </View>
             ) : null}
+            </>)} {/* end type !== salary - Tiêu đề/Nội dung/Preview */}
 
-            {/* Send button */}
-            <TouchableOpacity
-              style={[S.sendBtn, (sending || !title.trim() || !message.trim()) && S.sendBtnDisabled]}
-              onPress={handleSend}
-              disabled={sending || !title.trim() || !message.trim()}
-              activeOpacity={0.8}
-            >
-              {sending
-                ? <ActivityIndicator color={Colors.white} size="small" />
-                : <Text style={S.sendBtnText}>📨 Gửi thông báo</Text>
-              }
-            </TouchableOpacity>
+            {/* ── Salary mode ── */}
+            {type === 'salary' ? (
+              <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
+                {/* Tháng/Năm */}
+                <Text style={[S.label, { marginTop: 14 }]}>Tháng / Năm</Text>
+                <MonthYearPicker
+                  month={salaryMonth}
+                  year={salaryYear}
+                  onChange={(m, y) => {
+                    setSalaryMonth(m); setSalaryYear(y);
+                    if (salaryDriverId) loadSalaryPreview(salaryDriverId, m, y);
+                  }}
+                />
+
+                {/* Chọn tài xế */}
+                <Text style={[S.label, { marginTop: 14 }]}>Nhân viên <Text style={{ color: Colors.error }}>*</Text></Text>
+                <TouchableOpacity
+                  style={S.picker}
+                  onPress={() => setShowDriverPicker(!showDriverPicker)}
+                >
+                  <View style={S.pickerLeft}>
+                    <Text style={S.pickerIcon}>👤</Text>
+                    <Text style={S.pickerText}>
+                      {drivers.find(d => d._id === salaryDriverId)?.full_name ?? '-- Chọn nhân viên --'}
+                    </Text>
+                  </View>
+                  <Text style={S.pickerArrow}>{showDriverPicker ? '▲' : '▼'}</Text>
+                </TouchableOpacity>
+                {showDriverPicker && (
+                  <View style={S.dropdown}>
+                    {drivers.map(d => (
+                      <TouchableOpacity
+                        key={d._id}
+                        style={[S.dropItem, salaryDriverId === d._id && S.dropItemActive]}
+                        onPress={() => {
+                          setSalaryDriverId(d._id);
+                          setShowDriverPicker(false);
+                          loadSalaryPreview(d._id, salaryMonth, salaryYear);
+                        }}
+                      >
+                        <View style={[S.dropAvatar, salaryDriverId === d._id && { backgroundColor: Colors.primary }]}>
+                          <Text style={{ fontSize: 12, fontWeight: '700', color: salaryDriverId === d._id ? Colors.white : Colors.primary }}>
+                            {d.full_name.charAt(0).toUpperCase()}
+                          </Text>
+                        </View>
+                        <Text style={[S.dropText, salaryDriverId === d._id && S.dropTextActive]}>{d.full_name}</Text>
+                        {salaryDriverId === d._id && <Text style={S.checkMark}>✓</Text>}
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+
+                {/* Preview lương */}
+                {salaryLoading && (
+                  <View style={{ marginTop: 16, alignItems: 'center' }}>
+                    <ActivityIndicator color={Colors.primary} />
+                    <Text style={{ fontSize: 12, color: Colors.gray500, marginTop: 6 }}>Đang tải dữ liệu lương...</Text>
+                  </View>
+                )}
+                {!salaryLoading && salaryDriverId && !salaryPreview && (
+                  <View style={SL.emptyBox}>
+                    <Text style={{ fontSize: 13, color: Colors.gray500 }}>Không có dữ liệu lương tháng {salaryMonth}/{salaryYear}</Text>
+                  </View>
+                )}
+                {!salaryLoading && salaryPreview && (
+                  <View style={SL.previewCard}>
+                    <Text style={SL.previewTitle}>Xem trước — {salaryPreview.full_name}</Text>
+                    <View style={SL.grid}>
+                      <View style={SL.cell}>
+                        <Text style={SL.cellLabel}>Lương cơ bản + phụ cấp</Text>
+                        <Text style={SL.cellValue}>
+                          {new Intl.NumberFormat('vi-VN').format(
+                            (salaryPreview.base_salary ?? 0) + (salaryPreview.position_allowance ?? 0) + (salaryPreview.fuel_allowance ?? 0)
+                          )}đ
+                        </Text>
+                      </View>
+                      <View style={SL.cell}>
+                        <Text style={SL.cellLabel}>Chuyến tăng ca</Text>
+                        <Text style={[SL.cellValue, { color: '#ea580c' }]}>{salaryPreview.overtime_trips_month ?? 0} chuyến</Text>
+                      </View>
+                      <View style={SL.cell}>
+                        <Text style={SL.cellLabel}>Tiền tăng ca</Text>
+                        <Text style={[SL.cellValue, { color: Colors.success }]}>
+                          {new Intl.NumberFormat('vi-VN').format(salaryPreview.overtime_pay_month ?? 0)}đ
+                        </Text>
+                      </View>
+                      <View style={SL.cell}>
+                        <Text style={SL.cellLabel}>Tổng lương thực nhận</Text>
+                        <Text style={[SL.cellValue, { color: Colors.primary, fontSize: 16 }]}>
+                          {new Intl.NumberFormat('vi-VN').format(
+                            (salaryPreview.base_salary ?? 0) + (salaryPreview.position_allowance ?? 0) +
+                            (salaryPreview.fuel_allowance ?? 0) + (salaryPreview.overtime_pay_month ?? 0) -
+                            (salaryPreview.advance_month ?? 0)
+                          )}đ
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                )}
+
+                {/* Nút gửi lương */}
+                <TouchableOpacity
+                  style={[S.sendBtn, { marginTop: 16, marginHorizontal: 0 },
+                    (!salaryDriverId || !salaryPreview || salarySending) && S.sendBtnDisabled]}
+                  onPress={handleSendSalary}
+                  disabled={!salaryDriverId || !salaryPreview || salarySending}
+                  activeOpacity={0.8}
+                >
+                  {salarySending
+                    ? <ActivityIndicator color={Colors.white} size="small" />
+                    : <Text style={S.sendBtnText}>💵 Gửi thông báo lương</Text>
+                  }
+                </TouchableOpacity>
+              </View>
+            ) : (
+              /* ── Normal send button ── */
+              <TouchableOpacity
+                style={[S.sendBtn, (sending || !title.trim() || !message.trim()) && S.sendBtnDisabled]}
+                onPress={handleSend}
+                disabled={sending || !title.trim() || !message.trim()}
+                activeOpacity={0.8}
+              >
+                {sending
+                  ? <ActivityIndicator color={Colors.white} size="small" />
+                  : <Text style={S.sendBtnText}>📨 Gửi thông báo</Text>
+                }
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* ── History ── */}
@@ -1016,4 +1204,15 @@ const RS = StyleSheet.create({
   statusText:    { fontSize: 11, fontWeight: '600' },
   statusReadText:{ color: '#1d4ed8' },
   statusUnreadText: { color: Colors.gray500 },
+});
+
+/* ── Salary preview styles ── */
+const SL = StyleSheet.create({
+  emptyBox:     { marginTop: 16, padding: 16, backgroundColor: Colors.gray100, borderRadius: 12, alignItems: 'center' },
+  previewCard:  { marginTop: 16, backgroundColor: '#f0fdf4', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#bbf7d0' },
+  previewTitle: { fontSize: 13, fontWeight: '700', color: '#166534', marginBottom: 12 },
+  grid:         { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  cell:         { width: '47%', backgroundColor: Colors.white, borderRadius: 10, padding: 10, borderWidth: 1, borderColor: '#d1fae5' },
+  cellLabel:    { fontSize: 10, color: Colors.gray500, fontWeight: '600', marginBottom: 4 },
+  cellValue:    { fontSize: 14, fontWeight: '800', color: Colors.gray900 },
 });
