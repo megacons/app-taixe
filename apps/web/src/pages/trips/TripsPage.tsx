@@ -18,7 +18,7 @@ const getImageUrl = (url: string | null | undefined): string | null => {
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
   return url.startsWith('/') ? url : `/${url}`;
 };
-  
+
 interface Trip {
   _id: string;
   trip_date: string;
@@ -55,6 +55,11 @@ export default function TripsPage() {
   const [detail, setDetail]     = useState<Trip | null>(null);
   const [editTrip, setEditTrip] = useState<Trip | null>(null);
   const [editNote, setEditNote] = useState('');
+  const [editMaterial, setEditMaterial] = useState('');
+  const [editPickup, setEditPickup] = useState('');
+  const [editDrop, setEditDrop] = useState('');
+  const [editQuantity, setEditQuantity] = useState('');
+  const [editUnit, setEditUnit] = useState('');
   const [editSaving, setEditSaving] = useState(false);
   const [delTarget, setDelTarget] = useState<Trip | null>(null);
   const [delLoading, setDelLoading] = useState(false);
@@ -75,11 +80,13 @@ export default function TripsPage() {
   });
 
   const { data: driverData } = useApi<any>('/drivers', { limit: 200 });
+  const { data: materialData } = useApi<any>('/materials', { limit: 200 });
   const { data: oldestTrip } = useApi<any>('/trips', { limit: 1, sort: 'trip_date' });
 
   const trips: Trip[] = data?.trips ?? [];
   const pagination    = data?.pagination;
   const drivers       = driverData?.drivers ?? [];
+  const materials     = materialData?.materials ?? [];
 
   // Tính danh sách năm từ năm có chuyến đầu tiên đến hiện tại
   const oldestYear = oldestTrip?.trips?.[0]?.trip_date
@@ -338,7 +345,15 @@ export default function TripsPage() {
                         className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600">
                         <EyeIcon className="w-4 h-4" />
                       </button>
-                      <button onClick={() => { setEditTrip(t); setEditNote(t.note ?? ''); }}
+                      <button onClick={() => {
+                        setEditTrip(t);
+                        setEditNote(t.note ?? '');
+                        setEditMaterial(t.material_name ?? '');
+                        setEditPickup(t.pickup_location ?? '');
+                        setEditDrop(t.drop_location ?? '');
+                        setEditQuantity('');
+                        setEditUnit('');
+                      }}
                         className="p-1.5 rounded-lg text-gray-400 hover:bg-yellow-50 hover:text-yellow-600">
                         <PencilIcon className="w-4 h-4" />
                       </button>
@@ -400,15 +415,23 @@ export default function TripsPage() {
 
       {/* Lightbox */}
       {/* Modal sửa chuyến */}
-      <Modal open={!!editTrip} onClose={() => setEditTrip(null)} title="Sửa chuyến xe" size="sm"
+      <Modal open={!!editTrip} onClose={() => setEditTrip(null)} title="Sửa chuyến xe" size="md"
         footer={<>
           <button onClick={() => setEditTrip(null)} className="btn-outline text-sm px-4 py-2">Hủy</button>
           <button
             onClick={async () => {
               if (!editTrip) return;
+              if (!editMaterial.trim()) { toast.error('Vui lòng nhập vật liệu'); return; }
+              if (!editPickup.trim())   { toast.error('Vui lòng nhập nơi lấy'); return; }
+              if (!editDrop.trim())     { toast.error('Vui lòng nhập nơi đổ'); return; }
               setEditSaving(true);
               try {
-                await api.put(`/trips/${editTrip._id}`, { note: editNote });
+                await api.put(`/trips/${editTrip._id}`, {
+                  material_name:   editMaterial.trim(),
+                  pickup_location: editPickup.trim(),
+                  drop_location:   editDrop.trim(),
+                  note:            editNote.trim(),
+                });
                 toast.success('Đã cập nhật chuyến xe');
                 setEditTrip(null);
                 refetch();
@@ -422,20 +445,54 @@ export default function TripsPage() {
           </button>
         </>}>
         {editTrip && (
-          <div className="space-y-3 text-sm">
+          <div className="space-y-4 text-sm">
+            {/* Thông tin cơ bản */}
             <div className="bg-gray-50 rounded-lg p-3 text-xs text-gray-500">
               <p><strong>{editTrip.driver_id?.full_name}</strong> · {editTrip.vehicle_id?.license_plate}</p>
-              <p>{editTrip.trip_date ? fmtDate(editTrip.trip_date) : '—'} · {editTrip.material_name}</p>
+              <p>{editTrip.trip_date ? fmtDate(editTrip.trip_date) : '—'}</p>
             </div>
+
+            {/* Vật liệu */}
+            <div>
+              <label className="form-label">Vật liệu <span className="text-red-500">*</span></label>
+              {materials.length > 0 ? (
+                <select className="form-select w-full" value={editMaterial}
+                  onChange={e => setEditMaterial(e.target.value)}>
+                  <option value="">-- Chọn vật liệu --</option>
+                  {materials.map((m: any) => (
+                    <option key={m._id} value={m.material_name}>{m.material_name}</option>
+                  ))}
+                  <option value={editMaterial}>{editMaterial} (hiện tại)</option>
+                </select>
+              ) : (
+                <input type="text" className="form-input w-full"
+                  value={editMaterial} onChange={e => setEditMaterial(e.target.value)}
+                  placeholder="Tên vật liệu..." />
+              )}
+            </div>
+
+            {/* Nơi lấy */}
+            <div>
+              <label className="form-label">Nơi lấy hàng <span className="text-red-500">*</span></label>
+              <input type="text" className="form-input w-full"
+                value={editPickup} onChange={e => setEditPickup(e.target.value)}
+                placeholder="Địa điểm lấy hàng..." />
+            </div>
+
+            {/* Nơi đổ */}
+            <div>
+              <label className="form-label">Nơi đổ hàng <span className="text-red-500">*</span></label>
+              <input type="text" className="form-input w-full"
+                value={editDrop} onChange={e => setEditDrop(e.target.value)}
+                placeholder="Địa điểm đổ hàng..." />
+            </div>
+
+            {/* Ghi chú */}
             <div>
               <label className="form-label">Ghi chú</label>
-              <textarea
-                className="form-input w-full resize-none"
-                rows={3}
-                value={editNote}
-                onChange={e => setEditNote(e.target.value)}
-                placeholder="Ghi chú chuyến xe..."
-              />
+              <textarea className="form-input w-full resize-none" rows={3}
+                value={editNote} onChange={e => setEditNote(e.target.value)}
+                placeholder="Ghi chú chuyến xe..." />
             </div>
           </div>
         )}
