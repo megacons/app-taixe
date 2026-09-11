@@ -516,7 +516,7 @@ router.get('/:driverId/export', authenticate, authorize('coordinator', 'accounta
     };
 
     // ── Dòng tiêu đề tháng ──
-    ws.mergeCells('A1:I1');
+    ws.mergeCells('A1:J1');
     const titleCell = ws.getCell('A1');
     titleCell.value = `Tháng ${monthNum}`;
     titleCell.font  = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
@@ -525,7 +525,7 @@ router.get('/:driverId/export', authenticate, authorize('coordinator', 'accounta
     ws.getRow(1).height = 28;
 
     // ── Dòng tên tài xế ──
-    ws.mergeCells('A2:I2');
+    ws.mergeCells('A2:J2');
     const nameCell = ws.getCell('A2');
     nameCell.value = `TÀI XẾ ${driver.full_name?.toUpperCase() ?? ''}`;
     nameCell.font  = { bold: true, size: 13 };
@@ -535,7 +535,7 @@ router.get('/:driverId/export', authenticate, authorize('coordinator', 'accounta
 
     // ── Header ──
     const headers = [
-      'BSX', 'Ngày tháng', 'Tiền ứng', 'Tiền chi', 'Tiền còn lại',
+      'BSX', 'Tên tài xế', 'Ngày tháng', 'Tiền ứng', 'Tiền chi', 'Tiền còn lại',
       'Ghi chú', 'Tổng Số Chuyến', 'Số Chuyến tính tăng ca', '',
     ];
     const headerRow = ws.getRow(3);
@@ -555,6 +555,7 @@ router.get('/:driverId/export', authenticate, authorize('coordinator', 'accounta
       const row = ws.getRow(4 + idx);
       const vals = [
         r.license_plate,
+        driver.full_name ?? '—',
         r.date,
         r.advance ? fmtNum(r.advance) : '',
         r.expense ? fmtNum(r.expense) : '',
@@ -578,7 +579,7 @@ router.get('/:driverId/export', authenticate, authorize('coordinator', 'accounta
     // ── Dòng tổng cộng ──
     const totalRowIdx = 4 + rows.length;
     const totalRow = ws.getRow(totalRowIdx);
-    const totalVals = ['Tổng Cộng', '', fmtNum(sumAdvance), fmtNum(sumExpense), fmtNum(balance), '', sumTrips, sumOT, ''];
+    const totalVals = ['Tổng Cộng', '', '', fmtNum(sumAdvance), fmtNum(sumExpense), fmtNum(balance), '', sumTrips, sumOT, ''];
     totalVals.forEach((v, ci) => {
       const cell = totalRow.getCell(ci + 1);
       cell.value     = v;
@@ -592,6 +593,7 @@ router.get('/:driverId/export', authenticate, authorize('coordinator', 'accounta
     // ── Column widths ──
     ws.columns = [
       { width: 13 }, // BSX
+      { width: 22 }, // Tên tài xế
       { width: 12 }, // Ngày
       { width: 14 }, // Tiền ứng
       { width: 14 }, // Tiền chi
