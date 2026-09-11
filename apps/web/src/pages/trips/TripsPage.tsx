@@ -31,6 +31,8 @@ interface Trip {
   is_overtime: boolean;
   overtime_pay: number;
   trip_number: number;
+  quantity: number | null;
+  unit: string | null;
   note: string;
   delivery_receipt: string | null;
   driver_id: { _id: string; full_name: string; employee_id: string } | null;
@@ -125,6 +127,7 @@ export default function TripsPage() {
         { key: 'driver',   width: 20 },
         { key: 'vehicle',  width: 14 },
         { key: 'material', width: 16 },
+        { key: 'quantity', width: 12 },
         { key: 'pickup',   width: 28 },
         { key: 'drop',     width: 28 },
         { key: 'note',     width: 24 },
@@ -133,7 +136,7 @@ export default function TripsPage() {
       ];
 
       // Header
-      const hRow = ws.addRow(['STT', 'Ngày giờ', 'Tài xế', 'Xe', 'Vật liệu', 'Nơi lấy', 'Nơi đổ', 'Ghi chú', 'Trạng thái', 'Tăng ca']);
+      const hRow = ws.addRow(['STT', 'Ngày giờ', 'Tài xế', 'Xe', 'Vật liệu', 'Khối lượng', 'Nơi lấy', 'Nơi đổ', 'Ghi chú', 'Trạng thái', 'Tăng ca']);
       hRow.height = 22;
       hRow.eachCell(cell => {
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF163797' } };
@@ -150,6 +153,7 @@ export default function TripsPage() {
           t.driver_id?.full_name ?? '—',
           t.vehicle_id?.license_plate ?? '—',
           t.material_name ?? '—',
+          t.quantity ? `${t.quantity}${t.unit ? ` ${t.unit}` : ''}` : '—',
           t.pickup_location ?? '—',
           t.drop_location ?? '—',
           t.note ?? '',
@@ -271,6 +275,7 @@ export default function TripsPage() {
                 <th>Tài xế</th>
                 <th>Xe</th>
                 <th>Vật liệu</th>
+                <th>Khối lượng</th>
                 <th>Tuyến</th>
                 <th>Ghi chú</th>
                 <th>TT</th>
@@ -320,6 +325,9 @@ export default function TripsPage() {
                   </td>
                   <td className="text-xs font-bold text-primary">{t.vehicle_id?.license_plate ?? '—'}</td>
                   <td className="text-sm text-gray-700 max-w-[100px] truncate">{t.material_name}</td>
+                  <td className="text-sm text-gray-600 whitespace-nowrap">
+                    {t.quantity ? `${t.quantity}${t.unit ? ` ${t.unit}` : ''}` : <span className="text-gray-300">—</span>}
+                  </td>
                   <td className="text-xs text-gray-500 max-w-[120px]">
                     <div className="truncate" title={t.pickup_location}>{t.pickup_location}</div>
                     <div className="truncate text-gray-400" title={t.drop_location}>→ {t.drop_location}</div>
@@ -351,8 +359,8 @@ export default function TripsPage() {
                         setEditMaterial(t.material_name ?? '');
                         setEditPickup(t.pickup_location ?? '');
                         setEditDrop(t.drop_location ?? '');
-                        setEditQuantity('');
-                        setEditUnit('');
+                        setEditQuantity(t.quantity ? String(t.quantity) : '');
+                        setEditUnit(t.unit ?? '');
                       }}
                         className="p-1.5 rounded-lg text-gray-400 hover:bg-yellow-50 hover:text-yellow-600">
                         <PencilIcon className="w-4 h-4" />
@@ -384,6 +392,7 @@ export default function TripsPage() {
               ['Tài xế',   detail.driver_id?.full_name ?? '—'],
               ['Biển số',  detail.vehicle_id?.license_plate ?? '—'],
               ['Vật liệu', detail.material_name],
+              ['Khối lượng', detail.quantity ? `${detail.quantity}${detail.unit ? ` ${detail.unit}` : ''}` : '—'],
               ['Nơi lấy',  detail.pickup_location],
               ['Nơi đổ',   detail.drop_location],
               ['Tăng ca',  detail.is_overtime ? `✅ +${new Intl.NumberFormat('vi-VN').format(detail.overtime_pay)}đ` : 'Không'],
@@ -431,6 +440,8 @@ export default function TripsPage() {
                   pickup_location: editPickup.trim(),
                   drop_location:   editDrop.trim(),
                   note:            editNote.trim(),
+                  ...(editQuantity ? { quantity: Number(editQuantity) } : {}),
+                  ...(editUnit     ? { unit: editUnit } : {}),
                 });
                 toast.success('Đã cập nhật chuyến xe');
                 setEditTrip(null);
@@ -469,6 +480,26 @@ export default function TripsPage() {
                   value={editMaterial} onChange={e => setEditMaterial(e.target.value)}
                   placeholder="Tên vật liệu..." />
               )}
+            </div>
+
+            {/* Khối lượng + đơn vị */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="form-label">Khối lượng</label>
+                <input type="number" className="form-input w-full" min="0" step="0.1"
+                  value={editQuantity} onChange={e => setEditQuantity(e.target.value)}
+                  placeholder="VD: 10" />
+              </div>
+              <div>
+                <label className="form-label">Đơn vị</label>
+                <select className="form-select w-full" value={editUnit}
+                  onChange={e => setEditUnit(e.target.value)}>
+                  <option value="">-- Chọn --</option>
+                  {['tấn','m³','kg','m²','thùng','bao','chuyến','khác'].map(u => (
+                    <option key={u} value={u}>{u}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             {/* Nơi lấy */}
