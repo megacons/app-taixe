@@ -110,7 +110,11 @@ export default function AdminDashboard() {
   // Realtime: tự refresh khi có request mới hoặc được update
   useEffect(() => {
     const subs = [
-      DeviceEventEmitter.addListener('NEW_REQUEST',     () => fetchData()),
+      DeviceEventEmitter.addListener('NEW_REQUEST',     () => {
+        fetchData();
+        // Tăng badge ngay lập tức không cần chờ API
+        setKpi(prev => ({ ...prev, pending_requests: prev.pending_requests + 1 }));
+      }),
       DeviceEventEmitter.addListener('REQUEST_UPDATED', () => fetchData()),
     ];
     return () => subs.forEach(s => s.remove());
@@ -178,14 +182,21 @@ export default function AdminDashboard() {
             {/* Quick nav buttons */}
             <View style={S.navGrid}>
               {[
-                { icon: '👤', label: 'Tài xế',    onPress: () => navigation.navigate('Drivers') },
-                { icon: '📋', label: 'Yêu cầu',   onPress: () => navigation.navigate('Requests') },
-                { icon: '💰', label: 'Quỹ',       onPress: () => navigation.navigate('Fund') },
-                { icon: '🔔', label: 'Thông báo', onPress: () => navigation.navigate('Notifications') },
-                { icon: '⚙️', label: 'Cài đặt',  onPress: () => navigation.navigate('Profile') },
+                { icon: '👤', label: 'Tài xế',    badge: 0,                          onPress: () => navigation.navigate('Drivers') },
+                { icon: '📋', label: 'Yêu cầu',   badge: kpi.pending_requests,       onPress: () => navigation.navigate('Requests') },
+                { icon: '💰', label: 'Quỹ',       badge: 0,                          onPress: () => navigation.navigate('Fund') },
+                { icon: '🔔', label: 'Thông báo', badge: 0,                          onPress: () => navigation.navigate('Notifications') },
+                { icon: '⚙️', label: 'Cài đặt',  badge: 0,                          onPress: () => navigation.navigate('Profile') },
               ].map(btn => (
                 <TouchableOpacity key={btn.label} style={S.navBtn} onPress={btn.onPress} activeOpacity={0.75}>
-                  <Text style={S.navBtnIcon}>{btn.icon}</Text>
+                  <View style={{ position: 'relative' }}>
+                    <Text style={S.navBtnIcon}>{btn.icon}</Text>
+                    {btn.badge > 0 && (
+                      <View style={S.navBtnBadge}>
+                        <Text style={S.navBtnBadgeText}>{btn.badge > 99 ? '99+' : btn.badge}</Text>
+                      </View>
+                    )}
+                  </View>
                   <Text style={S.navBtnLabel}>{btn.label}</Text>
                 </TouchableOpacity>
               ))}
@@ -414,6 +425,8 @@ const S = StyleSheet.create({
   navBtn:  { flex: 1, minWidth: '18%', backgroundColor: Colors.white, borderRadius: 14, paddingVertical: 12, alignItems: 'center', gap: 4, borderWidth: 1, borderColor: Colors.border, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1 },
   navBtnIcon:  { fontSize: 22 },
   navBtnLabel: { fontSize: 10, color: Colors.gray600, fontWeight: '600', textAlign: 'center' },
+  navBtnBadge: { position: 'absolute', top: -4, right: -8, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: Colors.error, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 3, borderWidth: 1.5, borderColor: Colors.white },
+  navBtnBadgeText: { fontSize: 9, fontWeight: '800', color: Colors.white },
   monthCard:{ backgroundColor: Colors.white, borderRadius: 14, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: Colors.border, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6, elevation: 2 },
   monthRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10 },
   monthLeft:{ flexDirection: 'row', alignItems: 'center', gap: 8 },
