@@ -49,21 +49,21 @@ async function exportFundExcel(params: {
   wb.created = new Date();
   const ws = wb.addWorksheet(`Quỹ T${month}-${year}`);
   ws.columns = [
-    { key: 'bsx', width: 14 }, { key: 'date', width: 14 },
+    { key: 'bsx', width: 14 }, { key: 'name', width: 22 }, { key: 'date', width: 14 },
     { key: 'advance', width: 18 }, { key: 'expense', width: 18 },
     { key: 'balance', width: 18 }, { key: 'note', width: 44 },
   ];
 
   // Row 1: Tên tài xế
-  const r1 = ws.addRow(['', '', '', '', '', `TÀI XẾ ${driverName.toUpperCase()}`]);
+  const r1 = ws.addRow(['', '', '', '', '', '', `TÀI XẾ ${driverName.toUpperCase()}`]);
   r1.height = 22;
-  r1.getCell(6).font      = { bold: true, size: 14, color: { argb: 'FF8B0000' } };
-  r1.getCell(6).alignment = { horizontal: 'right', vertical: 'middle' };
+  r1.getCell(7).font      = { bold: true, size: 14, color: { argb: 'FF8B0000' } };
+  r1.getCell(7).alignment = { horizontal: 'right', vertical: 'middle' };
 
   ws.addRow([]); // Row 2 trống
 
   // Row 3: Header
-  const hRow = ws.addRow(['BSX', 'Ngày tháng', 'Tiền ứng', 'Tiền chi', 'Tiền còn lại', 'Ghi chú']);
+  const hRow = ws.addRow(['BSX', 'Tên tài xế', 'Ngày tháng', 'Tiền ứng', 'Tiền chi', 'Tiền còn lại', 'Ghi chú']);
   hRow.height = 20;
   hRow.eachCell(cell => {
     cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF2CC' } };
@@ -78,6 +78,7 @@ async function exportFundExcel(params: {
     runBalance += r.advance - r.expense;
     const row = ws.addRow([
       licensePlate,
+      driverName,
       r.date ? format(new Date(r.date + 'T00:00:00'), 'd/M/yyyy') : '',
       r.advance > 0 ? r.advance : null,
       r.expense > 0 ? r.expense : null,
@@ -89,24 +90,24 @@ async function exportFundExcel(params: {
     row.eachCell({ includeEmpty: true }, (cell, col) => {
       cell.fill   = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgColor } };
       cell.border = { top: { style: 'thin', color: { argb: 'FFE0E0E0' } }, bottom: { style: 'thin', color: { argb: 'FFE0E0E0' } }, left: { style: 'thin', color: { argb: 'FFE0E0E0' } }, right: { style: 'thin', color: { argb: 'FFE0E0E0' } } };
-      if (col === 3) { cell.numFmt = '#,##0'; cell.font = { bold: true, color: { argb: 'FF1F497D' } }; cell.alignment = { horizontal: 'right' }; }
-      if (col === 4) { cell.numFmt = '#,##0'; cell.font = { color: { argb: 'FFCC0000' } }; cell.alignment = { horizontal: 'right' }; }
-      if (col === 5) { cell.numFmt = '#,##0'; cell.font = { bold: true, color: { argb: runBalance >= 0 ? 'FF006600' : 'FFCC0000' } }; cell.alignment = { horizontal: 'right' }; }
+      if (col === 4) { cell.numFmt = '#,##0'; cell.font = { bold: true, color: { argb: 'FF1F497D' } }; cell.alignment = { horizontal: 'right' }; }
+      if (col === 5) { cell.numFmt = '#,##0'; cell.font = { color: { argb: 'FFCC0000' } }; cell.alignment = { horizontal: 'right' }; }
+      if (col === 6) { cell.numFmt = '#,##0'; cell.font = { bold: true, color: { argb: runBalance >= 0 ? 'FF006600' : 'FFCC0000' } }; cell.alignment = { horizontal: 'right' }; }
     });
-    if (r.advance > 0) row.getCell(3).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFF00' } };
+    if (r.advance > 0) row.getCell(4).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFF00' } };
   });
 
   // Dòng Tổng Cộng
   const remaining = totals.advance - totals.expense;
-  const tRow = ws.addRow(['Tổng Cộng', '', totals.advance, totals.expense, remaining, 0]);
+  const tRow = ws.addRow(['Tổng Cộng', '', '', totals.advance, totals.expense, remaining, 0]);
   tRow.height = 20;
   tRow.eachCell({ includeEmpty: true }, (cell, col) => {
     cell.fill   = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9D9D9' } };
     cell.font   = { bold: true, size: 11 };
     cell.border = { top: { style: 'medium' }, bottom: { style: 'medium' }, left: { style: 'thin' }, right: { style: 'thin' } };
-    if (col === 3) { cell.numFmt = '#,##0'; cell.font = { bold: true, color: { argb: 'FF1F497D' } }; cell.alignment = { horizontal: 'right' }; }
-    if (col === 4) { cell.numFmt = '#,##0'; cell.font = { bold: true, color: { argb: 'FFCC0000' } }; cell.alignment = { horizontal: 'right' }; }
-    if (col === 5) { cell.numFmt = '#,##0'; cell.font = { bold: true, color: { argb: remaining >= 0 ? 'FF006600' : 'FFCC0000' } }; cell.alignment = { horizontal: 'right' }; }
+    if (col === 4) { cell.numFmt = '#,##0'; cell.font = { bold: true, color: { argb: 'FF1F497D' } }; cell.alignment = { horizontal: 'right' }; }
+    if (col === 5) { cell.numFmt = '#,##0'; cell.font = { bold: true, color: { argb: 'FFCC0000' } }; cell.alignment = { horizontal: 'right' }; }
+    if (col === 6) { cell.numFmt = '#,##0'; cell.font = { bold: true, color: { argb: remaining >= 0 ? 'FF006600' : 'FFCC0000' } }; cell.alignment = { horizontal: 'right' }; }
   });
 
   await saveWorkbook(wb, `Quy_${driverName.replace(/\s/g, '_')}_T${month}_${year}.xlsx`);
