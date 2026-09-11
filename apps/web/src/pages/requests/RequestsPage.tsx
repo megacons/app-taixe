@@ -35,6 +35,7 @@ const PAYLOAD_KEY_LABEL: Record<string, string> = {
   amount:             'Số tiền',
   purpose:            'Mục đích',
   repay_date:         'Ngày hoàn trả',
+  expense_type:       'Loại chi phí',
   // Chi phí / Mua hàng
   description:        'Mô tả',
   category:           'Danh mục',
@@ -311,9 +312,9 @@ export default function RequestsPage() {
               <div className="mt-3 pt-3 border-t border-gray-100">
                 <p className="text-xs font-semibold text-gray-400 uppercase mb-2">Nội dung yêu cầu</p>
                 {Object.entries(detail.payload).map(([k, v]: any) => (
-                  <div key={k} className="flex justify-between border-b border-gray-50 pb-1.5 mb-1.5">
-                    <span className="text-gray-500">{fmtPayloadKey(k)}</span>
-                    <span className="font-medium text-gray-800 text-right max-w-[55%]">{String(v)}</span>
+                  <div key={k} className="flex justify-between gap-3 border-b border-gray-50 pb-1.5 mb-1.5">
+                    <span className="text-gray-500 flex-shrink-0">{fmtPayloadKey(k)}</span>
+                    <span className="font-medium text-gray-800 text-right break-words min-w-0" style={{ wordBreak: 'break-word' }}>{String(v)}</span>
                   </div>
                 ))}
               </div>
