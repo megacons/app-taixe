@@ -398,9 +398,9 @@ export default function TripsPage() {
               ['Tăng ca',  detail.is_overtime ? `✅ +${new Intl.NumberFormat('vi-VN').format(detail.overtime_pay)}đ` : 'Không'],
               ['Ghi chú',  detail.note || '—'],
             ].map(([k, v]) => (
-              <div key={k} className="flex justify-between border-b border-gray-100 pb-2">
-                <span className="text-gray-500">{k}</span>
-                <span className="font-medium text-gray-900 text-right max-w-[55%]">{v}</span>
+              <div key={k} className="flex justify-between border-b border-gray-100 pb-2 gap-3">
+                <span className="text-gray-500 flex-shrink-0">{k}</span>
+                <span className="font-medium text-gray-900 text-right break-words min-w-0" style={{ wordBreak: 'break-word' }}>{v}</span>
               </div>
             ))}
             {detail.delivery_receipt && (() => {
