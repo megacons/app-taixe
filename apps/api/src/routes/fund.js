@@ -549,8 +549,9 @@ router.get('/:driverId/export', authenticate, authorize('coordinator', 'accounta
     });
     headerRow.height = 40;
 
-    // ── Data rows ──
+    // ── Data rows ── (v3: BSX + Tên tài xế + Ngày + ...)
     const fmtNum = v => v ? new Intl.NumberFormat('vi-VN').format(v) : '';
+    console.info('[Fund Export] driver:', driver.full_name, '| columns: BSX + TenTaiXe + Ngay...');
     rows.forEach((r, idx) => {
       const row = ws.getRow(4 + idx);
       const vals = [
