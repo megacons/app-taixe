@@ -610,7 +610,7 @@ export default function SalaryPage() {
                         <td className="px-4 py-3 font-semibold text-red-500 whitespace-nowrap">
                           {new Intl.NumberFormat('vi-VN').format(r.payload?.amount ?? 0)}đ
                         </td>
-                        <td className="px-4 py-3 text-gray-600 max-w-[180px] truncate">
+                        <td className="px-4 py-3 text-gray-600 break-words" style={{ wordBreak: 'break-word', maxWidth: '220px' }}>
                           {r.payload?.reason ?? r.title ?? '—'}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
