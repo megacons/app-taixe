@@ -473,7 +473,7 @@ export default function DriverFundPage() {
                             <td className="px-4 py-2.5 border-r border-gray-100 text-right font-semibold text-red-600 whitespace-nowrap">
                               {r.amount > 0 ? `-${new Intl.NumberFormat('vi-VN').format(r.amount)}đ` : '—'}
                             </td>
-                            <td className="px-4 py-2.5 border-r border-gray-100 text-gray-700">
+                            <td className="px-4 py-2.5 border-r border-gray-100 text-gray-700 break-words" style={{ wordBreak: 'break-word', maxWidth: '300px' }}>
                               {r.note || r.title || '—'}
                             </td>
                             <td className="px-4 py-2.5 border-r border-gray-100">
@@ -657,7 +657,7 @@ export default function DriverFundPage() {
                         <td className="px-3 py-2.5 font-bold text-red-600 whitespace-nowrap">
                           {e.payload?.amount ? new Intl.NumberFormat('vi-VN').format(e.payload.amount) + 'đ' : '—'}
                         </td>
-                        <td className="px-3 py-2.5 text-gray-500 text-xs max-w-[180px] truncate">
+                        <td className="px-3 py-2.5 text-gray-500 text-xs break-words" style={{ wordBreak: 'break-word', maxWidth: '200px' }}>
                           {e.payload?.note || '—'}
                         </td>
                         <td className="px-3 py-2.5">
