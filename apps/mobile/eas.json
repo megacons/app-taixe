@@ -13,6 +13,15 @@
         "GOOGLE_MAPS_API_KEY": "AIzaSyB-qQR9kJXefBNKb9Y7qa3vphWCpLGP9HA"
       }
     },
+    "ios-testflight": {
+      "ios": {
+        "simulator": false
+      },
+      "env": {
+        "API_URL": "https://namthanhapi-production.up.railway.app",
+        "GOOGLE_MAPS_API_KEY": "AIzaSyB-qQR9kJXefBNKb9Y7qa3vphWCpLGP9HA"
+      }
+    },
     "production": {
       "android": {
         "buildType": "app-bundle"
@@ -20,6 +29,15 @@
       "env": {
         "API_URL": "https://namthanhapi-production.up.railway.app",
         "GOOGLE_MAPS_API_KEY": "AIzaSyB-qQR9kJXefBNKb9Y7qa3vphWCpLGP9HA"
+      }
+    }
+  },
+  "submit": {
+    "ios-testflight": {
+      "ios": {
+        "appleId": "info@vatlieuphotro.com",
+        "ascAppId": "",
+        "appleTeamId": ""
       }
     }
   }
