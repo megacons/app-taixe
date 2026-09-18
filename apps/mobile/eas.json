@@ -31,14 +31,5 @@
         "GOOGLE_MAPS_API_KEY": "AIzaSyB-qQR9kJXefBNKb9Y7qa3vphWCpLGP9HA"
       }
     }
-  },
-  "submit": {
-    "ios-testflight": {
-      "ios": {
-        "appleId": "info@vatlieuphotro.com",
-        "ascAppId": "",
-        "appleTeamId": ""
-      }
-    }
   }
 }
