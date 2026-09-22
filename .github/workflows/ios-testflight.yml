@@ -1,0 +1,86 @@
+name: iOS TestFlight Deploy
+
+on:
+  workflow_dispatch:  # Chạy thủ công từ GitHub Actions tab
+  push:
+    branches: [main]
+    paths:
+      - 'apps/mobile/**'  # Chỉ chạy khi có thay đổi trong mobile app
+
+jobs:
+  deploy-ios:
+    runs-on: macos-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: apps/mobile/package-lock.json
+
+      - name: Install dependencies
+        working-directory: apps/mobile
+        run: npm ci --legacy-peer-deps
+
+      - name: Setup Expo
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Setup iOS credentials
+        working-directory: apps/mobile
+        run: |
+          echo "${{ secrets.DISTRIBUTION_P12_BASE64 }}" | base64 --decode > distribution.p12
+          echo "${{ secrets.PROVISIONING_PROFILE_BASE64 }}" | base64 --decode > distribution.mobileprovision
+
+      - name: Update credentials.json
+        working-directory: apps/mobile
+        run: |
+          cat > credentials.json << EOF
+          {
+            "ios": {
+              "distributionCertificate": {
+                "path": "distribution.p12",
+                "password": "${{ secrets.P12_PASSWORD }}"
+              },
+              "provisioningProfilePath": "distribution.mobileprovision"
+            }
+          }
+          EOF
+
+      - name: Build iOS
+        working-directory: apps/mobile
+        env:
+          API_URL: https://namthanhapi-production.up.railway.app
+          GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+        run: |
+          eas build --platform ios --profile ios-testflight --non-interactive --no-wait
+          echo "Build started on EAS - check https://expo.dev for status"
+
+      - name: Submit to TestFlight (after build)
+        working-directory: apps/mobile
+        env:
+          FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+        run: |
+          # Install fastlane
+          gem install fastlane --no-document
+          
+          # Wait for EAS build and get IPA
+          BUILD_URL=$(eas build:list --platform ios --status finished --limit 1 --json --non-interactive | python3 -c "import sys,json; data=json.load(sys.stdin); print(data[0]['artifacts']['buildUrl'])" 2>/dev/null || echo "")
+          
+          if [ -n "$BUILD_URL" ]; then
+            curl -L "$BUILD_URL" -o app.ipa
+            fastlane pilot upload \
+              --ipa app.ipa \
+              --username info@vatlieuphotro.com \
+              --apple_id 6813797881 \
+              --skip_waiting_for_build_processing true
+          else
+            echo "Could not get build URL, please submit manually"
+          fi
