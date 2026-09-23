@@ -18,6 +18,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.namthanh.driver",
+      "buildNumber": "2",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Ứng dụng cần truy cập vị trí để ghi nhận địa điểm chuyến hàng",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Ứng dụng cần truy cập vị trí nền để theo dõi GPS",
@@ -57,7 +58,7 @@
         "android.permission.POST_NOTIFICATIONS",
         "android.permission.WAKE_LOCK"
       ],
-      "versionCode": 1
+      "versionCode": 2
     },
     "plugins": [
       "expo-location",
