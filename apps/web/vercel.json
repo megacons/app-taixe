@@ -2,11 +2,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://namthanhapi-production.up.railway.app/api/:path*"
+      "destination": "https://app-taixe.onrender.com/api/:path*"
     },
     {
       "source": "/uploads/:path*",
-      "destination": "https://namthanhapi-production.up.railway.app/uploads/:path*"
+      "destination": "https://app-taixe.onrender.com/uploads/:path*"
     },
     {
       "source": "/(.*)",
