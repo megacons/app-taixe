@@ -1,6 +1,7 @@
 {
   "cli": {
-    "version": ">= 16.0.0"
+    "version": ">= 7.0.0",
+    "promptToConfigurePushNotifications": false
   },
   "build": {
     "preview": {
@@ -9,7 +10,7 @@
         "gradleCommand": ":app:assembleRelease"
       },
       "env": {
-        "API_URL": "https://namthanhapi-production.up.railway.app",
+        "API_URL": "https://app-taixe.onrender.com",
         "GOOGLE_MAPS_API_KEY": "AIzaSyB-qQR9kJXefBNKb9Y7qa3vphWCpLGP9HA"
       }
     },
@@ -18,7 +19,7 @@
         "simulator": false
       },
       "env": {
-        "API_URL": "https://namthanhapi-production.up.railway.app",
+        "API_URL": "https://app-taixe.onrender.com",
         "GOOGLE_MAPS_API_KEY": "AIzaSyB-qQR9kJXefBNKb9Y7qa3vphWCpLGP9HA"
       }
     },
@@ -27,8 +28,17 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "API_URL": "https://namthanhapi-production.up.railway.app",
+        "API_URL": "https://app-taixe.onrender.com",
         "GOOGLE_MAPS_API_KEY": "AIzaSyB-qQR9kJXefBNKb9Y7qa3vphWCpLGP9HA"
+      }
+    }
+  },
+  "submit": {
+    "ios-testflight": {
+      "ios": {
+        "appleId": "info@vatlieuphotro.com",
+        "appleTeamId": "7KDFGX98DB",
+        "ascAppId": "6813797881"
       }
     }
   }

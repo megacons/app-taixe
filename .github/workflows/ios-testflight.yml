@@ -57,7 +57,7 @@ jobs:
       - name: Build iOS with EAS
         working-directory: apps/mobile
         env:
-          API_URL: https://namthanhapi-production.up.railway.app
+          API_URL: https://app-taixe.onrender.com
           GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
         run: |
           eas build --platform ios --profile ios-testflight --non-interactive --wait
