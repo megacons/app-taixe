@@ -18,7 +18,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.namthanh.driver",
-      "buildNumber": "2",
+      "buildNumber": "3",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Ứng dụng cần truy cập vị trí để ghi nhận địa điểm chuyến hàng",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Ứng dụng cần truy cập vị trí nền để theo dõi GPS",
