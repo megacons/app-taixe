@@ -44,7 +44,16 @@ router.get('/summary/daily', authenticate, async (req, res, next) => {
     const totalIncome  = trips.reduce((s, t) => s + (t.income  || 0), 0);
     const totalExpense = trips.reduce((s, t) => s + (t.expense || 0), 0);
 
-    const { overtimeTrips, overtimePay } = await calcDailyOvertime(totalTrips);
+    // Tính tăng ca: group theo từng tài xế, mỗi tài xế > threshold mới tính TC
+    const { getOvertimeConfig } = require('../utils/overtime');
+    const { threshold } = await getOvertimeConfig();
+    const driverTripCount = {};
+    trips.forEach(t => {
+      const dId = t.driver_id?.toString() ?? 'unknown';
+      driverTripCount[dId] = (driverTripCount[dId] ?? 0) + 1;
+    });
+    const overtimeTrips = Object.values(driverTripCount).reduce((s, c) => s + Math.max(0, c - threshold), 0);
+    const overtimePay = 0; // Admin view: không tính tiền TC ở đây, chỉ đếm số chuyến TC
 
     res.json({
       success: true,

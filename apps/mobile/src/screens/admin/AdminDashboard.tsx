@@ -319,11 +319,31 @@ export default function AdminDashboard() {
                         )}
                       </View>
                     </View>
-                    {/* Trips in day — mới nhất trên đầu, STT theo thứ tự API (index trong danh sách mới→cũ, đảo ngược = cũ nhất STT 1) */}
-                    {trips.map((t, idxDesc) => {
-                      const stt = trips.length - idxDesc; // index 0 (mới nhất) → STT cao nhất
-                      const isOT = stt > 4;
-                      return (
+                    {/* Trips in day — STT tính theo từng tài xế riêng */}
+                    {(() => {
+                      // Group theo driver, sort mỗi driver theo thời gian (cũ nhất = STT 1)
+                      const driverTripsMap: Record<string, any[]> = {};
+                      trips.forEach(t => {
+                        const dId = t.driver_id?._id ?? t.driver_id ?? 'unknown';
+                        if (!driverTripsMap[dId]) driverTripsMap[dId] = [];
+                        driverTripsMap[dId].push(t);
+                      });
+                      // Sort mỗi driver's trips theo thời gian tăng dần (cũ → mới)
+                      Object.values(driverTripsMap).forEach(arr =>
+                        arr.sort((a, b) => new Date(a.trip_date).getTime() - new Date(b.trip_date).getTime())
+                      );
+                      // Map trip._id → stt (per driver)
+                      const sttMap: Record<string, number> = {};
+                      Object.entries(driverTripsMap).forEach(([dId, arr]) => {
+                        arr.forEach((t, idx) => {
+                          sttMap[t._id] = idx + 1; // STT 1-indexed, cũ nhất = 1
+                        });
+                      });
+                      // Render: giữ thứ tự mới nhất trên đầu (theo API)
+                      return trips.map((t) => {
+                        const stt = sttMap[t._id] ?? 1;
+                        const isOT = stt > 4;
+                        return (
                         <TouchableOpacity
                           key={t._id}
                           style={[S.tripCard, isOT && S.tripCardOT]}
@@ -356,7 +376,8 @@ export default function AdminDashboard() {
                           </View>
                         </TouchableOpacity>
                       );
-                    })}
+                      });
+                    })()}
                   </View>
                 ));
               })()
