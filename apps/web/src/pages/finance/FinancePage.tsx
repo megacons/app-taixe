@@ -68,20 +68,27 @@ export default function FinancePage() {
 
         /* 3. Get advances & expenses approved this month */
         const reqRes = await api.get('/requests', {
-          params: { driverId: d._id, status: 'approved', limit: 100 },
+          params: { driverId: d._id, status: 'approved', limit: 200 },
         });
         const reqs: any[] = reqRes.data.data?.requests ?? [];
+
+        // Lọc chỉ lấy requests trong tháng đang xem
+        const monthStr = `${year}-${String(month).padStart(2, '0')}`;
+        const reqsThisMonth = reqs.filter(r => {
+          const d = r.payload?.date ?? r.updated_at?.slice(0, 10) ?? r.created_at?.slice(0, 10) ?? '';
+          return d.startsWith(monthStr);
+        });
 
         const totalIncome   = trips.reduce((s, t) => s + (t.income  || 0), 0);
         const totalExpense  = trips.reduce((s, t) => s + (t.expense || 0), 0);
         const overtripCount = trips.filter(t => t.is_overtime).length;
         const overtimePay   = trips.reduce((s, t) => s + (t.overtime_pay || 0), 0);
 
-        const advanceTotal  = reqs
+        const advanceTotal  = reqsThisMonth
           .filter(r => r.type === 'salary_advance')
           .reduce((s, r) => s + (r.payload?.amount || 0), 0);
 
-        const expenseTotal  = reqs
+        const expenseTotal  = reqsThisMonth
           .filter(r => r.type === 'expense')
           .reduce((s, r) => s + (r.payload?.amount || 0), 0);
 
