@@ -129,6 +129,7 @@ export default function AdminFund() {
 
 /* ─── FundEntriesModal — các lần chi tiền trong tháng ──── */
 function FundEntriesModal({ driver, month, year, onClose }: any) {
+  const navigation = useNavigation<any>();
   const [entries, setEntries] = useState<any[]>([]);
   const [totals,  setTotals]  = useState({ total: 0, approved: 0 });
   const [loading, setLoading] = useState(true);
@@ -218,7 +219,12 @@ function FundEntriesModal({ driver, month, year, onClose }: any) {
                     };
                     const st = ST[e.status] ?? ST.pending;
                     return (
-                      <View key={String(e._id ?? idx)} style={T.entryRow}>
+                      <TouchableOpacity
+                        key={String(e._id ?? idx)}
+                        style={T.entryRow}
+                        activeOpacity={0.75}
+                        onPress={() => { onClose(); navigation.navigate('RequestDetail', { requestId: e._id }); }}
+                      >
                         <View style={T.entryIcon}>
                           <Text style={{ fontSize: 18 }}>💸</Text>
                         </View>
@@ -236,7 +242,7 @@ function FundEntriesModal({ driver, month, year, onClose }: any) {
                             <Text style={[T.badgeText, { color: st.text }]}>{st.label}</Text>
                           </View>
                         </View>
-                      </View>
+                      </TouchableOpacity>
                     );
                   })}
                   <View style={{ height: 20 }} />

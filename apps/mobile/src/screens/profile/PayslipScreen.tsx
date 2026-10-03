@@ -48,6 +48,15 @@ export default function PayslipScreen() {
       );
       const totalAdvance = monthAdvances.reduce((s, r) => s + (r.payload?.amount ?? 0), 0);
 
+      // Lấy expense requests đã duyệt trong tháng
+      const expenseRes = await api.get('/requests', { params: { type: 'expense', status: 'approved', limit: 100 } });
+      const allExpenseReqs: any[] = expenseRes.data.data?.requests ?? [];
+      const monthExpenses = allExpenseReqs.filter(r => {
+        const d = r.payload?.date ?? r.created_at?.slice(0, 10) ?? '';
+        return d.startsWith(monthStr);
+      });
+      const totalExpense = monthExpenses.reduce((s, r) => s + (r.payload?.amount ?? 0), 0);
+
       // Tính tăng ca theo ngày (mỗi ngày > 4 chuyến)
       const dayMap: Record<string, number> = {};
       trips.forEach((t: any) => {
@@ -62,7 +71,7 @@ export default function PayslipScreen() {
       const overtimeRate      = driver.overtime_rate ?? 0;
       const overtimePay       = otTrips * overtimeRate;
       const totalIncome       = baseSalary + positionAllowance + fuelAllowance + overtimePay;
-      const netSalary         = totalIncome - totalAdvance;
+      const netSalary         = totalIncome + totalExpense - totalAdvance;
 
       setAdvances(monthAdvances);
       setData({
@@ -77,6 +86,7 @@ export default function PayslipScreen() {
         overtimePay,
         totalIncome,
         totalAdvance,
+        totalExpense,
         netSalary,
       });
     } catch (_) {}
@@ -138,6 +148,12 @@ export default function PayslipScreen() {
             {/* Divider */}
             <View style={{ height: 1, backgroundColor: Colors.gray200, marginHorizontal: 16, marginVertical: 4 }} />
 
+            {/* Chi phí đã chi — hoàn trả */}
+            {data.totalExpense > 0 && (
+              <Row icon="💸" label="Chi phí đã chi (hoàn trả)"
+                value={`+ ${fmtVND(data.totalExpense)}`} color={Colors.success} />
+            )}
+
             {/* Tiền ứng — nhấn để xem chi tiết */}
             <TouchableOpacity onPress={() => advances.length > 0 && setShowAdvance(true)} activeOpacity={0.7}>
               <View style={R.row}>
@@ -176,6 +192,7 @@ export default function PayslipScreen() {
 
           <Text style={S.note}>
             * Tăng ca: mỗi ngày chạy trên 4 chuyến, số chuyến dư tính tăng ca{'\n'}
+            * Chi phí hoàn trả: các yêu cầu chi đã được duyệt trong tháng, cộng vào lương{'\n'}
             * Tiền ứng: chỉ tính các yêu cầu đã được duyệt
           </Text>
 

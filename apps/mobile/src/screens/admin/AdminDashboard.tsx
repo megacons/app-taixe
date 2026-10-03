@@ -139,7 +139,7 @@ export default function AdminDashboard() {
           </View>
           <Text style={S.headerName}>{user?.name}</Text>
         </TouchableOpacity>
-        {/* Logo công ty */}
+        {/* Logo công ty */}làm 
         <View style={S.logoBox}>
           {companyLogoUrl ? (
             <Image source={{ uri: companyLogoUrl }} style={S.logoImg} resizeMode="contain" />
@@ -203,32 +203,14 @@ export default function AdminDashboard() {
             </View>
 
             {/* Monthly fund summary */}
-            <Text style={S.sectionTitle}>Quỹ tháng này</Text>
+            <Text style={S.sectionTitle}>Chi phí tháng này</Text>
             <View style={S.monthCard}>
-              <View style={S.monthRow}>
-                <View style={S.monthLeft}>
-                  <Text style={S.monthIcon}>💰</Text>
-                  <Text style={S.monthLabel}>Quỹ đã cấp</Text>
-                </View>
-                <Text style={[S.monthValue, { color: Colors.success }]}>{fmtVND(kpi.total_advance_month)}đ</Text>
-              </View>
-              <View style={S.divider} />
               <View style={S.monthRow}>
                 <View style={S.monthLeft}>
                   <Text style={S.monthIcon}>💸</Text>
                   <Text style={S.monthLabel}>Tài xế đã chi</Text>
                 </View>
                 <Text style={[S.monthValue, { color: Colors.error }]}>{fmtVND(kpi.total_expense_month)}đ</Text>
-              </View>
-              <View style={S.divider} />
-              <View style={S.monthRow}>
-                <View style={S.monthLeft}>
-                  <Text style={S.monthIcon}>🏦</Text>
-                  <Text style={S.monthLabel}>Còn lại</Text>
-                </View>
-                <Text style={[S.monthValue, { color: Colors.primary, fontWeight: '800' }]}>
-                  {fmtVND(kpi.total_advance_month - kpi.total_expense_month)}đ
-                </Text>
               </View>
             </View>
 
@@ -312,7 +294,13 @@ export default function AdminDashboard() {
                     const label = isNaN(d.getTime()) ? dateKey
                       : `${DAY[d.getDay()]} ${dateKey.split('-').reverse().join('/')}`;
                     const total = trips.length;
-                    const otCount = Math.max(0, total - 4);
+                    // Tính tăng ca đúng: nhóm theo từng tài xế, mỗi tài xế > 4 chuyến/ngày mới tính TC
+                    const driverMap: Record<string, number> = {};
+                    trips.forEach(t => {
+                      const dId = t.driver_id?._id ?? t.driver_id ?? 'unknown';
+                      driverMap[dId] = (driverMap[dId] ?? 0) + 1;
+                    });
+                    const otCount = Object.values(driverMap).reduce((s, c) => s + Math.max(0, c - 4), 0);
                     return { label, trips, total, otCount };
                   });
                 return sections.map(({ label, trips, total, otCount }) => (
