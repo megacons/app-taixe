@@ -509,8 +509,8 @@ export default function AddTripScreen() {
             />
           </Field>
 
-          {/* ── Số lượng đá + Đơn vị ── */}
-          <Field label="Số lượng đá *" error={errors.quantity}>
+          {/* ── Số lượng: + Đơn vị ── */}
+          <Field label="Số lượng: *" error={errors.quantity}>
             <View style={{ flexDirection: 'row', gap: 8 }}>
               {/* Input số lượng */}
               <View style={[S.input, S.row, { paddingHorizontal: 0, flex: 2 }]}>
