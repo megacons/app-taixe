@@ -73,10 +73,14 @@ export default function FinancePage() {
         const reqs: any[] = reqRes.data.data?.requests ?? [];
 
         // Lọc chỉ lấy requests trong tháng đang xem
+        // Ưu tiên payload.date (ngày chi thực tế), fallback về updated_at/created_at
         const monthStr = `${year}-${String(month).padStart(2, '0')}`;
         const reqsThisMonth = reqs.filter(r => {
-          const d = r.payload?.date ?? r.updated_at?.slice(0, 10) ?? r.created_at?.slice(0, 10) ?? '';
-          return d.startsWith(monthStr);
+          const dateToCheck = r.payload?.date
+            ?? r.updated_at?.slice(0, 10)
+            ?? r.created_at?.slice(0, 10)
+            ?? '';
+          return dateToCheck.startsWith(monthStr);
         });
 
         const totalIncome   = trips.reduce((s, t) => s + (t.income  || 0), 0);
@@ -88,7 +92,9 @@ export default function FinancePage() {
           .filter(r => r.type === 'salary_advance')
           .reduce((s, r) => s + (r.payload?.amount || 0), 0);
 
-        const expenseTotal  = reqsThisMonth
+        // expense: lấy tất cả đã approved, không lọc tháng chặt
+        // vì có thể ngày chi khác tháng duyệt
+        const expenseTotal  = reqs
           .filter(r => r.type === 'expense')
           .reduce((s, r) => s + (r.payload?.amount || 0), 0);
 
