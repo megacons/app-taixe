@@ -211,6 +211,7 @@ export default function SalaryPage() {
       { key: 'base',     width: 20 },
       { key: 'ot_pay',   width: 20 },
       { key: 'ot_trips', width: 14 },
+      { key: 'expense',  width: 20 },
       { key: 'advance',  width: 20 },
       { key: 'total',    width: 20 },
       { key: 'stk',      width: 20 },
@@ -218,7 +219,7 @@ export default function SalaryPage() {
     ];
 
     // Header
-    const hRow = ws.addRow(['Tên tài xế', 'Lương cơ bản (đ)', 'Lương tăng ca (đ)', 'Số chuyến TC', 'Tiền ứng (đ)', 'Tổng lương (đ)', 'STK', 'Ngân hàng']);
+    const hRow = ws.addRow(['Tên tài xế', 'Lương cơ bản (đ)', 'Lương tăng ca (đ)', 'Số chuyến TC', 'Tiền đã chi (đ)', 'Tiền ứng (đ)', 'Tổng lương (đ)', 'STK', 'Ngân hàng']);
     hRow.height = 20;
     hRow.eachCell(cell => {
       cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F3864' } };
@@ -230,7 +231,7 @@ export default function SalaryPage() {
     // Data rows
     filtered.forEach((d, i) => {
       const basePlusAllowance = (d.base_salary ?? 0) + (d.position_allowance ?? 0) + (d.fuel_allowance ?? 0);
-      const totalSalary = basePlusAllowance + (d.overtime_pay_month ?? 0) - (d.advance_month ?? 0);
+      const totalSalary = basePlusAllowance + (d.overtime_pay_month ?? 0) + (d.expense_month ?? 0) - (d.advance_month ?? 0);
       const bgColor = i % 2 === 0 ? 'FFFFFFFF' : 'FFF0F4FF';
 
       const row = ws.addRow([
@@ -238,6 +239,7 @@ export default function SalaryPage() {
         d.base_salary ?? 0,
         d.overtime_pay_month ?? 0,
         d.overtime_trips_month ?? 0,
+        d.expense_month ?? 0,
         d.advance_month ?? 0,
         totalSalary,
         d.bank_account ?? '',
@@ -250,8 +252,9 @@ export default function SalaryPage() {
         if (col === 2) { cell.numFmt = '#,##0'; cell.font = { color: { argb: 'FF1F497D' }, bold: true }; cell.alignment = { horizontal: 'right' }; }
         if (col === 3) { cell.numFmt = '#,##0'; cell.font = { color: { argb: (d.overtime_pay_month ?? 0) > 0 ? 'FFB45309' : 'FF666666' } }; cell.alignment = { horizontal: 'right' }; }
         if (col === 4) { cell.alignment = { horizontal: 'center' }; }
-        if (col === 5) { cell.numFmt = '#,##0'; cell.font = { color: { argb: 'FFCC0000' } }; cell.alignment = { horizontal: 'right' }; }
-        if (col === 6) { cell.numFmt = '#,##0'; cell.font = { bold: true, color: { argb: 'FF006600' } }; cell.alignment = { horizontal: 'right' }; }
+        if (col === 5) { cell.numFmt = '#,##0'; cell.font = { color: { argb: 'FF006600' } }; cell.alignment = { horizontal: 'right' }; }
+        if (col === 6) { cell.numFmt = '#,##0'; cell.font = { color: { argb: 'FFCC0000' } }; cell.alignment = { horizontal: 'right' }; }
+        if (col === 7) { cell.numFmt = '#,##0'; cell.font = { bold: true, color: { argb: 'FF006600' } }; cell.alignment = { horizontal: 'right' }; }
       });
     });
 
@@ -261,6 +264,7 @@ export default function SalaryPage() {
       filtered.reduce((s, d) => s + (d.base_salary ?? 0), 0),
       filtered.reduce((s, d) => s + (d.overtime_pay_month ?? 0), 0),
       filtered.reduce((s, d) => s + (d.overtime_trips_month ?? 0), 0),
+      filtered.reduce((s, d) => s + (d.expense_month ?? 0), 0),
       filtered.reduce((s, d) => s + (d.advance_month ?? 0), 0),
       totalGrand,
       '', '',
@@ -270,7 +274,7 @@ export default function SalaryPage() {
       cell.fill   = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFE599' } };
       cell.font   = { bold: true, size: 11 };
       cell.border = { top: { style: 'medium' }, bottom: { style: 'medium' }, left: { style: 'thin' }, right: { style: 'thin' } };
-      if (col === 2 || col === 3 || col === 5 || col === 6) { cell.numFmt = '#,##0'; cell.alignment = { horizontal: 'right' }; }
+      if (col === 2 || col === 3 || col === 5 || col === 6 || col === 7) { cell.numFmt = '#,##0'; cell.alignment = { horizontal: 'right' }; }
       if (col === 4) { cell.alignment = { horizontal: 'center' }; }
     });
 
