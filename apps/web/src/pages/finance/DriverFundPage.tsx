@@ -437,7 +437,7 @@ export default function DriverFundPage() {
                               {r.date ? format(new Date(r.date + 'T00:00:00'), 'EEE dd/MM/yyyy', { locale: vi }) : '—'}
                             </td>
                             <td className="px-4 py-2.5 border-r border-gray-100 text-right font-semibold text-red-600 whitespace-nowrap">
-                              {r.amount > 0 ? `-${new Intl.NumberFormat('vi-VN').format(r.amount)}đ` : '—'}
+                              {r.amount > 0 ? `${new Intl.NumberFormat('vi-VN').format(r.amount)}đ` : '—'}
                             </td>
                             <td className="px-4 py-2.5 border-r border-gray-100 text-gray-700 break-words" style={{ wordBreak: 'break-word', maxWidth: '300px' }}>
                               {r.note || r.title || '—'}

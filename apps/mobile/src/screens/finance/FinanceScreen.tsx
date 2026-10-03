@@ -163,7 +163,7 @@ export default function FinanceScreen() {
                   </View>
                 </View>
                 <View style={S.cardRight}>
-                  <Text style={S.cardAmount}>-{fmtVND(item.amount)}</Text>
+                  <Text style={S.cardAmount}>{fmtVND(item.amount)}</Text>
                   <View style={[S.badge, { backgroundColor: st.bg }]}>
                     <Text style={[S.badgeText, { color: st.text }]}>{st.label}</Text>
                   </View>
@@ -350,7 +350,7 @@ const S = StyleSheet.create({
   cardDate:  { fontSize: 13, fontWeight: '700', color: Colors.gray900 },
   cardNote:  { fontSize: 11, color: Colors.gray500, marginTop: 2, fontStyle: 'italic' },
   cardRight: { alignItems: 'flex-end', gap: 5, marginLeft: 8 },
-  cardAmount:{ fontSize: 14, fontWeight: '800', color: Colors.error },
+  cardAmount:{ fontSize: 14, fontWeight: '800', color: Colors.gray900 },
   badge:     { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
   badgeText: { fontSize: 11, fontWeight: '700' },
 

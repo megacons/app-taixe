@@ -236,7 +236,7 @@ function FundEntriesModal({ driver, month, year, onClose }: any) {
                           ) : null}
                         </View>
                         <View style={{ alignItems: 'flex-end', gap: 3 }}>
-                          <Text style={T.entryAmount}>-{fmtVND(e.amount)}đ</Text>
+                          <Text style={T.entryAmount}>{fmtVND(e.amount)}đ</Text>
                           <View style={[T.badge, { backgroundColor: st.bg }]}>
                             <Text style={[T.badgeText, { color: st.text }]}>{st.label}</Text>
                           </View>
@@ -317,7 +317,7 @@ const T = StyleSheet.create({
   entryIcon:  { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.error + '15', justifyContent: 'center', alignItems: 'center' },
   entryDate:  { fontSize: 13, fontWeight: '700', color: Colors.gray900 },
   entryNote:  { fontSize: 11, color: Colors.gray500, marginTop: 2, fontStyle: 'italic' },
-  entryAmount:{ fontSize: 15, fontWeight: '800', color: Colors.error },
+  entryAmount:{ fontSize: 15, fontWeight: '800', color: Colors.gray900 },
   badge:      { borderRadius: 8, paddingHorizontal: 7, paddingVertical: 2 },
   badgeText:  { fontSize: 10, fontWeight: '700' },
 
