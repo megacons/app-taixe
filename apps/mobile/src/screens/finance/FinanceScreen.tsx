@@ -34,7 +34,7 @@ export default function FinanceScreen() {
   const now = new Date();
   const [month, setMonth]         = useState(now.getMonth() + 1);
   const [year,  setYear]          = useState(now.getFullYear());
-  const [fund,      setFund]      = useState({ advance: 0, expense: 0, remaining: 0 });
+  const [fund,      setFund]      = useState({ total: 0, approved: 0 });
   const [items,     setItems]     = useState<any[]>([]);
   const [loading,   setLoading]   = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -49,15 +49,8 @@ export default function FinanceScreen() {
         api.get('/requests', { params: { type: 'expense', limit: 200 } }),
       ]);
 
-      // Tổng hợp quỹ
-      const totals = fundRes.data.data?.totals ?? {};
-      setFund({
-        advance:   totals.advance   ?? 0,
-        expense:   totals.expense   ?? 0,
-        remaining: totals.remaining ?? 0,
-      });
+      // Không dùng FundEntry totals nữa — chỉ dùng để compat
 
-      // Chỉ lấy requests trong tháng — mỗi request hiển thị 1 dòng riêng
       const allReqs: any[] = reqRes.data.data?.requests ?? [];
       const filtered = allReqs
         .filter(r => {
@@ -75,6 +68,11 @@ export default function FinanceScreen() {
         .sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
 
       setItems(filtered);
+
+      // Tính tổng từ requests (không dùng FundEntry advance/remaining nữa)
+      const totalAll      = filtered.reduce((s, r) => s + r.amount, 0);
+      const totalApproved = filtered.filter(r => r.status === 'approved').reduce((s, r) => s + r.amount, 0);
+      setFund({ total: totalAll, approved: totalApproved });
     } catch (_) {}
     finally { setLoading(false); }
   }, [month, year]);
@@ -90,9 +88,9 @@ export default function FinanceScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()} style={S.backBtn}>
           <Text style={S.backIcon}>←</Text>
         </TouchableOpacity>
-        <Text style={S.headerTitle}>Quỹ</Text>
+        <Text style={S.headerTitle}>Chi phí vận hành</Text>
         <TouchableOpacity style={S.addBtn} onPress={() => setShowForm(true)}>
-          <Text style={S.addBtnText}>+ Yêu cầu chi</Text>
+          <Text style={S.addBtnText}>+ Yêu cầu hoàn chi</Text>
         </TouchableOpacity>
       </View>
 
@@ -111,29 +109,19 @@ export default function FinanceScreen() {
         {/* Summary card */}
         <View style={S.summaryCard}>
           <View style={S.summaryItem}>
-            <Text style={S.summaryLabel}>Tổng ứng</Text>
-            <Text style={[S.summaryValue, { color: '#3b82f6' }]}>{fmtVND(fund.advance)}</Text>
+            <Text style={S.summaryLabel}>Tổng chi phí</Text>
+            <Text style={[S.summaryValue, { color: Colors.error }]}>{fmtVND(fund.total)}</Text>
           </View>
           <View style={S.summaryDivider} />
           <View style={S.summaryItem}>
-            <Text style={S.summaryLabel}>Đã chi</Text>
-            <Text style={[S.summaryValue, { color: Colors.error }]}>{fmtVND(fund.expense)}</Text>
-          </View>
-          <View style={S.summaryDivider} />
-          <View style={S.summaryItem}>
-            <Text style={S.summaryLabel}>Còn lại</Text>
-            <Text style={[S.summaryValue, {
-              color: fund.remaining >= 0 ? Colors.success : Colors.error,
-              fontWeight: '800',
-            }]}>
-              {fmtVND(fund.remaining)}
-            </Text>
+            <Text style={S.summaryLabel}>Đã duyệt hoàn trả</Text>
+            <Text style={[S.summaryValue, { color: Colors.success, fontWeight: '800' }]}>{fmtVND(fund.approved)}</Text>
           </View>
         </View>
 
         {/* List header */}
         <View style={S.listHeader}>
-          <Text style={S.listTitle}>Yêu cầu chi tháng {month}/{year}</Text>
+          <Text style={S.listTitle}>Chi phí tháng {month}/{year}</Text>
           <Text style={S.listCount}>{items.length} yêu cầu</Text>
         </View>
 
@@ -143,9 +131,9 @@ export default function FinanceScreen() {
         ) : items.length === 0 ? (
           <View style={S.empty}>
             <Text style={{ fontSize: 40 }}>💸</Text>
-            <Text style={S.emptyText}>Chưa có yêu cầu chi nào</Text>
+            <Text style={S.emptyText}>Chưa có chi phí nào trong tháng</Text>
             <TouchableOpacity style={S.emptyBtn} onPress={() => setShowForm(true)}>
-              <Text style={S.emptyBtnText}>+ Tạo yêu cầu</Text>
+              <Text style={S.emptyBtnText}>+ Tạo yêu cầu hoàn chi</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -232,7 +220,7 @@ function ExpenseForm({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
           expense_type: 'Chi phí vận hành',
         },
       });
-      Alert.alert('✅ Đã gửi', 'Yêu cầu chi phí đã gửi, chờ admin duyệt.', [
+      Alert.alert('✅ Đã gửi', 'Yêu cầu hoàn chi đã gửi, chờ admin duyệt.', [
         { text: 'OK', onPress: onSuccess },
       ]);
     } catch (err: any) {
@@ -255,7 +243,7 @@ function ExpenseForm({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
               <TouchableOpacity onPress={onClose}>
                 <Text style={F.cancelText}>Hủy</Text>
               </TouchableOpacity>
-              <Text style={F.headerTitle}>Yêu cầu chi phí</Text>
+              <Text style={F.headerTitle}>Yêu cầu hoàn chi</Text>
               <View style={{ width: 40 }} />
             </View>
 

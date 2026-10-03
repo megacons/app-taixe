@@ -215,7 +215,7 @@ export default function FinancePage() {
                   { label: 'Số chuyến',            align: 'right' },
                   { label: 'Lương Cơ Bản',         align: 'right' },
                   { label: 'Lương Tăng Ca',        align: 'right' },
-                  { label: 'Tổng Chi (Reimb.)',    align: 'right' },
+                  { label: 'Chi Phí Hoàn Trả',      align: 'right' },
                   { label: 'Tổng Tạm Ứng',        align: 'right' },
                   { label: 'Thực Lĩnh',            align: 'right', highlight: true },
                   { label: 'Trạng Thái',           align: 'center' },

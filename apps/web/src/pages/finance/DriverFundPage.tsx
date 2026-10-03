@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { ArrowDownTrayIcon, PlusIcon, PencilIcon, TrashIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
+import { ArrowDownTrayIcon, DocumentTextIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
@@ -31,39 +31,35 @@ async function exportFundExcel(params: {
 }) {
   const { driverName, licensePlate, month, year, rows, requests, totals } = params;
 
-  type ExcelRow = { date: string; advance: number; expense: number; note: string };
+  type ExcelRow = { date: string; expense: number; note: string };
   const allRows: ExcelRow[] = [];
-  rows.forEach(r => {
-    if (r.advance > 0) allRows.push({ date: r.date, advance: r.advance, expense: 0, note: r.note ?? '' });
-  });
   requests.forEach(r => {
     const date   = r.payload?.date ?? r.date ?? r.created_at?.slice(0, 10) ?? '';
     const amount = r.payload?.amount ?? r.amount ?? r.expense ?? 0;
     const note   = r.payload?.note ?? r.note ?? r.title ?? '';
-    if (amount > 0) allRows.push({ date, advance: 0, expense: amount, note });
+    if (amount > 0) allRows.push({ date, expense: amount, note });
   });
   allRows.sort((a, b) => a.date.localeCompare(b.date));
 
   const wb = new ExcelJS.Workbook();
   wb.creator = 'Nam Thanh Transport';
   wb.created = new Date();
-  const ws = wb.addWorksheet(`Quỹ T${month}-${year}`);
+  const ws = wb.addWorksheet(`Chi phí T${month}-${year}`);
   ws.columns = [
     { key: 'bsx', width: 14 }, { key: 'name', width: 22 }, { key: 'date', width: 14 },
-    { key: 'advance', width: 18 }, { key: 'expense', width: 18 },
-    { key: 'balance', width: 18 }, { key: 'note', width: 44 },
+    { key: 'expense', width: 20 }, { key: 'note', width: 50 },
   ];
 
   // Row 1: Tên tài xế
-  const r1 = ws.addRow(['', '', '', '', '', '', `TÀI XẾ ${driverName.toUpperCase()}`]);
+  const r1 = ws.addRow(['', '', '', '', `TÀI XẾ ${driverName.toUpperCase()}`]);
   r1.height = 22;
-  r1.getCell(7).font      = { bold: true, size: 14, color: { argb: 'FF8B0000' } };
-  r1.getCell(7).alignment = { horizontal: 'right', vertical: 'middle' };
+  r1.getCell(5).font      = { bold: true, size: 14, color: { argb: 'FF8B0000' } };
+  r1.getCell(5).alignment = { horizontal: 'right', vertical: 'middle' };
 
   ws.addRow([]); // Row 2 trống
 
   // Row 3: Header
-  const hRow = ws.addRow(['BSX', 'Tên tài xế', 'Ngày tháng', 'Tiền ứng', 'Tiền chi', 'Tiền còn lại', 'Ghi chú']);
+  const hRow = ws.addRow(['BSX', 'Tên tài xế', 'Ngày tháng', 'Chi phí', 'Ghi chú']);
   hRow.height = 20;
   hRow.eachCell(cell => {
     cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF2CC' } };
@@ -73,16 +69,12 @@ async function exportFundExcel(params: {
   });
 
   // Data rows
-  let runBalance = 0;
   allRows.forEach((r, i) => {
-    runBalance += r.advance - r.expense;
     const row = ws.addRow([
       licensePlate,
       driverName,
       r.date ? format(new Date(r.date + 'T00:00:00'), 'd/M/yyyy') : '',
-      r.advance > 0 ? r.advance : null,
       r.expense > 0 ? r.expense : null,
-      runBalance,
       r.note,
     ]);
     row.height = 18;
@@ -90,27 +82,21 @@ async function exportFundExcel(params: {
     row.eachCell({ includeEmpty: true }, (cell, col) => {
       cell.fill   = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgColor } };
       cell.border = { top: { style: 'thin', color: { argb: 'FFE0E0E0' } }, bottom: { style: 'thin', color: { argb: 'FFE0E0E0' } }, left: { style: 'thin', color: { argb: 'FFE0E0E0' } }, right: { style: 'thin', color: { argb: 'FFE0E0E0' } } };
-      if (col === 4) { cell.numFmt = '#,##0'; cell.font = { bold: true, color: { argb: 'FF1F497D' } }; cell.alignment = { horizontal: 'right' }; }
-      if (col === 5) { cell.numFmt = '#,##0'; cell.font = { color: { argb: 'FFCC0000' } }; cell.alignment = { horizontal: 'right' }; }
-      if (col === 6) { cell.numFmt = '#,##0'; cell.font = { bold: true, color: { argb: runBalance >= 0 ? 'FF006600' : 'FFCC0000' } }; cell.alignment = { horizontal: 'right' }; }
+      if (col === 4) { cell.numFmt = '#,##0'; cell.font = { color: { argb: 'FFCC0000' } }; cell.alignment = { horizontal: 'right' }; }
     });
-    if (r.advance > 0) row.getCell(4).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFF00' } };
   });
 
   // Dòng Tổng Cộng
-  const remaining = totals.advance - totals.expense;
-  const tRow = ws.addRow(['Tổng Cộng', '', '', totals.advance, totals.expense, remaining, 0]);
+  const tRow = ws.addRow(['Tổng Cộng', '', '', totals.expense, '']);
   tRow.height = 20;
   tRow.eachCell({ includeEmpty: true }, (cell, col) => {
     cell.fill   = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9D9D9' } };
     cell.font   = { bold: true, size: 11 };
     cell.border = { top: { style: 'medium' }, bottom: { style: 'medium' }, left: { style: 'thin' }, right: { style: 'thin' } };
-    if (col === 4) { cell.numFmt = '#,##0'; cell.font = { bold: true, color: { argb: 'FF1F497D' } }; cell.alignment = { horizontal: 'right' }; }
-    if (col === 5) { cell.numFmt = '#,##0'; cell.font = { bold: true, color: { argb: 'FFCC0000' } }; cell.alignment = { horizontal: 'right' }; }
-    if (col === 6) { cell.numFmt = '#,##0'; cell.font = { bold: true, color: { argb: remaining >= 0 ? 'FF006600' : 'FFCC0000' } }; cell.alignment = { horizontal: 'right' }; }
+    if (col === 4) { cell.numFmt = '#,##0'; cell.font = { bold: true, color: { argb: 'FFCC0000' } }; cell.alignment = { horizontal: 'right' }; }
   });
 
-  await saveWorkbook(wb, `Quy_${driverName.replace(/\s/g, '_')}_T${month}_${year}.xlsx`);
+  await saveWorkbook(wb, `ChiPhi_${driverName.replace(/\s/g, '_')}_T${month}_${year}.xlsx`);
   toast.success('Đã xuất file Excel');
 }
 
@@ -159,17 +145,13 @@ export default function DriverFundPage() {
   const [selected, setSelected] = useState<DriverSummary | null>(null);
   const [detail, setDetail]     = useState<FundDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
-  const [showAdd, setShowAdd]         = useState(false);
   const [editRow, setEditRow]         = useState<DayRow | null>(null);
   const [delRow, setDelRow]           = useState<DayRow | null>(null);
   const [delLoading, setDelLoading]   = useState(false);
-  const [quickFundDriver, setQuickFundDriver] = useState<DriverSummary | null>(null);
   const [viewExpenses, setViewExpenses]       = useState<DriverSummary | null>(null);
   const [expenses, setExpenses]               = useState<any[]>([]);
   const [expensesLoading, setExpensesLoading] = useState(false);
   const [editExpense, setEditExpense]         = useState<any | null>(null);
-  // Chế độ xem: 'day' = theo ngày gộp, 'request' = từng yêu cầu riêng
-  const [viewMode, setViewMode] = useState<'day' | 'request'>('day');
   const [reqList, setReqList]   = useState<any[]>([]);
   const [reqLoading, setReqLoading] = useState(false);
 
@@ -264,9 +246,9 @@ export default function DriverFundPage() {
       {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Quỹ Tài Xế</h1>
+          <h1 className="text-xl font-bold text-gray-900">Chi Phí Tài Xế</h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            Theo dõi tiền ứng, tiền chi và số dư của từng tài xế theo tháng
+            Theo dõi và duyệt các yêu cầu hoàn chi phí vận hành của tài xế theo tháng
           </p>
         </div>
         <MonthYearPicker
@@ -308,29 +290,20 @@ export default function DriverFundPage() {
                           <p className="text-xs text-primary font-bold mt-0.5">{d.license_plate}</p>
                         </div>
                         <div className="text-right">
-                          <p className={`text-xs font-bold ${d.remaining >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                            {fmtVND(d.remaining)}đ
+                          <p className="text-xs font-bold text-red-500">
+                            {fmtVND(d.total_expense)}đ
                           </p>
-                          <p className="text-[10px] text-gray-400 mt-0.5">còn lại</p>
+                          <p className="text-[10px] text-gray-400 mt-0.5">tổng chi phí</p>
                         </div>
                       </div>
                       <div className="flex gap-3 mt-1 text-[10px] text-gray-500">
-                        <span>Ứng: <b className="text-blue-600">{fmtVND(d.total_advance)}</b></span>
-                        <span>Chi: <b className="text-red-500">{fmtVND(d.total_expense)}</b></span>
-                        <span>🚛 {d.total_trips}</span>
+                        <span>🚛 {d.total_trips} chuyến</span>
+                        {d.overtime_trips > 0 && <span>🔥 {d.overtime_trips} tăng ca</span>}
                       </div>
                     </div>
 
                     {/* Action buttons */}
                     <div className="flex gap-2 px-4 pb-3 mt-1">
-                      <button
-                        type="button"
-                        onClick={() => { loadDetail(d); setQuickFundDriver(d); setShowAdd(true); }}
-                        className="flex-1 text-[11px] font-semibold py-1.5 rounded-lg
-                          bg-primary text-white hover:bg-primary-800 transition-colors flex items-center justify-center gap-1">
-                        <PlusIcon className="w-3 h-3" />
-                        Nạp quỹ
-                      </button>
                       <button
                         type="button"
                         onClick={() => handleViewExpenses(d)}
@@ -389,11 +362,6 @@ export default function DriverFundPage() {
                   <span className="text-xs text-gray-500">Tháng {month}/{year}</span>
                 </div>
                 <div className="flex gap-2 items-center">
-                  <button onClick={() => setShowAdd(true)}
-                    className="btn-primary gap-1.5 text-xs py-1.5 px-3">
-                    <PlusIcon className="w-3.5 h-3.5" />
-                    Thêm
-                  </button>
                   <button
                     onClick={async () => {
                       if (!detail) return;
@@ -417,17 +385,15 @@ export default function DriverFundPage() {
               {detail && (
                 <div className="flex gap-6 px-5 py-3 border-b border-gray-100 bg-white text-sm">
                   <div>
-                    <span className="text-gray-500 text-xs">Tổng ứng</span>
-                    <p className="font-bold text-blue-600">{new Intl.NumberFormat('vi-VN').format(detail.totals.advance)}đ</p>
-                  </div>
-                  <div>
-                    <span className="text-gray-500 text-xs">Đã chi</span>
+                    <span className="text-gray-500 text-xs">Tổng chi phí</span>
                     <p className="font-bold text-red-500">{new Intl.NumberFormat('vi-VN').format(detail.totals.expense)}đ</p>
                   </div>
                   <div>
-                    <span className="text-gray-500 text-xs">Còn lại</span>
-                    <p className={`font-bold ${detail.totals.remaining >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                      {new Intl.NumberFormat('vi-VN').format(detail.totals.remaining)}đ
+                    <span className="text-gray-500 text-xs">Đã duyệt hoàn trả</span>
+                    <p className="font-bold text-emerald-600">
+                      {new Intl.NumberFormat('vi-VN').format(
+                        reqList.filter((r: any) => r.status === 'approved').reduce((s: number, r: any) => s + r.amount, 0)
+                      )}đ
                     </p>
                   </div>
                   <div className="ml-auto text-xs text-gray-400 self-center">
@@ -540,23 +506,6 @@ export default function DriverFundPage() {
       </div>
 
       {/* ── Modals ── */}
-      {(showAdd || editRow) && selected && (
-        <FundEntryModal
-          driverId={selected.driver_id}
-          driverName={selected.full_name}
-          licensePlate={selected.license_plate}
-          month={`${year}-${String(month).padStart(2, '0')}`}
-          editRow={editRow}
-          onClose={() => { setShowAdd(false); setEditRow(null); }}
-          onSuccess={() => {
-            setShowAdd(false);
-            setEditRow(null);
-            loadDetail(selected);
-            refetch();
-          }}
-        />
-      )}
-
       {delRow && (
         <Modal open title="Xóa dòng quỹ" size="sm" onClose={() => setDelRow(null)}
           footer={
@@ -569,34 +518,11 @@ export default function DriverFundPage() {
           }>
           <p className="text-sm text-gray-600">
             Xóa dòng ngày <b>{delRow.date}</b>?
-            {delRow.advance > 0 && (
-              <span className="ml-1 text-blue-600">Tiền ứng: {fmtVND(delRow.advance)}đ</span>
-            )}
             {delRow.expense > 0 && (
               <span className="ml-1 text-red-500"> Tiền chi: {fmtVND(delRow.expense)}đ</span>
             )}
           </p>
         </Modal>
-      )}
-
-      {/* ── Modal: Nạp quỹ nhanh từ left panel ── */}
-      {quickFundDriver && (
-        <FundEntryModal
-          driverId={quickFundDriver.driver_id}
-          driverName={quickFundDriver.full_name}
-          licensePlate={quickFundDriver.license_plate}
-          month={`${year}-${String(month).padStart(2, '0')}`}
-          editRow={null}
-          defaultMode="advance"
-          onClose={() => setQuickFundDriver(null)}
-          onSuccess={() => {
-            setQuickFundDriver(null);
-            refetch();
-            if (selected?.driver_id === quickFundDriver.driver_id) {
-              loadDetail(quickFundDriver);
-            }
-          }}
-        />
       )}
 
       {/* ── Modal: Xem yêu cầu chi của tài xế ── */}
@@ -821,166 +747,6 @@ function EditExpenseModal({
           <textarea {...register('note')} rows={3}
             className="form-input resize-none"
             placeholder="Mô tả chi tiết..." />
-        </div>
-      </div>
-    </Modal>
-  );
-}
-/* ══════════════════════════════════════════════════════
- *  FundEntryModal — Form thêm / sửa dòng quỹ
- * ══════════════════════════════════════════════════════ */
-interface FundEntryModalProps {
-  driverId: string;
-  driverName: string;
-  licensePlate: string;
-  month: string;
-  editRow: DayRow | null;
-  defaultMode?: 'advance' | 'expense' | 'both';
-  onClose: () => void;
-  onSuccess: () => void;
-}
-
-function FundEntryModal({
-  driverId, driverName, licensePlate, month, editRow, defaultMode, onClose, onSuccess,
-}: FundEntryModalProps) {
-  const mode: 'advance' | 'expense' | 'both' = defaultMode ?? (editRow
-    ? (editRow.advance > 0 && editRow.expense > 0 ? 'both'
-      : editRow.expense > 0 ? 'expense' : 'advance')
-    : 'advance');
-
-  const [saving, setSaving] = useState(false);
-
-  const [advanceDisplay, setAdvanceDisplay] = useState(
-    editRow?.advance ? new Intl.NumberFormat('vi-VN').format(editRow.advance) : ''
-  );
-  const [expenseDisplay, setExpenseDisplay] = useState(
-    editRow?.expense ? new Intl.NumberFormat('vi-VN').format(editRow.expense) : ''
-  );
-
-  const formatInput = (val: string): string => {
-    const nums = val.replace(/\./g, '').replace(/[^0-9]/g, '');
-    if (!nums) return '';
-    return new Intl.NumberFormat('vi-VN').format(Number(nums));
-  };
-
-  const rawNum = (display: string): number =>
-    Number(display.replace(/\./g, '').replace(/[^0-9]/g, '')) || 0;
-
-  const { register, handleSubmit } = useForm({
-    defaultValues: { note: editRow?.note ?? '' },
-  });
-
-  const onSubmit = async (data: any) => {
-    setSaving(true);
-    try {
-      // Dùng ngày hiện tại (theo tháng đang xem nếu là edit, ngày hôm nay nếu tạo mới)
-      const today = new Date().toISOString().slice(0, 10);
-      const payload = {
-        date:    editRow?.date ?? today,
-        advance: (mode === 'expense') ? 0 : rawNum(advanceDisplay),
-        expense: (mode === 'advance') ? 0 : rawNum(expenseDisplay),
-        note:    data.note,
-      };
-
-      if (editRow?.entry_id) {
-        await api.put(`/fund/entries/${editRow.entry_id}`, payload);
-        toast.success('Cập nhật thành công');
-      } else {
-        await api.post(`/fund/${driverId}/entries`, payload);
-        toast.success('Đã thêm vào quỹ');
-      }
-      onSuccess();
-    } catch (e: any) {
-      toast.error(e?.response?.data?.message ?? 'Lỗi lưu dữ liệu');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <Modal open
-      title={editRow ? 'Sửa dòng quỹ' : 'Nạp quỹ'}
-      size="md"
-      onClose={onClose}
-      footer={
-        <>
-          <button onClick={onClose} className="btn-outline text-sm px-4 py-2">Hủy</button>
-          <button onClick={handleSubmit(onSubmit)} disabled={saving} className="btn-primary text-sm px-5 py-2">
-            {saving ? 'Đang lưu...' : editRow ? 'Cập nhật' : 'Lưu'}
-          </button>
-        </>
-      }>
-      <div className="space-y-4">
-        {/* Driver badge */}
-        <div className="flex items-center gap-3 bg-blue-50 rounded-xl p-3 border border-blue-100">
-          <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-            {driverName.charAt(0)}
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-gray-900">{driverName}</p>
-            <p className="text-xs text-primary font-bold">{licensePlate}</p>
-          </div>
-          <div className="ml-auto text-right">
-            <p className="text-xs text-gray-400">Ngày nạp</p>
-            <p className="text-sm font-semibold text-gray-700">
-              {format(new Date(), 'dd/MM/yyyy', { locale: vi })}
-            </p>
-          </div>
-        </div>
-
-        {/* Tiền ứng (advance) */}
-        {(mode === 'advance' || mode === 'both') && (
-          <div>
-            <label className="form-label">Số tiền nạp (VNĐ) *</label>
-            <div className="relative">
-              <input
-                type="text"
-                inputMode="numeric"
-                value={advanceDisplay}
-                onChange={e => setAdvanceDisplay(formatInput(e.target.value))}
-                className="form-input text-right text-xl font-bold text-blue-700 pr-10"
-                placeholder="2.000.000"
-                autoFocus
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-semibold">đ</span>
-            </div>
-            {advanceDisplay && (
-              <p className="text-xs text-blue-600 mt-1 text-right font-medium">
-                = {advanceDisplay}đ
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* Tiền chi */}
-        {(mode === 'expense' || mode === 'both') && (
-          <div>
-            <label className="form-label">Tiền chi (VNĐ)</label>
-            <div className="relative">
-              <input
-                type="text"
-                inputMode="numeric"
-                value={expenseDisplay}
-                onChange={e => setExpenseDisplay(formatInput(e.target.value))}
-                className="form-input text-right text-xl font-bold text-red-600 pr-10"
-                placeholder="390.000"
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-semibold">đ</span>
-            </div>
-            {expenseDisplay && (
-              <p className="text-xs text-red-500 mt-1 text-right font-medium">
-                = {expenseDisplay}đ
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* Ghi chú */}
-        <div>
-          <label className="form-label">Ghi chú</label>
-          <textarea {...register('note')} rows={3}
-            className="form-input resize-none"
-            placeholder="VD: Bồi dưỡng 140k, vá lốp 250k..." />
         </div>
       </div>
     </Modal>

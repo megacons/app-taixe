@@ -1,14 +1,13 @@
 import { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, FlatList, StyleSheet, TouchableOpacity,
-  RefreshControl, ActivityIndicator, Alert, TextInput, Modal,
-  ScrollView, Platform, KeyboardAvoidingView,
+  RefreshControl, ActivityIndicator, Alert, Modal,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Colors } from '@/constants/colors';
 import api from '@/lib/api';
-import DatePickerField from '@/components/DatePickerField';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import MonthYearPicker from '@/components/MonthYearPicker';
@@ -27,10 +26,8 @@ export default function AdminFund() {
   const [drivers, setDrivers]     = useState<any[]>([]);
   const [loading, setLoading]     = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [showAdd, setShowAdd]     = useState(false);
   const [showEntries, setShowEntries] = useState(false);
   const [selDriver, setSelDriver] = useState<any>(null);
-  const [showAdvances, setShowAdvances] = useState(false);
 
   const fetchDrivers = useCallback(async () => {
     try {
@@ -48,15 +45,13 @@ export default function AdminFund() {
     setRefreshing(false);
   };
 
-  const MONTHS_UNUSED = null; // replaced by MonthYearPicker
-
   return (
     <SafeAreaView style={S.safe} edges={['top']}>
       <View style={S.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={S.backBtn}>
           <Text style={S.backIcon}>←</Text>
         </TouchableOpacity>
-        <Text style={S.headerTitle}>Quỹ tài xế</Text>
+        <Text style={S.headerTitle}>Chi phí tài xế</Text>
       </View>
 
       {/* Month/Year selector */}
@@ -88,42 +83,26 @@ export default function AdminFund() {
                   <Text style={S.name}>{d.full_name}</Text>
                   <Text style={S.plate}>🚛 {d.license_plate}</Text>
                 </View>
-                <TouchableOpacity
-                  style={S.addBtn}
-                  onPress={(e) => { e.stopPropagation?.(); setSelDriver(d); setShowAdd(true); }}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  <Text style={S.addBtnText}>+ Nạp quỹ</Text>
-                </TouchableOpacity>
               </View>
 
               <View style={S.fundRow}>
                 <View style={S.fundItem}>
-                  <Text style={S.fundLabel}>Đã cấp</Text>
-                  <Text style={[S.fundValue, { color: '#3b82f6' }]}>{fmtVND(d.total_advance)}đ</Text>
-                </View>
-                <View style={S.fundItem}>
-                  <Text style={S.fundLabel}>Đã chi</Text>
+                  <Text style={S.fundLabel}>Tổng chi phí</Text>
                   <Text style={[S.fundValue, { color: Colors.error }]}>{fmtVND(d.total_expense)}đ</Text>
                 </View>
                 <View style={S.fundItem}>
-                  <Text style={S.fundLabel}>Còn lại</Text>
-                  <Text style={[S.fundValue, {
-                    color: d.remaining >= 0 ? Colors.success : Colors.error,
-                    fontWeight: '800',
-                  }]}>
-                    {fmtVND(d.remaining)}đ
-                  </Text>
+                  <Text style={S.fundLabel}>Số chuyến</Text>
+                  <Text style={[S.fundValue, { color: Colors.primary }]}>{d.total_trips} chuyến</Text>
                 </View>
+                {d.overtime_trips > 0 && (
+                  <View style={S.fundItem}>
+                    <Text style={S.fundLabel}>Tăng ca</Text>
+                    <Text style={[S.fundValue, { color: Colors.accentDark }]}>🔥 {d.overtime_trips}</Text>
+                  </View>
+                )}
               </View>
 
-              <View style={S.tripsRow}>
-                <Text style={S.tripsText}>🚛 {d.total_trips} chuyến</Text>
-                {d.overtime_trips > 0 && (
-                  <Text style={S.otText}>🔥 {d.overtime_trips} tăng ca</Text>
-                )}
-                <Text style={S.tapHint}>Xem chi tiền →</Text>
-              </View>
+              <Text style={S.tapHint}>Xem chi tiết →</Text>
             </TouchableOpacity>
           )}
           ListEmptyComponent={
@@ -135,16 +114,6 @@ export default function AdminFund() {
         />
       )}
 
-      {/* Nạp quỹ modal */}
-      {showAdd && selDriver && (
-        <AddFundModal
-          driver={selDriver}
-          month={`${year}-${String(month).padStart(2, '0')}`}
-          onClose={() => { setShowAdd(false); setSelDriver(null); }}
-          onSuccess={() => { setShowAdd(false); setSelDriver(null); fetchDrivers(); }}
-        />
-      )}
-
       {/* Xem các lần chi tiền modal */}
       {showEntries && selDriver && (
         <FundEntriesModal
@@ -152,148 +121,26 @@ export default function AdminFund() {
           month={month}
           year={year}
           onClose={() => { setShowEntries(false); setSelDriver(null); }}
-          onShowAdvances={() => { setShowEntries(false); setShowAdvances(true); }}
-        />
-      )}
-
-      {/* Xem lịch sử cấp tiền — render ở cấp cao nhất tránh modal lồng nhau */}
-      {showAdvances && selDriver && (
-        <AdvanceHistoryModal
-          driver={selDriver}
-          month={month}
-          year={year}
-          onClose={() => { setShowAdvances(false); setShowEntries(true); }}
         />
       )}
     </SafeAreaView>
   );
 }
 
-/* ─── AddFundModal ──────────────────────────────────────── */
-function AddFundModal({ driver, month, onClose, onSuccess }: any) {
-  const [date,    setDate]    = useState<Date | null>(null);
-  const [advance, setAdvance] = useState('');
-  const [note,    setNote]    = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async () => {
-    const amt = Number(advance.replace(/\./g, '').replace(/[^0-9]/g, '')) || 0;
-    if (!date)    { Alert.alert('Lỗi', 'Vui lòng chọn ngày'); return; }
-    if (amt <= 0) { Alert.alert('Lỗi', 'Vui lòng nhập số tiền'); return; }
-    setLoading(true);
-    try {
-      await api.post(`/fund/${driver.driver_id}/entries`, {
-        date: format(date!, 'yyyy-MM-dd'),
-        advance: amt,
-        expense: 0,
-        note,
-      });
-      Alert.alert('✅ Thành công', `Đã nạp ${new Intl.NumberFormat('vi-VN').format(amt)}đ cho ${driver.full_name}`);
-      onSuccess();
-    } catch (e: any) {
-      Alert.alert('Lỗi', e?.response?.data?.message ?? 'Không thể nạp quỹ');
-    } finally { setLoading(false); }
-  };
-
-  return (
-    <Modal visible transparent animationType="fade">
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1 }}
-      >
-        <TouchableOpacity style={M.overlay} activeOpacity={1} onPress={onClose}>
-          <TouchableOpacity activeOpacity={1} style={M.sheet} onPress={() => {}}>
-            <View style={M.header}>
-              <TouchableOpacity onPress={onClose}><Text style={M.cancel}>Hủy</Text></TouchableOpacity>
-              <Text style={M.title}>Nạp quỹ</Text>
-              <View style={{ width: 40 }} />
-            </View>
-            <ScrollView
-              contentContainerStyle={M.content}
-              keyboardShouldPersistTaps="handled"
-              showsVerticalScrollIndicator={false}
-              bounces={false}
-            >
-              <View style={M.driverInfo}>
-                <Text style={M.driverName}>{driver.full_name}</Text>
-                <Text style={M.driverPlate}>🚛 {driver.license_plate}</Text>
-              </View>
-
-              <DatePickerField label="Ngày *" value={date} onChange={setDate} required />
-
-              <View style={M.fieldGroup}>
-                <Text style={M.label}>Số tiền ứng (VNĐ) *</Text>
-                <View style={M.amountRow}>
-                  <TextInput
-                    style={M.amountInput}
-                    value={advance}
-                    onChangeText={v => setAdvance(fmtDisplay(v))}
-                    placeholder="0"
-                    placeholderTextColor={Colors.gray400}
-                    keyboardType="numeric"
-                    textAlign="right"
-                    returnKeyType="next"
-                  />
-                  <Text style={M.unit}>đ</Text>
-                </View>
-                {advance ? <Text style={M.amountPreview}>= {advance}đ</Text> : null}
-              </View>
-
-              <View style={M.fieldGroup}>
-                <Text style={M.label}>Ghi chú</Text>
-                <TextInput
-                  style={M.textarea}
-                  value={note}
-                  onChangeText={setNote}
-                  placeholder="Ghi chú (tùy chọn)..."
-                  placeholderTextColor={Colors.gray400}
-                  multiline
-                  numberOfLines={3}
-                  textAlignVertical="top"
-                  returnKeyType="done"
-                />
-              </View>
-
-              <TouchableOpacity
-                style={[M.btn, loading && { opacity: 0.55 }]}
-                onPress={handleSubmit}
-                disabled={loading}
-              >
-                {loading
-                  ? <ActivityIndicator color={Colors.white} size="small" />
-                  : <Text style={M.btnText}>💰 Nạp quỹ</Text>
-                }
-              </TouchableOpacity>
-              <View style={{ height: 20 }} />
-            </ScrollView>
-          </TouchableOpacity>
-        </TouchableOpacity>
-      </KeyboardAvoidingView>
-    </Modal>
-  );
-}
-
 /* ─── FundEntriesModal — các lần chi tiền trong tháng ──── */
-function FundEntriesModal({ driver, month, year, onClose, onShowAdvances }: any) {
+function FundEntriesModal({ driver, month, year, onClose }: any) {
   const [entries, setEntries] = useState<any[]>([]);
-  const [totals,  setTotals]  = useState({ advance: 0, expense: 0, remaining: 0 });
+  const [totals,  setTotals]  = useState({ total: 0, approved: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       try {
         const monthStr = `${year}-${String(month).padStart(2, '0')}`;
+        const reqRes = await api.get('/requests', {
+          params: { type: 'expense', driverId: driver.driver_id, limit: 200 },
+        });
 
-        const [fundRes, reqRes] = await Promise.all([
-          api.get(`/fund/${driver.driver_id}/entries`, { params: { month, year } }),
-          api.get('/requests', {
-            params: { type: 'expense', driverId: driver.driver_id, limit: 200 },
-          }),
-        ]);
-
-        const data = fundRes.data.data ?? {};
-
-        // Mỗi request = 1 dòng riêng, tất cả trạng thái
         const allReqs: any[] = reqRes.data.data?.requests ?? [];
         const filtered = allReqs
           .filter(r => {
@@ -310,12 +157,10 @@ function FundEntriesModal({ driver, month, year, onClose, onShowAdvances }: any)
           }))
           .sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
 
+        const totalAll      = filtered.reduce((s, r) => s + r.amount, 0);
+        const totalApproved = filtered.filter(r => r.status === 'approved').reduce((s, r) => s + r.amount, 0);
         setEntries(filtered);
-        setTotals({
-          advance:   data.totals?.advance   ?? 0,
-          expense:   data.totals?.expense   ?? 0,
-          remaining: data.totals?.remaining ?? 0,
-        });
+        setTotals({ total: totalAll, approved: totalApproved });
       } catch (_) {}
       finally { setLoading(false); }
     })();
@@ -347,21 +192,14 @@ function FundEntriesModal({ driver, month, year, onClose, onShowAdvances }: any)
             <>
               {/* Stats */}
               <View style={T.statsBar}>
-                <TouchableOpacity style={T.statItem} onPress={onShowAdvances} activeOpacity={0.7}>
-                  <Text style={[T.statValue, { color: '#3b82f6' }]}>{fmtVND(totals.advance)}đ</Text>
-                  <Text style={T.statLabel}>Đã cấp</Text>
-                </TouchableOpacity>
-                <View style={T.statDivider} />
                 <View style={T.statItem}>
-                  <Text style={[T.statValue, { color: Colors.error }]}>{fmtVND(totals.expense)}đ</Text>
-                  <Text style={T.statLabel}>Đã chi</Text>
+                  <Text style={[T.statValue, { color: Colors.error }]}>{fmtVND(totals.total)}đ</Text>
+                  <Text style={T.statLabel}>Tổng chi phí</Text>
                 </View>
                 <View style={T.statDivider} />
                 <View style={T.statItem}>
-                  <Text style={[T.statValue, { color: totals.remaining >= 0 ? Colors.success : Colors.error }]}>
-                    {fmtVND(totals.remaining)}đ
-                  </Text>
-                  <Text style={T.statLabel}>Còn lại</Text>
+                  <Text style={[T.statValue, { color: Colors.success }]}>{fmtVND(totals.approved)}đ</Text>
+                  <Text style={T.statLabel}>Đã duyệt hoàn trả</Text>
                 </View>
               </View>
 
@@ -372,7 +210,7 @@ function FundEntriesModal({ driver, month, year, onClose, onShowAdvances }: any)
                 </View>
               ) : (
                 <ScrollView contentContainerStyle={T.content} showsVerticalScrollIndicator={false}>
-                  <Text style={T.listHeader}>{entries.length} yêu cầu chi</Text>
+                  <Text style={T.listHeader}>{entries.length} yêu cầu hoàn chi</Text>
                   {entries.map((e, idx) => {
                     const d = e.date ? new Date(e.date + 'T00:00:00') : null;
                     const dayLabel = d && !isNaN(d.getTime())
@@ -417,95 +255,6 @@ function FundEntriesModal({ driver, month, year, onClose, onShowAdvances }: any)
   );
 }
 
-/* ─── AdvanceHistoryModal — các lần cấp tiền ─────────────── */
-function AdvanceHistoryModal({ driver, month, year, onClose }: any) {
-  const [advances, setAdvances] = useState<any[]>([]);
-  const [total,    setTotal]    = useState(0);
-  const [loading,  setLoading]  = useState(true);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const driverId = driver.driver_id ?? driver._id;
-        const res = await api.get(`/fund/${driverId}/entries`, { params: { month, year } });
-        const rows: any[] = res.data.data?.rows ?? [];
-        const advRows = rows.filter((r: any) => (r.advance ?? 0) > 0);
-        setAdvances(advRows.map((r: any) => ({
-          _id:     r.entry_id ?? r.date,
-          date:    r.date,
-          advance: r.advance,
-          note:    r.note ?? '',
-        })));
-        setTotal(res.data.data?.totals?.advance ?? 0);
-      } catch (e: any) {
-        console.warn('[AdvanceHistory]', e?.response?.data ?? e?.message);
-      }
-      finally { setLoading(false); }
-    })();
-  }, [driver.driver_id, month, year]);
-
-  return (
-    <Modal visible transparent animationType="fade">
-      <View style={AH.overlay}>
-        <TouchableOpacity style={AH.backdrop} activeOpacity={1} onPress={onClose} />
-        <View style={AH.sheet}>
-          {/* Header */}
-          <View style={AH.header}>
-            <TouchableOpacity onPress={onClose} style={AH.backBtn}>
-              <Text style={AH.backIcon}>←</Text>
-            </TouchableOpacity>
-            <Text style={AH.title} numberOfLines={1}>Lịch sử cấp tiền</Text>
-            <View style={{ width: 36 }} />
-          </View>
-
-          {/* Driver info */}
-          <View style={AH.driverRow}>
-            <Text style={AH.driverName}>{driver.full_name}</Text>
-            <Text style={AH.driverMeta}>🚛 {driver.license_plate} · Tháng {month}/{year}</Text>
-          </View>
-
-          {/* Total */}
-          <View style={AH.totalRow}>
-            <Text style={AH.totalLabel}>Tổng đã cấp</Text>
-            <Text style={AH.totalValue}>{fmtVND(total)}đ</Text>
-          </View>
-
-          {loading ? (
-            <ActivityIndicator color={Colors.primary} style={{ marginTop: 40 }} />
-          ) : advances.length === 0 ? (
-            <View style={AH.empty}>
-              <Text style={{ fontSize: 36 }}>💰</Text>
-              <Text style={AH.emptyText}>Chưa có lần cấp tiền nào</Text>
-            </View>
-          ) : (
-            <ScrollView contentContainerStyle={AH.list} showsVerticalScrollIndicator={false}>
-              {advances.map((a, idx) => {
-                const d = a.date ? new Date(a.date + 'T00:00:00') : null;
-                const dayLabel = d && !isNaN(d.getTime())
-                  ? `${['CN','T2','T3','T4','T5','T6','T7'][d.getDay()]} ${format(d, 'dd/MM/yyyy', { locale: vi })}`
-                  : a.date ?? '—';
-                return (
-                  <View key={String(a._id ?? idx)} style={AH.row}>
-                    <View style={AH.iconBox}>
-                      <Text style={{ fontSize: 20 }}>💰</Text>
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={AH.rowDate}>{dayLabel}</Text>
-                      {!!a.note && <Text style={AH.rowNote} numberOfLines={2}>{a.note}</Text>}
-                    </View>
-                    <Text style={AH.rowAmount}>+{fmtVND(a.advance)}đ</Text>
-                  </View>
-                );
-              })}
-              <View style={{ height: 20 }} />
-            </ScrollView>
-          )}
-        </View>
-      </View>
-    </Modal>
-  );
-}
-
 /* ─── Styles ─────────────────────────────────────────────── */
 const S = StyleSheet.create({
   safe:        { flex: 1, backgroundColor: Colors.background },
@@ -533,7 +282,7 @@ const S = StyleSheet.create({
   plate:       { fontSize: 11, color: Colors.primary, fontWeight: '600', marginTop: 1 },
   addBtn:      { backgroundColor: Colors.primary, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 5 },
   addBtnText:  { fontSize: 11, fontWeight: '700', color: Colors.white },
-  fundRow:     { flexDirection: 'row' },
+  fundRow:     { flexDirection: 'row', gap: 8 },
   fundItem:    { flex: 1, alignItems: 'center' },
   fundLabel:   { fontSize: 10, color: Colors.gray500, fontWeight: '600' },
   fundValue:   { fontSize: 13, fontWeight: '700', marginTop: 2 },
@@ -543,29 +292,6 @@ const S = StyleSheet.create({
   tapHint:     { fontSize: 11, color: Colors.primary, marginLeft: 'auto', fontWeight: '600' },
   empty:       { alignItems: 'center', paddingTop: 60, gap: 8 },
   emptyText:   { fontSize: 14, color: Colors.gray500 },
-});
-
-const M = StyleSheet.create({
-  overlay:    { flex: 1, justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.45)', padding: 16 },
-  backdrop:   { ...StyleSheet.absoluteFillObject, backgroundColor: 'transparent' },
-  sheet:      { backgroundColor: Colors.white, borderRadius: 20, maxHeight: '90%' },
-  header:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14, backgroundColor: Colors.primary },
-  title:      { fontSize: 16, fontWeight: '700', color: Colors.white },
-  cancel:     { fontSize: 14, color: 'rgba(255,255,255,0.8)' },
-  content:    { padding: 20 },
-  driverInfo: { backgroundColor: Colors.primary + '0d', borderRadius: 12, padding: 12, marginBottom: 16 },
-  driverName: { fontSize: 15, fontWeight: '700', color: Colors.gray900 },
-  driverPlate:{ fontSize: 12, color: Colors.primary, fontWeight: '600', marginTop: 2 },
-  fieldGroup: { marginBottom: 16 },
-  label:      { fontSize: 13, fontWeight: '600', color: Colors.gray700, marginBottom: 6 },
-  amountRow:  { flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderColor: Colors.gray300, borderRadius: 10, backgroundColor: Colors.white, paddingRight: 12 },
-  amountInput:{ flex: 1, paddingHorizontal: 14, paddingVertical: 12, fontSize: 20, fontWeight: '700', color: Colors.primary },
-  unit:       { fontSize: 14, color: Colors.gray400 },
-  amountPreview: { fontSize: 12, color: Colors.primary, marginTop: 4 },
-  textarea:   { borderWidth: 1.5, borderColor: Colors.gray300, borderRadius: 10, padding: 12, fontSize: 14, color: Colors.gray900, minHeight: 80, textAlignVertical: 'top' },
-  footer:     { padding: 16, paddingBottom: Platform.OS === 'ios' ? 28 : 16 },
-  btn:        { backgroundColor: Colors.primary, borderRadius: 12, height: 52, justifyContent: 'center', alignItems: 'center' },
-  btnText:    { fontSize: 15, fontWeight: '700', color: Colors.white },
 });
 
 const T = StyleSheet.create({
@@ -599,26 +325,4 @@ const T = StyleSheet.create({
   emptyText:  { fontSize: 14, color: Colors.gray500, textAlign: 'center' },
 });
 
-const AH = StyleSheet.create({
-  overlay:    { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 16, backgroundColor: 'rgba(0,0,0,0.65)' },
-  backdrop:   { ...StyleSheet.absoluteFillObject, backgroundColor: 'transparent' },
-  sheet:      { backgroundColor: Colors.white, borderRadius: 20, width: '100%', maxHeight: '88%', overflow: 'hidden' },
-  header:     { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: Colors.primary, gap: 8 },
-  backBtn:    { width: 32, height: 32, justifyContent: 'center' },
-  backIcon:   { fontSize: 20, color: Colors.white, fontWeight: '700' },
-  title:      { flex: 1, fontSize: 16, fontWeight: '700', color: Colors.white, textAlign: 'center' },
-  driverRow:  { paddingHorizontal: 16, paddingVertical: 12, backgroundColor: Colors.primary + '0d', borderBottomWidth: 1, borderBottomColor: Colors.border },
-  driverName: { fontSize: 15, fontWeight: '700', color: Colors.gray900 },
-  driverMeta: { fontSize: 12, color: Colors.primary, fontWeight: '600', marginTop: 2 },
-  totalRow:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#eff6ff', borderBottomWidth: 1, borderBottomColor: Colors.border },
-  totalLabel: { fontSize: 13, fontWeight: '600', color: '#1e40af' },
-  totalValue: { fontSize: 16, fontWeight: '800', color: '#1d4ed8' },
-  list:       { padding: 14, paddingBottom: 20 },
-  row:        { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: Colors.white, borderRadius: 12, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: Colors.border },
-  iconBox:    { width: 40, height: 40, borderRadius: 20, backgroundColor: '#dbeafe', justifyContent: 'center', alignItems: 'center', flexShrink: 0 },
-  rowDate:    { fontSize: 13, fontWeight: '700', color: Colors.gray900 },
-  rowNote:    { fontSize: 12, color: Colors.gray500, marginTop: 2 },
-  rowAmount:  { fontSize: 15, fontWeight: '800', color: '#16a34a' },
-  empty:      { alignItems: 'center', paddingTop: 40, gap: 8 },
-  emptyText:  { fontSize: 14, color: Colors.gray500 },
-});
+
