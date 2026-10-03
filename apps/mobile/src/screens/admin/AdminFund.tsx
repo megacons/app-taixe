@@ -196,11 +196,6 @@ function FundEntriesModal({ driver, month, year, onClose }: any) {
                   <Text style={[T.statValue, { color: Colors.error }]}>{fmtVND(totals.total)}đ</Text>
                   <Text style={T.statLabel}>Tổng chi phí</Text>
                 </View>
-                <View style={T.statDivider} />
-                <View style={T.statItem}>
-                  <Text style={[T.statValue, { color: Colors.success }]}>{fmtVND(totals.approved)}đ</Text>
-                  <Text style={T.statLabel}>Đã duyệt hoàn trả</Text>
-                </View>
               </View>
 
               {entries.length === 0 ? (

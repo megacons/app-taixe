@@ -109,13 +109,8 @@ export default function FinanceScreen() {
         {/* Summary card */}
         <View style={S.summaryCard}>
           <View style={S.summaryItem}>
-            <Text style={S.summaryLabel}>Tổng chi phí</Text>
-            <Text style={[S.summaryValue, { color: Colors.error }]}>{fmtVND(fund.total)}</Text>
-          </View>
-          <View style={S.summaryDivider} />
-          <View style={S.summaryItem}>
-            <Text style={S.summaryLabel}>Đã duyệt hoàn trả</Text>
-            <Text style={[S.summaryValue, { color: Colors.success, fontWeight: '800' }]}>{fmtVND(fund.approved)}</Text>
+            <Text style={S.summaryLabel}>Tổng chi phí tháng {month}/{year}</Text>
+            <Text style={[S.summaryValue, { color: Colors.error, fontSize: 16 }]}>{fmtVND(fund.total)}</Text>
           </View>
         </View>
 
