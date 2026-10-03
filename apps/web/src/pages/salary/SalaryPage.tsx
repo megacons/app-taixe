@@ -55,6 +55,7 @@ interface Driver {
   overtime_trips_month: number;
   overtime_pay_month: number;
   advance_month: number;
+  expense_month: number;
   bank_account?: string;
   bank_name?: string;
 }
@@ -288,7 +289,8 @@ export default function SalaryPage() {
   const totalBase        = filtered.reduce((s, d) => s + (d.base_salary ?? 0), 0);
   const totalOvertimePay = filtered.reduce((s, d) => s + (d.overtime_pay_month ?? 0), 0);
   const totalAdvance     = filtered.reduce((s, d) => s + (d.advance_month ?? 0), 0);
-  const totalGrand       = totalBase + totalOvertimePay - totalAdvance;
+  const totalExpense     = filtered.reduce((s, d) => s + (d.expense_month ?? 0), 0);
+  const totalGrand       = totalBase + totalOvertimePay + totalExpense - totalAdvance;
 
   return (
     <>
@@ -373,6 +375,7 @@ export default function SalaryPage() {
                 <th className="px-4 py-3 text-center text-xs font-semibold text-amber-600 uppercase tracking-wide">Chuyến TC</th>
                 <th className="px-4 py-3 text-right  text-xs font-semibold text-gray-500   uppercase tracking-wide">Đơn giá TC</th>
                 <th className="px-4 py-3 text-right  text-xs font-semibold text-amber-600 uppercase tracking-wide">Tiền TC</th>
+                <th className="px-4 py-3 text-right  text-xs font-semibold text-emerald-600 uppercase tracking-wide">Tiền đã chi</th>
                 <th className="px-4 py-3 text-right  text-xs font-semibold text-red-500   uppercase tracking-wide">Tiền ứng</th>
                 <th className="px-4 py-3 text-right  text-xs font-semibold text-primary  uppercase tracking-wide">Tổng lương</th>
                 {canEdit && <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide w-20">Sửa</th>}
@@ -401,9 +404,9 @@ export default function SalaryPage() {
                 filtered.map(d => {
                   const isEditing   = editId === d._id;
                   const basePlusAllowance = (d.base_salary ?? 0) + (d.position_allowance ?? 0) + (d.fuel_allowance ?? 0);
-                  const totalSalary = basePlusAllowance + (d.overtime_pay_month ?? 0) - (d.advance_month ?? 0);
+                  const totalSalary = basePlusAllowance + (d.overtime_pay_month ?? 0) + (d.expense_month ?? 0) - (d.advance_month ?? 0);
                   const liveOvertimePay = toNumber(form.overtime_rate) * (d.overtime_trips_month ?? 0);
-                  const liveTotal   = liveBase + liveOvertimePay - (d.advance_month ?? 0);
+                  const liveTotal   = liveBase + liveOvertimePay + (d.expense_month ?? 0) - (d.advance_month ?? 0);
 
                   return (
                     <tr key={d._id} className={`hover:bg-gray-50 transition-colors ${isEditing ? 'bg-blue-50/40' : ''}`}>
@@ -477,6 +480,17 @@ export default function SalaryPage() {
                         </span>
                       </td>
 
+                      {/* Tiền đã chi — hoàn trả vào lương */}
+                      <td className="px-4 py-3.5 text-right">
+                        {(d.expense_month ?? 0) > 0 ? (
+                          <span className="font-semibold text-emerald-600">
+                            +{fmtVND(d.expense_month)}đ
+                          </span>
+                        ) : (
+                          <span className="text-gray-300">0đ</span>
+                        )}
+                      </td>
+
                       {/* Tiền ứng — click để xem chi tiết */}
                       <td className="px-4 py-3.5 text-right">
                         {(d.advance_month ?? 0) > 0 ? (
@@ -548,6 +562,7 @@ export default function SalaryPage() {
                   </td>
                   <td />
                   <td className="px-4 py-3 text-right text-amber-600">{fmtVND(totalOvertimePay)}đ</td>
+                  <td className="px-4 py-3 text-right text-emerald-600">+{fmtVND(totalExpense)}đ</td>
                   <td className="px-4 py-3 text-right text-red-500">-{fmtVND(totalAdvance)}đ</td>
                   <td className="px-4 py-3 text-right text-primary">{fmtVND(totalGrand)}đ</td>
                   {canEdit && <td />}

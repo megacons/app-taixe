@@ -522,12 +522,18 @@ router.get('/salary/list', authenticate, authorize('coordinator', 'accountant', 
       overtimeMap[row._id.toString()] = { overtime_trips: ot, total_trips: row.total_trips };
     });
 
-    // Gắn kết quả tăng ca vào từng driver + tính tiền ứng đã duyệt trong tháng
+    // Gắn kết quả tăng ca vào từng driver + tính tiền ứng và tiền chi đã duyệt trong tháng
     // Lấy tất cả salary_advance approved trong tháng của tất cả driver cùng lúc
     const advanceReqs = await Request.find({
       type:       'salary_advance',
       status:     'approved',
       created_at: { $gte: from, $lt: to },
+    }).lean();
+
+    // Lấy tất cả expense approved (không giới hạn tháng created_at vì ngày chi là payload.date)
+    const expenseReqs = await Request.find({
+      type:   'expense',
+      status: 'approved',
     }).lean();
 
     // Map userId → tổng advance
@@ -539,18 +545,32 @@ router.get('/salary/list', authenticate, authorize('coordinator', 'accountant', 
       }
     });
 
+    // Map userId → tổng expense trong tháng (lọc theo payload.date)
+    const monthStr = `${year}-${String(month).padStart(2, '0')}`;
+    const expenseMap = {};
+    expenseReqs.forEach(r => {
+      const payloadDate = r.payload?.date ?? '';
+      if (!payloadDate.startsWith(monthStr)) return;
+      const uid = r.created_by?.toString();
+      if (uid) {
+        expenseMap[uid] = (expenseMap[uid] ?? 0) + (r.payload?.amount ?? 0);
+      }
+    });
+
     const result = drivers.map(d => {
       const dId          = d._id.toString();
       const ot           = overtimeMap[dId] ?? { overtime_trips: 0, total_trips: 0 };
       const overtime_rate = d.overtime_rate ?? 100000;
       const uid          = d.user_id?._id?.toString() ?? d.user_id?.toString();
       const advance_month = advanceMap[uid] ?? 0;
+      const expense_month = expenseMap[uid] ?? 0;
       return {
         ...d,
         total_trips_month:    ot.total_trips,
         overtime_trips_month: ot.overtime_trips,
         overtime_pay_month:   ot.overtime_trips * overtime_rate,
         advance_month,
+        expense_month,
       };
     });
 
