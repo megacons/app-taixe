@@ -488,7 +488,7 @@ export default function DriverFundPage() {
                       <tr className="bg-primary text-white font-bold text-xs">
                         <td colSpan={2} className="px-4 py-2.5">TỔNG ({reqList.filter((r: any) => r.status === 'approved').length} yêu cầu đã duyệt)</td>
                         <td className="px-4 py-2.5 text-right">
-                          -{new Intl.NumberFormat('vi-VN').format(
+                          {new Intl.NumberFormat('vi-VN').format(
                             reqList.filter((r: any) => r.status === 'approved').reduce((s: number, r: any) => s + r.amount, 0)
                           )}đ
                         </td>

@@ -277,8 +277,8 @@ export default function FinancePage() {
                       <td className="px-5 py-4 text-right text-sm text-teal-600 font-medium">
                         {row.overtime_pay > 0 ? fmtVND(row.overtime_pay) : '—'}
                       </td>
-                      <td className="px-5 py-4 text-right text-sm text-gray-700">
-                        {row.reimbursed > 0 ? fmtVND(row.reimbursed) : '0'}
+                      <td className="px-5 py-4 text-right text-sm text-emerald-600 font-medium">
+                        {row.reimbursed > 0 ? `+${fmtVND(row.reimbursed)}` : '0'}
                       </td>
                       <td className="px-5 py-4 text-right text-sm text-red-500">
                         {row.advance > 0 ? fmtVND(row.advance) : '0'}
@@ -312,8 +312,8 @@ export default function FinancePage() {
                   <td className="px-5 py-4 text-right font-bold text-sm">
                     {fmtVND(totals.overtime)}
                   </td>
-                  <td className="px-5 py-4 text-right font-bold text-sm">
-                    {fmtVND(totals.reimb)}
+                  <td className="px-5 py-4 text-right font-bold text-sm text-emerald-300">
+                    +{fmtVND(totals.reimb)}
                   </td>
                   <td className="px-5 py-4 text-right font-bold text-sm text-red-200">
                     {fmtVND(totals.advance)}
