@@ -153,6 +153,8 @@ export default function AdminDashboard() {
     } catch (_) {}
   };
 
+  const onRefresh = async () => { setRefreshing(true); await fetchData(); setRefreshing(false); };
+
   return (
     <SafeAreaView style={S.safe} edges={['top']}>
       <View style={S.header}>
