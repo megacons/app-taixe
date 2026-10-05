@@ -75,7 +75,7 @@ export default function AdminDashboard() {
 
   const fetchData = useCallback(async () => {
     try {
-      const today = new Date().toISOString().slice(0, 10);
+      const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
       const now   = new Date();
 
       const [todayRes, reqRes, driversRes, fundRes, tripsMonthRes] = await Promise.all([

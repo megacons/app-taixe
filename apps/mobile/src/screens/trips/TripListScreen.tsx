@@ -57,7 +57,7 @@ export default function TripListScreen() {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [summary, setSummary] = useState<DailySummary | null>(null);
   const [history, setHistory] = useState<HistoryDay[]>([]);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10));
+  const [selectedDate, setSelectedDate] = useState(new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }));
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -83,7 +83,7 @@ export default function TripListScreen() {
     const today = new Date();
     for (let i = 1; i <= 7; i++) {
       const d = subDays(today, i);
-      const dateStr = d.toISOString().slice(0, 10);
+      const dateStr = d.toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
       try {
         const res = await api.get('/trips/summary/daily', { params: { date: dateStr } });
         const data = res.data.data;

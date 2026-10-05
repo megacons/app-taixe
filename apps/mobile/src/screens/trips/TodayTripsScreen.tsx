@@ -33,7 +33,7 @@ export default function TodayTripsScreen() {
         params.month = month;
         params.year  = year;
       } else {
-        params.date = date ?? new Date().toISOString().slice(0, 10);
+        params.date = date ?? new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
       }
       if (!isAdmin) {
         try {
@@ -54,7 +54,7 @@ export default function TodayTripsScreen() {
   const headerLabel = (() => {
     if (isMonthMode) return `Tháng ${month}/${year}`;
     try {
-      const d = new Date((date ?? new Date().toISOString().slice(0, 10)) + 'T00:00:00');
+      const d = new Date((date ?? new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' })) + 'T00:00:00');
       return format(d, 'EEEE, dd/MM/yyyy', { locale: vi });
     } catch { return date ?? ''; }
   })();

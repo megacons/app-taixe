@@ -87,7 +87,7 @@ export default function DashboardScreen() {
 
   const fetchDailySummary = useCallback(async () => {
     try {
-      const today = new Date().toISOString().slice(0, 10);
+      const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
       const res = await api.get('/trips/summary/daily', { params: { date: today } });
       setSummary(res.data.data);
     } catch (_) {}
@@ -118,7 +118,7 @@ export default function DashboardScreen() {
       } catch (_) {}
 
       const today      = new Date();
-      const todayStr   = today.toISOString().slice(0, 10);
+      const todayStr   = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
       const dayOfWeek  = today.getDay();
       const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
 
@@ -129,7 +129,7 @@ export default function DashboardScreen() {
       for (let i = 0; i < 7; i++) {
         const d = new Date(weekMonday);
         d.setDate(weekMonday.getDate() + i);
-        const dateStr = d.toISOString().slice(0, 10);
+        const dateStr = d.toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
         const label   = dayLabels[d.getDay()];
         const isFuture = dateStr > todayStr;
 
@@ -442,7 +442,7 @@ export default function DashboardScreen() {
               ? weeklyData
               : ['T2','T3','T4','T5','T6','T7','CN'].map(day => ({ day, trips: 0, height: 4, dateStr: '', isFuture: false }))
             ).map((item, i) => {
-              const isToday  = item.dateStr === new Date().toISOString().slice(0, 10);
+              const isToday  = item.dateStr === new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
               const isFuture = (item as any).isFuture;
               const barH = Math.max(item.height, 20);
               return (

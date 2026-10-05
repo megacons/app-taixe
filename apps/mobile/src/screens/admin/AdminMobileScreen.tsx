@@ -46,7 +46,7 @@ export default function AdminMobileScreen() {
       const [driverRes, reqRes, tripRes] = await Promise.all([
         api.get('/drivers', { params: { limit: 1 } }),
         api.get('/requests', { params: { status: 'pending', limit: 20 } }),
-        api.get('/trips/summary/daily', { params: { date: new Date().toISOString().slice(0, 10) } }),
+        api.get('/trips/summary/daily', { params: { date: new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }) } }),
       ]);
 
       setKpi({
