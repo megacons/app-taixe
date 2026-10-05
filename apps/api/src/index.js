@@ -114,6 +114,27 @@ app.use('/api/reports',       reportRoutes);
 app.use('/api/fund',          fundRoutes);
 app.use('/api/attendance',   attendanceRoutes);
 
+// Debug endpoint — check timezone
+app.get('/api/debug-tz', (req, res) => {
+  const now = new Date();
+  const utcDate = now.toISOString().slice(0, 10);
+  const vnDate = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
+  const testDate = '2026-09-01';
+  const dayStartOld = new Date(testDate + 'T00:00:00.000Z');
+  const dayStartNew = new Date(testDate + 'T00:00:00+07:00');
+  res.json({
+    success: true,
+    data: {
+      utc_date: utcDate,
+      vn_date: vnDate,
+      test_date: testDate,
+      old_filter_utc: dayStartOld.toISOString(),
+      new_filter_vn: dayStartNew.toISOString(),
+      using_vn_timezone: utcDate !== vnDate,
+    },
+  });
+});
+
 
 // 404 handler
 app.use((req, res) => {
