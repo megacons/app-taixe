@@ -63,9 +63,7 @@ export default function TodayTripsScreen() {
     } catch { return currentDate ?? ''; }
   })();
 
-  const overtimeCount = isMonthMode
-    ? trips.filter(t => t.is_overtime).length
-    : Math.max(0, trips.length - 4);
+  const overtimeCount = trips.filter(t => t.is_overtime === true).length;
 
   // Build sections grouped by date (mới nhất lên đầu)
   const sections = (() => {
@@ -115,12 +113,18 @@ export default function TodayTripsScreen() {
   );
 
   const renderTrip = (t: any, index: number, dayTrips?: any[]) => {
-    // STT và tăng ca tính theo thứ tự thực trong ngày (chuyến sớm nhất = 1)
-    // section.data đang sort mới→cũ, nên chuyến sớm nhất ở CUỐI → STT = total - index
-    const total = dayTrips ? dayTrips.length : trips.length;
-    const chronoIndex = dayTrips ? (total - 1 - index) : (total - 1 - index);
-    const stt = chronoIndex + 1; // 1-based, chuyến đầu tiên trong ngày = 1
-    const isOT = stt > 4; // tăng ca từ chuyến thứ 5 trở đi
+    // Dùng is_overtime từ DB — đã được tính đúng per driver khi tạo chuyến
+    const isOT = t.is_overtime === true;
+    // STT: tính theo từng tài xế riêng trong ngày
+    const driverId = t.driver_id?._id ?? t.driver_id;
+    const sameDayDriverTrips = (dayTrips ?? trips).filter(
+      x => (x.driver_id?._id ?? x.driver_id) === driverId
+    );
+    // Sort theo thời gian tăng dần để tính STT đúng
+    const sorted = [...sameDayDriverTrips].sort(
+      (a, b) => new Date(a.trip_date).getTime() - new Date(b.trip_date).getTime()
+    );
+    const stt = sorted.findIndex(x => x._id === t._id) + 1;
     return (
       <TouchableOpacity
         key={t._id}

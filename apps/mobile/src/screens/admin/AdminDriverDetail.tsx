@@ -157,26 +157,19 @@ export default function AdminDriverDetail() {
 
         {/* ── Fund card ── */}
         <View style={S.section}>
-          <Text style={S.sectionTitle}>Quỹ tháng {month}/{year}</Text>
+          <Text style={S.sectionTitle}>Chi phí tháng {month}/{year}</Text>
           <View style={S.fundCard}>
             <View style={S.fundRow}>
               <View style={S.fundItem}>
-                <Text style={S.fundLabel}>Tổng ứng</Text>
-                <Text style={[S.fundValue, { color: '#3b82f6' }]}>{fmtVND(fund?.total_advance ?? 0)}đ</Text>
-              </View>
-              <View style={S.fundItem}>
-                <Text style={S.fundLabel}>Đã chi</Text>
+                <Text style={S.fundLabel}>Tổng chi phí</Text>
                 <Text style={[S.fundValue, { color: Colors.error }]}>{fmtVND(fund?.total_expense ?? 0)}đ</Text>
               </View>
               <View style={S.fundItem}>
-                <Text style={S.fundLabel}>Còn lại</Text>
-                <Text style={[S.fundValue, { color: (fund?.remaining ?? 0) >= 0 ? Colors.success : Colors.error, fontWeight: '800' }]}>
-                  {fmtVND(fund?.remaining ?? 0)}đ
-                </Text>
+                <Text style={S.fundLabel}>Số chuyến</Text>
+                <Text style={[S.fundValue, { color: Colors.primary }]}>{fund?.total_trips ?? 0} chuyến</Text>
               </View>
             </View>
             <View style={S.fundFooter}>
-              <Text style={S.tripsText}>🚛 {fund?.total_trips ?? 0} chuyến</Text>
               {(fund?.overtime_trips ?? 0) > 0 && (
                 <Text style={S.otText}>🔥 {fund.overtime_trips} tăng ca</Text>
               )}
