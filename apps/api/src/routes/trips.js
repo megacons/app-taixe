@@ -313,7 +313,40 @@ router.delete('/:id', authenticate, authorize('coordinator', 'manager'), async (
   try {
     const trip = await Trip.findById(req.params.id);
     if (!trip) return res.status(404).json({ success: false, message: 'Không tìm thấy chuyến' });
+
+    // Lưu thông tin trước khi xóa để tính lại OT
+    const driverId = trip.driver_id;
+    const tripDate = trip.trip_date;
+    const dateStr = tripDate.toISOString().slice(0, 10);
+
     await trip.softDelete(req.user._id);
+
+    // Tính lại is_overtime cho các chuyến còn lại trong ngày
+    const dayStart = new Date(dateStr + 'T00:00:00.000Z');
+    const dayEnd   = new Date(dateStr + 'T23:59:59.999Z');
+    const remainingTrips = await Trip.find({
+      driver_id: driverId,
+      trip_date: { $gte: dayStart, $lte: dayEnd },
+      status: { $ne: 'cancelled' },
+      is_deleted: { $ne: true },
+    }).sort('trip_date');
+
+    const { getOvertimeConfig } = require('../utils/overtime');
+    const { threshold, rate } = await getOvertimeConfig();
+
+    // Cập nhật lại is_overtime và overtime_pay cho từng chuyến
+    for (let i = 0; i < remainingTrips.length; i++) {
+      const tripNum = i + 1;
+      const isOT = tripNum > threshold;
+      await Trip.findByIdAndUpdate(remainingTrips[i]._id, {
+        $set: {
+          is_overtime: isOT,
+          overtime_pay: isOT ? rate : 0,
+          trip_number: tripNum,
+        },
+      });
+    }
+
     res.json({ success: true, message: 'Xóa chuyến thành công' });
   } catch (err) {
     next(err);
