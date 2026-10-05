@@ -115,12 +115,14 @@ export default function TodayTripsScreen() {
   const renderTrip = (t: any, index: number, dayTrips?: any[]) => {
     // Dùng is_overtime từ DB — đã được tính đúng per driver khi tạo chuyến
     const isOT = t.is_overtime === true;
-    // STT: tính theo từng tài xế riêng trong ngày
-    const driverId = t.driver_id?._id ?? t.driver_id;
-    const sameDayDriverTrips = (dayTrips ?? trips).filter(
-      x => (x.driver_id?._id ?? x.driver_id) === driverId
-    );
-    // Sort theo thời gian tăng dần để tính STT đúng
+    // STT: tính riêng theo từng tài xế trong ngày
+    const driverId = String(t.driver_id?._id ?? t.driver_id ?? '');
+    const allForDay = dayTrips ?? trips;
+    const sameDayDriverTrips = allForDay.filter(x => {
+      const xId = String(x.driver_id?._id ?? x.driver_id ?? '');
+      return xId === driverId;
+    });
+    // Sort cũ nhất trước để STT 1 = chuyến đầu tiên trong ngày
     const sorted = [...sameDayDriverTrips].sort(
       (a, b) => new Date(a.trip_date).getTime() - new Date(b.trip_date).getTime()
     );
