@@ -10,30 +10,34 @@ import { useAuthStore } from '@/stores/authStore';
 import api from '@/lib/api';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import DatePickerField from '@/components/DatePickerField';
 
 export default function TodayTripsScreen() {
   const navigation = useNavigation<any>();
   const route      = useRoute<any>();
   const { user }   = useAuthStore();
 
-  const date:  string | undefined = route.params?.date;
+  const initialDate = route.params?.date ?? new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
   const month: number | undefined = route.params?.month;
   const year:  number | undefined = route.params?.year;
-  const isMonthMode = !date && !!month;
+  const isMonthMode = !route.params?.date && !!month;
   const isAdmin = user?.role !== 'driver';
+
+  const [selectedDate, setSelectedDate] = useState<Date>(() => new Date(initialDate + 'T00:00:00'));
+  const [currentDate, setCurrentDate] = useState<string>(initialDate);
 
   const [trips,     setTrips]     = useState<any[]>([]);
   const [loading,   setLoading]   = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchTrips = useCallback(async () => {
+  const fetchTrips = useCallback(async (dateStr?: string) => {
     try {
       const params: any = { limit: 500, sort: '-trip_date' };
       if (isMonthMode) {
         params.month = month;
         params.year  = year;
       } else {
-        params.date = date ?? new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
+        params.date = dateStr ?? currentDate;
       }
       if (!isAdmin) {
         try {
@@ -46,7 +50,7 @@ export default function TodayTripsScreen() {
       setTrips(res.data.data?.trips ?? []);
     } catch (_) {}
     finally { setLoading(false); }
-  }, [date, month, year, isAdmin, isMonthMode]);
+  }, [currentDate, month, year, isAdmin, isMonthMode]);
 
   useEffect(() => { fetchTrips(); }, [fetchTrips]);
   const onRefresh = async () => { setRefreshing(true); await fetchTrips(); setRefreshing(false); };
@@ -54,9 +58,9 @@ export default function TodayTripsScreen() {
   const headerLabel = (() => {
     if (isMonthMode) return `Tháng ${month}/${year}`;
     try {
-      const d = new Date((date ?? new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' })) + 'T00:00:00');
+      const d = new Date(currentDate + 'T00:00:00');
       return format(d, 'EEEE, dd/MM/yyyy', { locale: vi });
-    } catch { return date ?? ''; }
+    } catch { return currentDate ?? ''; }
   })();
 
   const overtimeCount = isMonthMode
@@ -168,6 +172,23 @@ export default function TodayTripsScreen() {
         </View>
         <View style={{ width: 40 }} />
       </View>
+
+      {/* Date picker — chỉ hiện khi không phải month mode */}
+      {!isMonthMode && (
+        <View style={{ paddingHorizontal: 16, paddingVertical: 8, backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.border }}>
+          <DatePickerField
+            label="Chọn ngày"
+            value={selectedDate}
+            onChange={(d) => {
+              setSelectedDate(d);
+              const dateStr = d.toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
+              setCurrentDate(dateStr);
+              setLoading(true);
+              fetchTrips(dateStr);
+            }}
+          />
+        </View>
+      )}
 
       {loading ? (
         <ActivityIndicator color={Colors.primary} style={{ flex: 1 }} />
