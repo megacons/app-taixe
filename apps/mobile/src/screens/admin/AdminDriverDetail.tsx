@@ -46,7 +46,7 @@ export default function AdminDriverDetail() {
       const [driverRes, fundRes, tripsRes] = await Promise.all([
         api.get(`/drivers/${driverId}`),
         api.get(`/fund/drivers`, { params: { month, year } }),
-        api.get('/trips', { params: { driver_id: driverId, month, year, limit: 200, sort: '-trip_date' } }),
+        api.get('/trips', { params: { driverId: driverId, month, year, limit: 200, sort: '-trip_date' } }),
       ]);
 
       setDriver(driverRes.data.data?.driver ?? driverRes.data.data);
