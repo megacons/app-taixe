@@ -492,7 +492,7 @@ router.get('/salary/list', authenticate, authorize('coordinator', 'accountant', 
 
     // Aggregate: group by (driver_id, ngày) → tính số chuyến tăng ca mỗi ngày
     const tripAgg = await Trip.aggregate([
-      { $match: { trip_date: { $gte: from, $lt: to }, status: { $ne: 'cancelled' } } },
+      { $match: { trip_date: { $gte: from, $lt: to }, status: { $ne: 'cancelled' }, is_deleted: { $ne: true } } },
       {
         $group: {
           _id: {
