@@ -39,8 +39,17 @@ export default function AdminDashboard() {
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [filterDateValue, setFilterDateValue] = useState<Date>(new Date());
   const [filterDateSelected, setFilterDateSelected] = useState(false);
+  const [filterDriverId, setFilterDriverId] = useState('');
+  const [driverList, setDriverList] = useState<any[]>([]);
 
-  const fetchRecentTrips = async (date?: string, month?: number, year?: number) => {
+  // Load danh sách tài xế cho filter
+  useEffect(() => {
+    api.get('/drivers', { params: { status: 'active', limit: 100 } })
+      .then(r => setDriverList(r.data.data?.drivers ?? []))
+      .catch(() => {});
+  }, []);
+
+  const fetchRecentTrips = async (date?: string, month?: number, year?: number, driverId?: string) => {
     try {
       const params: any = { limit: 200, sort: '-trip_date' };
       if (date) {
@@ -49,27 +58,30 @@ export default function AdminDashboard() {
         params.month = month;
         params.year  = year;
       }
+      if (driverId) params.driverId = driverId;
       const res = await api.get('/trips', { params });
       setRecentTrips(res.data.data?.trips ?? []);
     } catch (_) {}
   };
 
-  const applyFilter = (mode: 'none' | 'month' | 'day', d?: number, m?: number, y?: number) => {
+  const applyFilter = (mode: 'none' | 'month' | 'day', d?: number, m?: number, y?: number, drvId?: string) => {
     setFilterMode(mode);
     setShowFilterModal(false);
     const dm = m ?? filterMonth;
     const dy = y ?? filterYear;
     const dd = d ?? filterDay;
+    const drv = drvId ?? filterDriverId;
     if (mode === 'none') {
       setFilterDate('');
-      fetchRecentTrips();
+      setFilterDriverId('');
+      fetchRecentTrips(undefined, undefined, undefined, '');
     } else if (mode === 'month') {
       setFilterDate(`T${dm}/${dy}`);
-      fetchRecentTrips(undefined, dm, dy);
+      fetchRecentTrips(undefined, dm, dy, drv);
     } else {
       const dateStr = `${dy}-${String(dm).padStart(2, '0')}-${String(dd).padStart(2, '0')}`;
       setFilterDate(`${String(dd).padStart(2, '0')}/${String(dm).padStart(2, '0')}/${dy}`);
-      fetchRecentTrips(dateStr);
+      fetchRecentTrips(dateStr, undefined, undefined, drv);
     }
   };
 
@@ -223,6 +235,11 @@ export default function AdminDashboard() {
                     <Text style={S.clearBtnText}>✕ {filterDate}</Text>
                   </TouchableOpacity>
                 )}
+                {filterDriverId !== '' && (
+                  <TouchableOpacity onPress={() => { setFilterDriverId(''); fetchRecentTrips(filterMode === 'day' ? `${filterYear}-${String(filterMonth).padStart(2,'0')}-${String(filterDay).padStart(2,'0')}` : undefined, filterMode === 'month' ? filterMonth : undefined, filterMode === 'month' ? filterYear : undefined, ''); }} style={S.clearBtn}>
+                    <Text style={S.clearBtnText}>✕ {driverList.find(d => d._id === filterDriverId)?.full_name}</Text>
+                  </TouchableOpacity>
+                )}
                 <TouchableOpacity style={S.filterBtn} onPress={() => setShowFilterModal(true)}>
                   <Text style={S.filterBtnText}>⚙️ Lọc</Text>
                 </TouchableOpacity>
@@ -262,12 +279,36 @@ export default function AdminDashboard() {
                     }}
                   />
 
+                  {/* Filter theo tài xế */}
+                  <View style={{ marginTop: 12 }}>
+                    <Text style={[S.filterTitle, { fontSize: 13, marginBottom: 6 }]}>Tài xế</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 4 }}>
+                      <TouchableOpacity
+                        style={[S.modeBtn, !filterDriverId && S.modeBtnActive, { marginRight: 6 }]}
+                        onPress={() => setFilterDriverId('')}
+                      >
+                        <Text style={[S.modeBtnText, !filterDriverId && S.modeBtnTextActive]}>Tất cả</Text>
+                      </TouchableOpacity>
+                      {driverList.map(drv => (
+                        <TouchableOpacity
+                          key={drv._id}
+                          style={[S.modeBtn, filterDriverId === drv._id && S.modeBtnActive, { marginRight: 6 }]}
+                          onPress={() => setFilterDriverId(drv._id)}
+                        >
+                          <Text style={[S.modeBtnText, filterDriverId === drv._id && S.modeBtnTextActive]} numberOfLines={1}>
+                            {drv.full_name}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </View>
+
                   <View style={S.filterActions}>
                     <TouchableOpacity style={S.cancelBtn} onPress={() => setShowFilterModal(false)}>
                       <Text style={S.cancelBtnText}>Hủy</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={S.applyBtn}
-                      onPress={() => applyFilter(filterMode, filterDay, filterMonth, filterYear)}>
+                      onPress={() => applyFilter(filterMode, filterDay, filterMonth, filterYear, filterDriverId)}>
                       <Text style={S.applyBtnText}>Áp dụng</Text>
                     </TouchableOpacity>
                   </View>
