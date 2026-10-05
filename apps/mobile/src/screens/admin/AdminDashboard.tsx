@@ -137,7 +137,21 @@ export default function AdminDashboard() {
     return () => subs.forEach(s => s.remove());
   }, [fetchData]);
 
-  const onRefresh = async () => { setRefreshing(true); await fetchData(); setRefreshing(false); };
+  const [showTripDatePicker, setShowTripDatePicker] = useState(false);
+  const [tripDateSelected, setTripDateSelected] = useState<Date>(new Date());
+  const [kpiSelectedDate, setKpiSelectedDate] = useState<string>(''); // '' = hôm nay
+
+  const fetchTripsByDate = async (dateStr: string) => {
+    try {
+      const res = await api.get('/trips/summary/daily', { params: { date: dateStr } });
+      const d = res.data.data;
+      setKpi(prev => ({
+        ...prev,
+        trips_today:    d?.total_trips    ?? 0,
+        overtime_today: d?.overtime_trips ?? 0,
+      }));
+    } catch (_) {}
+  };
 
   return (
     <SafeAreaView style={S.safe} edges={['top']}>
@@ -174,10 +188,20 @@ export default function AdminDashboard() {
         {loading ? <ActivityIndicator color={Colors.primary} style={{ marginTop: 40 }} /> : (
           <>
             {/* KPI row */}
-            <Text style={S.sectionTitle}>Hôm nay</Text>
+            <Text style={S.sectionTitle}>
+              {kpiSelectedDate
+                ? `Ngày ${kpiSelectedDate.split('-').reverse().join('/')}`
+                : 'Hôm nay'}
+            </Text>
             <View style={S.kpiRow}>
               {[
-                { icon: '🚛', label: 'Số chuyến', value: String(kpi.trips_today), sub: kpi.overtime_today > 0 ? `+${kpi.overtime_today} tăng ca` : undefined, color: Colors.primary, onPress: () => navigation.navigate('TodayTrips') },
+                {
+                  icon: '🚛', label: 'Số chuyến',
+                  value: String(kpi.trips_today),
+                  sub: kpi.overtime_today > 0 ? `+${kpi.overtime_today} tăng ca` : undefined,
+                  color: Colors.primary,
+                  onPress: () => setShowTripDatePicker(true),
+                },
                 { icon: '📊', label: 'Chuyến tháng', value: String(kpi.trips_month), color: Colors.success, onPress: undefined },
                 { icon: '⏳', label: 'Chờ duyệt', value: String(kpi.pending_requests), color: Colors.warning, onPress: () => navigation.navigate('Requests') },
               ].map(k => (
@@ -195,6 +219,35 @@ export default function AdminDashboard() {
                 </TouchableOpacity>
               ))}
             </View>
+
+            {/* Date picker cho Số chuyến */}
+            {showTripDatePicker && (
+              <View style={{ marginBottom: 8 }}>
+                <DatePickerField
+                  label="Chọn ngày xem số chuyến"
+                  value={tripDateSelected}
+                  onChange={(d) => {
+                    setTripDateSelected(d);
+                    const dateStr = d.toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
+                    setKpiSelectedDate(dateStr);
+                    fetchTripsByDate(dateStr);
+                    setShowTripDatePicker(false);
+                  }}
+                />
+                <TouchableOpacity
+                  onPress={() => {
+                    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
+                    setKpiSelectedDate('');
+                    setTripDateSelected(new Date());
+                    fetchTripsByDate(today);
+                    setShowTripDatePicker(false);
+                  }}
+                  style={{ alignSelf: 'flex-end', marginTop: 4, marginRight: 4 }}
+                >
+                  <Text style={{ fontSize: 12, color: Colors.primary }}>← Về hôm nay</Text>
+                </TouchableOpacity>
+              </View>
+            )}
 
             {/* Quick nav buttons */}
             <View style={S.navGrid}>
