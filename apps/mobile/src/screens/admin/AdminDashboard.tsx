@@ -40,6 +40,7 @@ export default function AdminDashboard() {
   const [filterDateValue, setFilterDateValue] = useState<Date>(new Date());
   const [filterDateSelected, setFilterDateSelected] = useState(false);
   const [filterDriverId, setFilterDriverId] = useState('');
+  const [showDriverPicker, setShowDriverPicker] = useState(false);
   const [driverList, setDriverList] = useState<any[]>([]);
 
   // Load danh sách tài xế cho filter
@@ -279,28 +280,56 @@ export default function AdminDashboard() {
                     }}
                   />
 
-                  {/* Filter theo tài xế */}
+                  {/* Filter theo tài xế — Dropdown */}
                   <View style={{ marginTop: 12 }}>
                     <Text style={[S.filterTitle, { fontSize: 13, marginBottom: 6 }]}>Tài xế</Text>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 4 }}>
-                      <TouchableOpacity
-                        style={[S.modeBtn, !filterDriverId && S.modeBtnActive, { marginRight: 6 }]}
-                        onPress={() => setFilterDriverId('')}
-                      >
-                        <Text style={[S.modeBtnText, !filterDriverId && S.modeBtnTextActive]}>Tất cả</Text>
-                      </TouchableOpacity>
-                      {driverList.map(drv => (
-                        <TouchableOpacity
-                          key={drv._id}
-                          style={[S.modeBtn, filterDriverId === drv._id && S.modeBtnActive, { marginRight: 6 }]}
-                          onPress={() => setFilterDriverId(drv._id)}
-                        >
-                          <Text style={[S.modeBtnText, filterDriverId === drv._id && S.modeBtnTextActive]} numberOfLines={1}>
-                            {drv.full_name}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
+                    <TouchableOpacity
+                      style={{
+                        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                        borderWidth: 1.5, borderColor: Colors.gray300, borderRadius: 10,
+                        paddingHorizontal: 14, paddingVertical: 11, backgroundColor: Colors.white,
+                      }}
+                      onPress={() => setShowDriverPicker(!showDriverPicker)}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={{ fontSize: 14, color: filterDriverId ? Colors.gray900 : Colors.gray400 }}>
+                        {filterDriverId
+                          ? driverList.find(d => d._id === filterDriverId)?.full_name ?? 'Tài xế'
+                          : 'Tất cả tài xế'}
+                      </Text>
+                      <Text style={{ fontSize: 12, color: Colors.gray500 }}>
+                        {showDriverPicker ? '▲' : '▼'}
+                      </Text>
+                    </TouchableOpacity>
+                    {showDriverPicker && (
+                      <View style={{
+                        borderWidth: 1.5, borderColor: Colors.gray200, borderRadius: 10,
+                        backgroundColor: Colors.white, marginTop: 4,
+                        maxHeight: 200, overflow: 'hidden',
+                      }}>
+                        <ScrollView nestedScrollEnabled showsVerticalScrollIndicator={false}>
+                          {[{ _id: '', full_name: 'Tất cả tài xế' }, ...driverList].map(drv => (
+                            <TouchableOpacity
+                              key={drv._id}
+                              style={{
+                                paddingHorizontal: 14, paddingVertical: 12,
+                                borderBottomWidth: 1, borderBottomColor: Colors.gray100,
+                                backgroundColor: filterDriverId === drv._id ? Colors.primary + '15' : Colors.white,
+                              }}
+                              onPress={() => { setFilterDriverId(drv._id); setShowDriverPicker(false); }}
+                            >
+                              <Text style={{
+                                fontSize: 14,
+                                color: filterDriverId === drv._id ? Colors.primary : Colors.gray800,
+                                fontWeight: filterDriverId === drv._id ? '700' : '400',
+                              }}>
+                                {drv._id === '' ? '👥 ' : '👤 '}{drv.full_name}
+                              </Text>
+                            </TouchableOpacity>
+                          ))}
+                        </ScrollView>
+                      </View>
+                    )}
                   </View>
 
                   <View style={S.filterActions}>
