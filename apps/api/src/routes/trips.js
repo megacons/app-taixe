@@ -96,7 +96,7 @@ router.get('/', authenticate, async (req, res, next) => {
       const dayEnd   = new Date(date + 'T23:59:59+07:00');
       filter.trip_date = { $gte: dayStart, $lte: dayEnd };
     } else if (month && year) {
-      const from = new Date(`${year}-${String(month).padStart(2, '0')}-01T00:00:00+07:00');
+      const from = new Date(year + '-' + String(month).padStart(2, '0') + '-01T00:00:00+07:00');
       const to   = new Date(from);
       to.setMonth(to.getMonth() + 1);
       filter.trip_date = { $gte: from, $lt: to };
