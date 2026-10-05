@@ -314,7 +314,13 @@ export default function RequestsPage() {
                 {Object.entries(detail.payload).map(([k, v]: any) => (
                   <div key={k} className="flex justify-between gap-3 border-b border-gray-50 pb-1.5 mb-1.5">
                     <span className="text-gray-500 flex-shrink-0">{fmtPayloadKey(k)}</span>
-                    <span className="font-medium text-gray-800 text-right break-words min-w-0" style={{ wordBreak: 'break-word' }}>{String(v)}</span>
+                    <span className="font-medium text-gray-800 text-right break-words min-w-0" style={{ wordBreak: 'break-word' }}>
+                      {typeof v === 'number'
+                        ? new Intl.NumberFormat('vi-VN').format(v) + (
+                            ['amount','penalty','reward_amount','penalty_amount'].includes(k) ? 'đ' : ''
+                          )
+                        : String(v)}
+                    </span>
                   </div>
                 ))}
               </div>
