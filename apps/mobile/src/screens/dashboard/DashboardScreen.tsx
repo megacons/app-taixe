@@ -190,7 +190,7 @@ export default function DashboardScreen() {
         params: { month: now.getMonth() + 1, year: now.getFullYear() },
       });
       const totals = res.data.data?.totals;
-      if (totals) setFundRemaining(totals.advance - totals.expense);
+      if (totals) setFundRemaining(totals.expense ?? 0);
     } catch (_) {}
   }, []);
 
@@ -385,11 +385,10 @@ export default function DashboardScreen() {
                 }}
               />
               <KPICard
-                icon="💼"
-                label="Quỹ còn lại"
+                icon="💸"
+                label="Đã chi"
                 value={fundRemaining === null ? '—' : formatCurrency(fundRemaining)}
-                sub={fundRemaining !== null && fundRemaining < 0 ? '⚠️ Âm quỹ' : undefined}
-                valueColor={fundRemaining !== null && fundRemaining < 0 ? Colors.error : undefined}
+                valueColor={Colors.error}
                 onPress={() => navigation.navigate('Finance' as any)}
               />
             </View>
