@@ -29,8 +29,8 @@ router.get('/summary/daily', authenticate, async (req, res, next) => {
     const driverId = await resolveDriverId(req);
     const dateStr = req.query.date || new Date().toISOString().slice(0, 10);
 
-    const dayStart = new Date(dateStr + 'T00:00:00.000Z');
-    const dayEnd   = new Date(dateStr + 'T23:59:59.999Z');
+    const dayStart = new Date(dateStr + 'T00:00:00+07:00');
+    const dayEnd   = new Date(dateStr + 'T23:59:59+07:00');
 
     const filter = {
       trip_date: { $gte: dayStart, $lte: dayEnd },
@@ -90,13 +90,13 @@ router.get('/', authenticate, async (req, res, next) => {
     if (driverId) filter.driver_id = driverId;
     if (status)   filter.status   = status;
 
-    // Filter by date
+    // Filter by date — dùng timezone Việt Nam (UTC+7)
     if (date) {
-      const dayStart = new Date(date + 'T00:00:00.000Z');
-      const dayEnd   = new Date(date + 'T23:59:59.999Z');
+      const dayStart = new Date(date + 'T00:00:00+07:00');
+      const dayEnd   = new Date(date + 'T23:59:59+07:00');
       filter.trip_date = { $gte: dayStart, $lte: dayEnd };
     } else if (month && year) {
-      const from = new Date(`${year}-${String(month).padStart(2, '0')}-01T00:00:00.000Z`);
+      const from = new Date(`${year}-${String(month).padStart(2, '0')}-01T00:00:00+07:00');
       const to   = new Date(from);
       to.setMonth(to.getMonth() + 1);
       filter.trip_date = { $gte: from, $lt: to };
@@ -217,8 +217,8 @@ router.post(
       }
 
       const dateStr  = tripDate.toISOString().slice(0, 10);
-      const dayStart = new Date(dateStr + 'T00:00:00.000Z');
-      const dayEnd   = new Date(dateStr + 'T23:59:59.999Z');
+      const dayStart = new Date(dateStr + 'T00:00:00+07:00');
+      const dayEnd   = new Date(dateStr + 'T23:59:59+07:00');
 
       // Đếm số chuyến hôm nay để tính tăng ca
       const todayCount = await Trip.countDocuments({
@@ -322,8 +322,8 @@ router.delete('/:id', authenticate, authorize('coordinator', 'manager'), async (
     await trip.softDelete(req.user._id);
 
     // Tính lại is_overtime cho các chuyến còn lại trong ngày
-    const dayStart = new Date(dateStr + 'T00:00:00.000Z');
-    const dayEnd   = new Date(dateStr + 'T23:59:59.999Z');
+    const dayStart = new Date(dateStr + 'T00:00:00+07:00');
+    const dayEnd   = new Date(dateStr + 'T23:59:59+07:00');
     const remainingTrips = await Trip.find({
       driver_id: driverId,
       trip_date: { $gte: dayStart, $lte: dayEnd },
@@ -365,8 +365,8 @@ router.post('/submit-daily', authenticate, authorize('driver', 'coordinator', 'm
     const driver = await Driver.findOne({ user_id: req.user._id });
     if (!driver) return res.status(404).json({ success: false, message: 'Không tìm thấy tài xế' });
 
-    const dayStart = new Date(date + 'T00:00:00.000Z');
-    const dayEnd   = new Date(date + 'T23:59:59.999Z');
+    const dayStart = new Date(date + 'T00:00:00+07:00');
+    const dayEnd   = new Date(date + 'T23:59:59+07:00');
 
     await Trip.updateMany(
       { driver_id: driver._id, trip_date: { $gte: dayStart, $lte: dayEnd }, status: 'draft' },
