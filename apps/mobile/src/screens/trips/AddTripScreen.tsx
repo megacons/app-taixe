@@ -431,11 +431,10 @@ export default function AddTripScreen() {
         receiptUrl = await uploadReceipt(form.delivery_receipt) ?? form.delivery_receipt;
       }
 
-      // Tạo N chuyến song song
-      const promises = Array.from({ length: tripCount }, () =>
-        api.post('/trips', { ...basePayload, delivery_receipt: receiptUrl })
-      );
-      await Promise.all(promises);
+      // Tạo N chuyến tuần tự (để tính đúng STT và tăng ca)
+      for (let i = 0; i < tripCount; i++) {
+        await api.post('/trips', { ...basePayload, delivery_receipt: receiptUrl });
+      }
 
       const msg = tripCount > 1
         ? `✅ Đã lưu ${tripCount} chuyến xe!`
