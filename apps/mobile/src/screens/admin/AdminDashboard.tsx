@@ -72,10 +72,14 @@ export default function AdminDashboard() {
     const dy = y ?? filterYear;
     const dd = d ?? filterDay;
     const drv = drvId ?? filterDriverId;
-    if (mode === 'none') {
+    if (mode === 'none' && !drv) {
       setFilterDate('');
       setFilterDriverId('');
       fetchRecentTrips(undefined, undefined, undefined, '');
+    } else if (mode === 'none' && drv) {
+      // Chỉ filter theo tài xế, không có ngày
+      setFilterDate('');
+      fetchRecentTrips(undefined, undefined, undefined, drv);
     } else if (mode === 'month') {
       setFilterDate(`T${dm}/${dy}`);
       fetchRecentTrips(undefined, dm, dy, drv);
@@ -333,8 +337,20 @@ export default function AdminDashboard() {
                   </View>
 
                   <View style={S.filterActions}>
-                    <TouchableOpacity style={S.cancelBtn} onPress={() => setShowFilterModal(false)}>
+                    <TouchableOpacity style={S.cancelBtn} onPress={() => {
+                      setShowFilterModal(false);
+                      setShowDriverPicker(false);
+                    }}>
                       <Text style={S.cancelBtnText}>Hủy</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[S.cancelBtn, { backgroundColor: Colors.gray100 }]} onPress={() => {
+                      setFilterMode('none');
+                      setFilterDriverId('');
+                      setShowFilterModal(false);
+                      setShowDriverPicker(false);
+                      fetchRecentTrips();
+                    }}>
+                      <Text style={[S.cancelBtnText, { color: Colors.gray600 }]}>Xóa lọc</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={S.applyBtn}
                       onPress={() => applyFilter(filterMode, filterDay, filterMonth, filterYear, filterDriverId)}>
