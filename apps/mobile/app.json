@@ -18,15 +18,13 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.namthanh.driver",
-      "buildNumber": "6",
+      "buildNumber": "7",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Ứng dụng cần truy cập vị trí để ghi nhận địa điểm chuyến hàng",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Ứng dụng cần truy cập vị trí nền để theo dõi GPS",
         "NSCameraUsageDescription": "Ứng dụng cần truy cập camera để chụp ảnh biên nhận",
         "NSPhotoLibraryUsageDescription": "Ứng dụng cần truy cập thư viện ảnh để tải lên biên nhận",
         "UIBackgroundModes": [
-          "remote-notification",
-          "fetch",
           "remote-notification",
           "fetch"
         ],

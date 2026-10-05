@@ -15,10 +15,9 @@ async function sendExpoPush(tokens, title, body, data = {}) {
     data,
     sound:     'default',
     priority:  'high',
-    channelId: 'requests',  // Android channel với lockscreenVisibility PUBLIC
-    ttl:       0,
+    channelId: 'requests',
+    ttl:       86400,
     badge:     1,
-    _contentAvailable: true,
   }));
   const payload = JSON.stringify(messages);
   const options = {
