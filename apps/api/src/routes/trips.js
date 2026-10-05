@@ -27,7 +27,7 @@ async function resolveDriverId(req) {
 router.get('/summary/daily', authenticate, async (req, res, next) => {
   try {
     const driverId = await resolveDriverId(req);
-    const dateStr = req.query.date || new Date().toISOString().slice(0, 10);
+    const dateStr = req.query.date || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
 
     const dayStart = new Date(dateStr + 'T00:00:00+07:00');
     const dayEnd   = new Date(dateStr + 'T23:59:59+07:00');
@@ -207,8 +207,8 @@ router.post(
       }
 
       // Không cho phép tạo chuyến ngày tương lai
-      const todayStr2 = new Date().toISOString().slice(0, 10);
-      const tripStr   = tripDate.toISOString().slice(0, 10);
+      const todayStr2 = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
+      const tripStr   = tripDate.toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
       if (tripStr > todayStr2) {
         return res.status(400).json({
           success: false,
@@ -216,7 +216,7 @@ router.post(
         });
       }
 
-      const dateStr  = tripDate.toISOString().slice(0, 10);
+      const dateStr  = tripDate.toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
       const dayStart = new Date(dateStr + 'T00:00:00+07:00');
       const dayEnd   = new Date(dateStr + 'T23:59:59+07:00');
 
@@ -317,7 +317,7 @@ router.delete('/:id', authenticate, authorize('coordinator', 'manager'), async (
     // Lưu thông tin trước khi xóa để tính lại OT
     const driverId = trip.driver_id;
     const tripDate = trip.trip_date;
-    const dateStr = tripDate.toISOString().slice(0, 10);
+    const dateStr = tripDate.toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
 
     await trip.softDelete(req.user._id);
 
