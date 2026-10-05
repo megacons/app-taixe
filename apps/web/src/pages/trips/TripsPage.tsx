@@ -63,6 +63,7 @@ export default function TripsPage() {
   const [editQuantity, setEditQuantity] = useState('');
   const [editUnit, setEditUnit] = useState('');
   const [editSaving, setEditSaving] = useState(false);
+  const [editIsOvertime, setEditIsOvertime] = useState(false);
   const [delTarget, setDelTarget] = useState<Trip | null>(null);
   const [delLoading, setDelLoading] = useState(false);
   const [lightbox, setLightbox] = useState<string | null>(null);
@@ -361,6 +362,7 @@ export default function TripsPage() {
                         setEditDrop(t.drop_location ?? '');
                         setEditQuantity(t.quantity ? String(t.quantity) : '');
                         setEditUnit(t.unit ?? '');
+                        setEditIsOvertime(t.is_overtime ?? false);
                       }}
                         className="p-1.5 rounded-lg text-gray-400 hover:bg-yellow-50 hover:text-yellow-600">
                         <PencilIcon className="w-4 h-4" />
@@ -440,6 +442,7 @@ export default function TripsPage() {
                   pickup_location: editPickup.trim(),
                   drop_location:   editDrop.trim(),
                   note:            editNote.trim(),
+                  is_overtime:     editIsOvertime,
                   ...(editQuantity ? { quantity: Number(editQuantity) } : {}),
                   ...(editUnit     ? { unit: editUnit } : {}),
                 });
@@ -524,6 +527,21 @@ export default function TripsPage() {
               <textarea className="form-input w-full resize-none" rows={3}
                 value={editNote} onChange={e => setEditNote(e.target.value)}
                 placeholder="Ghi chú chuyến xe..." />
+            </div>
+
+            {/* Tăng ca thủ công */}
+            <div className="flex items-center gap-3 bg-orange-50 border border-orange-200 rounded-lg p-3">
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" className="sr-only peer"
+                  checked={editIsOvertime}
+                  onChange={e => setEditIsOvertime(e.target.checked)}
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
+              </label>
+              <div>
+                <p className="text-sm font-semibold text-orange-700">🔥 Tăng ca</p>
+                <p className="text-xs text-gray-500">Bật/tắt thủ công cho chuyến này</p>
+              </div>
             </div>
           </div>
         )}

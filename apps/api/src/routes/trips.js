@@ -292,11 +292,19 @@ router.put('/:id', authenticate, async (req, res, next) => {
       'quantity', 'unit',
       'income', 'expense', 'note', 'delivery_receipt',
       'gps_latitude', 'gps_longitude', 'status',
+      'is_overtime',
     ];
 
     allowed.forEach(f => {
       if (req.body[f] !== undefined) trip[f] = req.body[f];
     });
+
+    // Nếu thay đổi is_overtime → tính lại overtime_pay
+    if (req.body.is_overtime !== undefined) {
+      const driver = await Driver.findById(trip.driver_id);
+      const rate = driver?.overtime_rate ?? 100000;
+      trip.overtime_pay = req.body.is_overtime ? rate : 0;
+    }
 
     await trip.save();
 
