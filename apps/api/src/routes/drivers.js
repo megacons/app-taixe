@@ -514,12 +514,27 @@ router.get('/salary/list', authenticate, authorize('coordinator', 'accountant', 
     const thresholdDoc = await SystemConfig.findOne({ key: 'overtime_threshold' });
     const threshold    = thresholdDoc?.value ?? 4;
 
-    // Map driverId → overtime_trips tháng này
-    const overtimeMap = {};
+    // Map driverId → total_trips (vẫn dùng aggregation để đếm tổng chuyến)
+    const tripCountMap = {};
     tripAgg.forEach(row => {
-      let ot = 0;
-      row.days.forEach(d => { ot += Math.max(0, d.trips - threshold); });
-      overtimeMap[row._id.toString()] = { overtime_trips: ot, total_trips: row.total_trips };
+      tripCountMap[row._id.toString()] = row.total_trips;
+    });
+
+    // Đếm overtime từ field is_overtime trong DB (đồng bộ với sửa thủ công)
+    const overtimeTripsData = await Trip.find({
+      trip_date: { $gte: from, $lt: to },
+      status: { $ne: 'cancelled' },
+      is_overtime: true,
+    }).lean();
+
+    // Map driverId → { overtime_trips, overtime_pay }
+    const overtimeMap = {};
+    overtimeTripsData.forEach(t => {
+      const dId = t.driver_id?.toString();
+      if (!dId) return;
+      if (!overtimeMap[dId]) overtimeMap[dId] = { overtime_trips: 0, overtime_pay: 0 };
+      overtimeMap[dId].overtime_trips += 1;
+      overtimeMap[dId].overtime_pay += t.overtime_pay || 0;
     });
 
     // Gắn kết quả tăng ca vào từng driver + tính tiền ứng và tiền chi đã duyệt trong tháng
@@ -559,16 +574,16 @@ router.get('/salary/list', authenticate, authorize('coordinator', 'accountant', 
 
     const result = drivers.map(d => {
       const dId          = d._id.toString();
-      const ot           = overtimeMap[dId] ?? { overtime_trips: 0, total_trips: 0 };
-      const overtime_rate = d.overtime_rate ?? 100000;
+      const ot           = overtimeMap[dId] ?? { overtime_trips: 0, overtime_pay: 0 };
+      const total_trips  = tripCountMap[dId] ?? 0;
       const uid          = d.user_id?._id?.toString() ?? d.user_id?.toString();
       const advance_month = advanceMap[uid] ?? 0;
       const expense_month = expenseMap[uid] ?? 0;
       return {
         ...d,
-        total_trips_month:    ot.total_trips,
+        total_trips_month:    total_trips,
         overtime_trips_month: ot.overtime_trips,
-        overtime_pay_month:   ot.overtime_trips * overtime_rate,
+        overtime_pay_month:   ot.overtime_pay,
         advance_month,
         expense_month,
       };
