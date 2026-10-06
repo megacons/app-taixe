@@ -388,6 +388,51 @@ router.delete('/:id', authenticate, authorize('coordinator', 'manager'), async (
 });
 
 /* ─────────────────────────────────────────────
+ * POST /trips/recalculate-overtime
+ * Admin: tính lại is_overtime cho tất cả trips trong DB
+ * ───────────────────────────────────────────── */
+router.post('/recalculate-overtime', authenticate, authorize('coordinator', 'manager'), async (req, res, next) => {
+  try {
+    const { getOvertimeConfig } = require('../utils/overtime');
+    const { threshold, rate } = await getOvertimeConfig();
+
+    // Lấy tất cả trips chưa xóa, group theo driver + ngày
+    const allTrips = await Trip.find({ is_deleted: { $ne: true }, status: { $ne: 'cancelled' } })
+      .sort('trip_date')
+      .lean();
+
+    // Group by driver_id + dateStr
+    const groups = {};
+    allTrips.forEach(t => {
+      const dateStr = new Date(t.trip_date).toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
+      const key = `${t.driver_id}_${dateStr}`;
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(t);
+    });
+
+    let updated = 0;
+    for (const trips of Object.values(groups)) {
+      for (let i = 0; i < trips.length; i++) {
+        const tripNum = i + 1;
+        const isOT = tripNum > threshold;
+        if (trips[i].trip_number !== tripNum || trips[i].is_overtime !== isOT) {
+          await Trip.findByIdAndUpdate(trips[i]._id, {
+            $set: {
+              trip_number:  tripNum,
+              is_overtime:  isOT,
+              overtime_pay: isOT ? rate : 0,
+            },
+          });
+          updated++;
+        }
+      }
+    }
+
+    res.json({ success: true, message: `Đã recalculate ${updated} chuyến`, updated });
+  } catch (err) { next(err); }
+});
+
+/* ─────────────────────────────────────────────
  * POST /trips/submit-daily
  * Tài xế chốt báo cáo ngày
  * ───────────────────────────────────────────── */
