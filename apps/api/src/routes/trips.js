@@ -6,7 +6,7 @@ const { Trip, Driver, Vehicle, TripImage } = require('../models');
 const { authenticate, authorize } = require('../middleware/auth');
 const { validate } = require('../middleware/validate');
 const { upload, getFileUrl } = require('../middleware/upload');
-const { calcOvertimeForTrip, calcDailyOvertime } = require('../utils/overtime');
+const { calcOvertimeForTrip, calcDailyOvertime, getOvertimeConfig } = require('../utils/overtime');
 
 /**
  * Lấy driverId từ user (driver tự xem, admin truyền qua param)
@@ -252,12 +252,38 @@ router.post(
         synced_from_offline: req.body.synced_from_offline || false,
       });
 
+      // Sau khi tạo chuyến, recalculate is_overtime cho toàn bộ chuyến trong ngày
+      // để xử lý trường hợp tạo nhiều chuyến gần nhau (race condition)
+      const allTripsToday = await Trip.find({
+        driver_id:  driverId,
+        trip_date:  { $gte: dayStart, $lte: dayEnd },
+        status:     { $ne: 'cancelled' },
+        is_deleted: { $ne: true },
+      }).sort('trip_date').lean();
+
+      const { threshold: ot_threshold, rate: ot_rate } = await getOvertimeConfig();
+      for (let i = 0; i < allTripsToday.length; i++) {
+        const tripNum = i + 1;
+        const isOT = tripNum > ot_threshold;
+        if (allTripsToday[i].is_overtime !== isOT || allTripsToday[i].trip_number !== tripNum) {
+          await Trip.findByIdAndUpdate(allTripsToday[i]._id, {
+            $set: {
+              trip_number:  tripNum,
+              is_overtime:  isOT,
+              overtime_pay: isOT ? ot_rate : 0,
+            },
+          });
+        }
+      }
+
+      const updatedTrip = await Trip.findById(trip._id).lean();
+
       res.status(201).json({
         success: true,
-        message: isOvertime
-          ? `Lưu chuyến thành công! 🔥 Tăng ca chuyến ${tripNumberToday} (+${overtimePay.toLocaleString('vi-VN')}đ)`
+        message: updatedTrip?.is_overtime
+          ? `Lưu chuyến thành công! 🔥 Tăng ca chuyến ${updatedTrip.trip_number} (+${(updatedTrip.overtime_pay || 0).toLocaleString('vi-VN')}đ)`
           : 'Lưu chuyến thành công!',
-        data: trip,
+        data: updatedTrip,
       });
     } catch (err) {
       next(err);
