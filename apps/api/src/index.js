@@ -114,7 +114,7 @@ app.use('/api/reports',       reportRoutes);
 app.use('/api/fund',          fundRoutes);
 app.use('/api/attendance',   attendanceRoutes);
 
-// Debug endpoint — check push tokens
+// Debug endpoint — check push tokens + test push
 app.get('/api/debug-push', async (req, res) => {
   try {
     const { User } = require('./models');
@@ -128,7 +128,7 @@ app.get('/api/debug-push', async (req, res) => {
         phone: u.phone,
         role: u.role,
         has_token: !!u.fcm_token,
-        token_preview: u.fcm_token ? u.fcm_token.slice(0, 50) + '...' : null,
+        token: u.fcm_token || null,
       })),
     });
   } catch (err) {
