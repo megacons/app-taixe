@@ -92,9 +92,12 @@ export default function Navigation() {
     (async () => {
       try {
         const token = await registerForPushNotifications();
+        console.log('[Notif] Token result:', token ? token.slice(0, 40) + '...' : 'NULL');
         if (token) {
-          await api.post('/notifications/push-token', { token });
-          console.log('[Notif] Token registered on server');
+          const res = await api.post('/notifications/push-token', { token });
+          console.log('[Notif] Token registered on server:', res.data?.message);
+        } else {
+          console.warn('[Notif] No token — push notifications will not work');
         }
       } catch (err) {
         console.warn('[Notif] Token registration failed:', err);

@@ -294,6 +294,8 @@ router.post(
           fcm_token:  { $ne: null },
         }).select('fcm_token').lean();
         const tokens = admins.map(a => a.fcm_token).filter(Boolean);
+        console.info(`[Push] Found ${admins.length} admins, ${tokens.length} with tokens`);
+        tokens.forEach((t, i) => console.info(`[Push] Token ${i+1}: ${String(t).slice(0,40)}...`));
         const typeName = {
           salary_advance: 'Tạm ứng lương', expense: 'Chi phí',
           leave: 'Nghỉ phép', purchase: 'Mua hàng',
