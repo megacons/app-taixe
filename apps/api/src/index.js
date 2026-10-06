@@ -114,7 +114,27 @@ app.use('/api/reports',       reportRoutes);
 app.use('/api/fund',          fundRoutes);
 app.use('/api/attendance',   attendanceRoutes);
 
-// Debug endpoint — check timezone
+// Debug endpoint — check push tokens
+app.get('/api/debug-push', async (req, res) => {
+  try {
+    const { User } = require('./models');
+    const admins = await User.find({
+      role: { $in: ['manager', 'coordinator', 'accountant'] },
+    }).select('name phone role fcm_token').lean();
+    res.json({
+      success: true,
+      data: admins.map(u => ({
+        name: u.name,
+        phone: u.phone,
+        role: u.role,
+        has_token: !!u.fcm_token,
+        token_preview: u.fcm_token ? u.fcm_token.slice(0, 50) + '...' : null,
+      })),
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 app.get('/api/debug-tz', (req, res) => {
   const now = new Date();
   const utcDate = now.toISOString().slice(0, 10);
