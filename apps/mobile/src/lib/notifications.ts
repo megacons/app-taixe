@@ -37,8 +37,9 @@ export async function registerForPushNotifications(): Promise<string | null> {
         allowSound: true,
         allowDisplayInCarPlay: false,
         allowCriticalAlerts: false,
-        provideAppNotificationSettings: false,
+        provideAppNotificationSettings: true,
         allowProvisional: false,
+        allowAnnouncements: true,
       },
     });
     finalStatus = status;

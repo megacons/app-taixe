@@ -385,17 +385,11 @@ export default function AddTripScreen() {
     if (!validate()) return;
     setLoading(true);
     try {
-      // Kết hợp ngày từ DatePicker với giờ thực tế hiện tại
+      // Dùng 12:00 VN cố định để tránh lệch ngày do timezone
+      // Ngày tài xế chọn luôn được lưu đúng bất kể giờ tạo
       const selectedDate = form.trip_date;
-      const now = new Date();
-      const tripDateTime = new Date(
-        selectedDate.getFullYear(),
-        selectedDate.getMonth(),
-        selectedDate.getDate(),
-        now.getHours(),
-        now.getMinutes(),
-        now.getSeconds(),
-      );
+      const dateStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}T12:00:00+07:00`;
+      const tripDateTime = new Date(dateStr);
 
       const tripCount = Math.max(1, parseInt(form.trip_count || '1', 10) || 1);
 

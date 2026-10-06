@@ -72,7 +72,9 @@ export default function AdminDriverDetail() {
   const groupByDay = () => {
     const map: Record<string, any[]> = {};
     trips.forEach(t => {
-      const day = t.trip_date?.slice(0, 10) ?? 'Không rõ';
+      const day = t.trip_date
+        ? new Date(t.trip_date).toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' })
+        : 'Không rõ';
       if (!map[day]) map[day] = [];
       map[day].push(t);
     });
@@ -187,7 +189,6 @@ export default function AdminDriverDetail() {
             </View>
           ) : (
             groupByDay().map(([day, dayTrips]) => {
-              const isOT  = dayTrips.length > 4;
               const date  = new Date(day + 'T00:00:00');
               const label = isNaN(date.getTime())
                 ? day
@@ -202,17 +203,19 @@ export default function AdminDriverDetail() {
                       <View style={S.dayCountBadge}>
                         <Text style={S.dayCount}>{dayTrips.length} chuyến</Text>
                       </View>
-                      {isOT && (
+                      {dayTrips.filter(t => t.is_overtime).length > 0 && (
                         <View style={S.otBadge}>
-                          <Text style={S.otBadgeText}>🔥 {dayTrips.length - 4} TC</Text>
+                          <Text style={S.otBadgeText}>🔥 {dayTrips.filter(t => t.is_overtime).length} TC</Text>
                         </View>
                       )}
                     </View>
                   </View>
 
-                  {/* Trip rows */}
-                  {dayTrips.map((t, idx) => {
-                    const isOTTrip = idx >= 4;
+                  {/* Trip rows — sort cũ nhất trước để STT 1 = cũ nhất */}
+                  {[...dayTrips].sort((a, b) => new Date(a.trip_date).getTime() - new Date(b.trip_date).getTime())
+                    .map((t, idx) => {
+                    const stt = idx + 1; // cũ nhất = 1
+                    const isOTTrip = t.is_overtime === true;
                     return (
                       <TouchableOpacity
                         key={t._id}
@@ -221,7 +224,7 @@ export default function AdminDriverDetail() {
                         activeOpacity={0.7}
                       >
                         <View style={[S.tripNumBadge, isOTTrip && { backgroundColor: Colors.accentDark }]}>
-                          <Text style={S.tripNum}>{idx + 1}</Text>
+                          <Text style={S.tripNum}>{stt}</Text>
                         </View>
                         <View style={{ flex: 1 }}>
                           <Text style={S.tripRoute} numberOfLines={1}>

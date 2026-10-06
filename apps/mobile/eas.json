@@ -16,7 +16,8 @@
     },
     "ios-testflight": {
       "ios": {
-        "simulator": false
+        "simulator": false,
+        "distribution": "store"
       },
       "env": {
         "API_URL": "https://app-taixe.onrender.com",

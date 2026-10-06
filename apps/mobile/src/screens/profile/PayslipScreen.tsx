@@ -60,7 +60,9 @@ export default function PayslipScreen() {
       // Tính tăng ca theo ngày (mỗi ngày > 4 chuyến)
       const dayMap: Record<string, number> = {};
       trips.forEach((t: any) => {
-        const d = t.trip_date?.slice(0, 10) ?? '';
+        const d = t.trip_date
+          ? new Date(t.trip_date).toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' })
+          : '';
         dayMap[d] = (dayMap[d] ?? 0) + 1;
       });
       const otTrips = Object.values(dayMap).reduce((s: number, c: number) => s + Math.max(0, c - 4), 0);

@@ -70,7 +70,10 @@ export default function TodayTripsScreen() {
     if (!isMonthMode) return [];
     const map: Record<string, any[]> = {};
     trips.forEach(t => {
-      const d = t.trip_date?.slice(0, 10) ?? '';
+      // Dùng timezone VN để lấy đúng ngày
+      const d = t.trip_date
+        ? new Date(t.trip_date).toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' })
+        : '';
       if (!map[d]) map[d] = [];
       map[d].push(t);
     });
