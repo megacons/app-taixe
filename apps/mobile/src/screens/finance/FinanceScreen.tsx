@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
   RefreshControl, ActivityIndicator, Modal, TextInput,
-  KeyboardAvoidingView, Platform, Alert,
+  KeyboardAvoidingView, Platform, Alert, Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -187,10 +187,37 @@ function ExpenseForm({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
   const [date,    setDate]    = useState<Date | null>(null);
   const [amount,  setAmount]  = useState('');
   const [note,    setNote]    = useState('');
+  const [image,   setImage]   = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [errors,  setErrors]  = useState<Record<string, string>>({});
 
   const rawAmount = () => Number(amount.replace(/[^0-9]/g, ''));
+
+  const pickImage = () => {
+    Alert.alert('Thêm ảnh', 'Chọn nguồn ảnh', [
+      {
+        text: 'Chụp ảnh',
+        onPress: async () => {
+          const { ImagePicker } = require('expo-image-picker');
+          const perm = await ImagePicker.requestCameraPermissionsAsync();
+          if (perm.status !== 'granted') { Alert.alert('Cần quyền camera'); return; }
+          const result = await ImagePicker.launchCameraAsync({ quality: 0.7, allowsEditing: false });
+          if (!result.canceled) setImage(result.assets[0].uri);
+        },
+      },
+      {
+        text: 'Chọn từ thư viện',
+        onPress: async () => {
+          const { ImagePicker } = require('expo-image-picker');
+          const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+          if (perm.status !== 'granted') { Alert.alert('Cần quyền thư viện ảnh'); return; }
+          const result = await ImagePicker.launchImageLibraryAsync({ quality: 0.7, allowsEditing: false });
+          if (!result.canceled) setImage(result.assets[0].uri);
+        },
+      },
+      { text: 'Hủy', style: 'cancel' },
+    ]);
+  };
 
   const validate = () => {
     const e: Record<string, string> = {};
@@ -205,6 +232,16 @@ function ExpenseForm({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
     if (!validate()) return;
     setLoading(true);
     try {
+      let imageUrl = null;
+      if (image) {
+        try {
+          const fd = new FormData();
+          fd.append('receipt', { uri: image, type: 'image/jpeg', name: `expense_${Date.now()}.jpg` } as any);
+          const uploadRes = await api.post('/uploads/receipt', fd, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 60000 });
+          imageUrl = uploadRes.data.data?.url ?? null;
+        } catch (_) { /* ảnh upload fail — vẫn tiếp tục gửi yêu cầu */ }
+      }
+
       await api.post('/requests', {
         type:  'expense',
         title: `Chi phí - ${format(date!, 'dd/MM/yyyy')}`,
@@ -213,6 +250,7 @@ function ExpenseForm({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
           amount:       rawAmount(),
           note:         note.trim(),
           expense_type: 'Chi phí vận hành',
+          ...(imageUrl ? { image_url: imageUrl } : {}),
         },
       });
       Alert.alert('✅ Đã gửi', 'Yêu cầu hoàn chi đã gửi, chờ admin duyệt.', [
@@ -282,6 +320,31 @@ function ExpenseForm({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
                   textAlignVertical="top"
                 />
                 {errors.note ? <Text style={F.errText}>{errors.note}</Text> : null}
+              </View>
+
+              {/* Ảnh đính kèm — không bắt buộc */}
+              <View style={F.fieldGroup}>
+                <Text style={F.label}>Ảnh đính kèm <Text style={{ fontSize: 11, color: Colors.gray400, fontWeight: '400' }}>(không bắt buộc)</Text></Text>
+                {image ? (
+                  <View style={{ position: 'relative' }}>
+                    <Image source={{ uri: image }} style={{ width: '100%', height: 180, borderRadius: 12, resizeMode: 'cover' }} />
+                    <TouchableOpacity
+                      style={{ position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 16, width: 32, height: 32, justifyContent: 'center', alignItems: 'center' }}
+                      onPress={() => setImage(null)}
+                    >
+                      <Text style={{ color: Colors.white, fontSize: 18, fontWeight: '700' }}>×</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    style={{ borderWidth: 1.5, borderColor: Colors.gray300, borderRadius: 12, borderStyle: 'dashed', height: 100, justifyContent: 'center', alignItems: 'center', gap: 6 }}
+                    onPress={pickImage}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={{ fontSize: 28 }}>📷</Text>
+                    <Text style={{ fontSize: 13, color: Colors.gray500 }}>Nhấn để thêm ảnh</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             </ScrollView>
 
