@@ -127,6 +127,17 @@ export default function RequestDetailScreen() {
           </View>
         )}
 
+        {/* ── Ảnh đính kèm từ payload.image_url ── */}
+        {request.payload?.image_url && (
+          <View style={S.card}>
+            <Text style={S.cardTitle}>Ảnh đính kèm</Text>
+            <Image
+              source={{ uri: request.payload.image_url }}
+              style={{ width: '100%', height: 220, borderRadius: 12, resizeMode: 'cover', marginTop: 8 }}
+            />
+          </View>
+        )}
+
         {/* ── Đính kèm ── */}
         {request.attachments?.length > 0 && (
           <View style={S.card}>

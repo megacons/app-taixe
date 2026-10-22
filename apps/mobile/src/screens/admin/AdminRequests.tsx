@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, FlatList, StyleSheet, TouchableOpacity,
   RefreshControl, ActivityIndicator, Alert, ScrollView,
-  DeviceEventEmitter, Modal, TextInput, KeyboardAvoidingView, Platform,
+  DeviceEventEmitter, Modal, TextInput, KeyboardAvoidingView, Platform, Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -242,8 +242,23 @@ export default function AdminRequests() {
                       amount: 'Số tiền', reason: 'Lý do', note: 'Ghi chú', date: 'Ngày',
                       purpose: 'Mục đích', expense_type: 'Loại chi phí',
                       check_in_time: 'Giờ vào', check_out_time: 'Giờ ra',
+                      image_url: 'Ảnh đính kèm',
                     };
                     const label = keyLabel[k] ?? k;
+
+                    // Hiển thị ảnh nếu là image_url
+                    if (k === 'image_url' && v) {
+                      return (
+                        <View key={k} style={{ marginVertical: 8 }}>
+                          <Text style={{ fontSize: 13, color: Colors.gray500, marginBottom: 6 }}>{label}</Text>
+                          <Image
+                            source={{ uri: v }}
+                            style={{ width: '100%', height: 200, borderRadius: 12, resizeMode: 'cover' }}
+                          />
+                        </View>
+                      );
+                    }
+
                     const display = typeof v === 'number' ? new Intl.NumberFormat('vi-VN').format(v) + (k === 'amount' ? 'đ' : '') : String(v);
                     return (
                       <View key={k} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: Colors.gray50 }}>
