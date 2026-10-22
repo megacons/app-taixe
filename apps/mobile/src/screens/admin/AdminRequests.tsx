@@ -333,7 +333,7 @@ export default function AdminRequests() {
   );
 }
 
-
+const S = StyleSheet.create({
   safe:        { flex: 1, backgroundColor: Colors.background },
   header:      { backgroundColor: Colors.primary, paddingHorizontal: 16, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', gap: 8 },
   backBtn:     { width: 36, height: 36, justifyContent: 'center' },
