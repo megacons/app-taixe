@@ -4,6 +4,7 @@ import {
   RefreshControl, ActivityIndicator, Modal, TextInput,
   KeyboardAvoidingView, Platform, Alert, Image,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Colors } from '@/constants/colors';
@@ -198,7 +199,6 @@ function ExpenseForm({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
       {
         text: 'Chụp ảnh',
         onPress: async () => {
-          const { ImagePicker } = require('expo-image-picker');
           const perm = await ImagePicker.requestCameraPermissionsAsync();
           if (perm.status !== 'granted') { Alert.alert('Cần quyền camera'); return; }
           const result = await ImagePicker.launchCameraAsync({ quality: 0.7, allowsEditing: false });
@@ -208,7 +208,6 @@ function ExpenseForm({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
       {
         text: 'Chọn từ thư viện',
         onPress: async () => {
-          const { ImagePicker } = require('expo-image-picker');
           const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
           if (perm.status !== 'granted') { Alert.alert('Cần quyền thư viện ảnh'); return; }
           const result = await ImagePicker.launchImageLibraryAsync({ quality: 0.7, allowsEditing: false });
