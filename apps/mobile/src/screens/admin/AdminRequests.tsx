@@ -208,10 +208,10 @@ export default function AdminRequests() {
     </SafeAreaView>
 
     {/* ── Modal chi tiết yêu cầu ── */}
-    {detailRequest && (
-      <Modal visible transparent animationType="fade" onRequestClose={() => setDetailRequest(null)}>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 16, backgroundColor: 'rgba(0,0,0,0.55)' }}>
-          <TouchableOpacity style={{ ...StyleSheet.absoluteFillObject }} activeOpacity={1} onPress={() => setDetailRequest(null)} />
+    <Modal visible={!!detailRequest} transparent animationType="fade" onRequestClose={() => setDetailRequest(null)}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 16, backgroundColor: 'rgba(0,0,0,0.55)' }}>
+        <TouchableOpacity style={{ ...StyleSheet.absoluteFillObject }} activeOpacity={1} onPress={() => setDetailRequest(null)} />
+        {detailRequest && (
           <View style={{ backgroundColor: Colors.white, borderRadius: 20, width: '100%', maxHeight: '85%', overflow: 'hidden' }}>
             {/* Header */}
             <View style={{ backgroundColor: Colors.primary, paddingHorizontal: 20, paddingVertical: 14, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -294,9 +294,9 @@ export default function AdminRequests() {
               </View>
             )}
           </View>
-        </View>
-      </Modal>
-    )}
+        )}
+      </View>
+    </Modal>
 
     {/* ── Modal nhập lý do từ chối ── */}
     <Modal
