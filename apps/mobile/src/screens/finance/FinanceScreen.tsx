@@ -47,6 +47,7 @@ export default function FinanceScreen() {
     setWatermarkedImage(uri);
   });
   const [watermarkedImage, setWatermarkedImage] = useState<string | null>(null);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -187,29 +188,44 @@ export default function FinanceScreen() {
           applyWatermark={applyWatermark}
           watermarkedImage={watermarkedImage}
           setWatermarkedImage={setWatermarkedImage}
+          onOpenLightbox={setLightboxImage}
         />
       )}
       <WatermarkView />
+
+      {/* Lightbox fullscreen — nằm ngoài mọi Modal */}
+      {lightboxImage && (
+        <Modal visible transparent animationType="fade" onRequestClose={() => setLightboxImage(null)}>
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center', alignItems: 'center' }}>
+            <TouchableOpacity
+              style={{ position: 'absolute', top: 48, right: 20, zIndex: 10, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 20, width: 40, height: 40, justifyContent: 'center', alignItems: 'center' }}
+              onPress={() => setLightboxImage(null)}
+            >
+              <Text style={{ color: '#fff', fontSize: 22, fontWeight: '700' }}>×</Text>
+            </TouchableOpacity>
+            <Image source={{ uri: lightboxImage }} style={{ width: '100%', height: '80%', resizeMode: 'contain' }} />
+          </View>
+        </Modal>
+      )}
     </SafeAreaView>
   );
 }
 
 /* ─── ExpenseForm modal ──────────────────────────────── */
-function ExpenseForm({ onClose, onSuccess, applyWatermark, watermarkedImage, setWatermarkedImage }: {
+function ExpenseForm({ onClose, onSuccess, applyWatermark, watermarkedImage, setWatermarkedImage, onOpenLightbox }: {
   onClose: () => void;
   onSuccess: () => void;
   applyWatermark: (uri: string) => Promise<void>;
   watermarkedImage: string | null;
   setWatermarkedImage: (uri: string | null) => void;
+  onOpenLightbox: (uri: string) => void;
 }) {
   const [date,    setDate]    = useState<Date | null>(null);
   const [amount,  setAmount]  = useState('');
   const [note,    setNote]    = useState('');
-  const [lightbox, setLightbox] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors,  setErrors]  = useState<Record<string, string>>({});
 
-  // image = watermarkedImage từ parent
   const image = watermarkedImage;
   const setImage = setWatermarkedImage;
 
@@ -348,7 +364,7 @@ function ExpenseForm({ onClose, onSuccess, applyWatermark, watermarkedImage, set
                 <Text style={F.label}>Ảnh đính kèm <Text style={{ fontSize: 11, color: Colors.gray400, fontWeight: '400' }}>(không bắt buộc)</Text></Text>
                 {image ? (
                   <View style={{ position: 'relative' }}>
-                    <TouchableOpacity onPress={() => setLightbox(true)} activeOpacity={0.9}>
+                    <TouchableOpacity onPress={() => onOpenLightbox(image)} activeOpacity={0.9}>
                       <Image source={{ uri: image }} style={{ width: '100%', height: 180, borderRadius: 12, resizeMode: 'cover' }} />
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -388,19 +404,6 @@ function ExpenseForm({ onClose, onSuccess, applyWatermark, watermarkedImage, set
         </KeyboardAvoidingView>
       </View>
     </Modal>
-
-    {/* Lightbox xem ảnh fullscreen */}
-    {lightbox && image && (
-      <Modal visible transparent animationType="fade" onRequestClose={() => setLightbox(false)}>
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center', alignItems: 'center' }}>
-          <TouchableOpacity style={{ position: 'absolute', top: 48, right: 20, zIndex: 10, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 20, width: 40, height: 40, justifyContent: 'center', alignItems: 'center' }} onPress={() => setLightbox(false)}>
-            <Text style={{ color: Colors.white, fontSize: 22, fontWeight: '700' }}>×</Text>
-          </TouchableOpacity>
-          <Image source={{ uri: image }} style={{ width: '100%', height: '80%', resizeMode: 'contain' }} />
-        </View>
-      </Modal>
-    )}
-  </>
   );
 }
 
