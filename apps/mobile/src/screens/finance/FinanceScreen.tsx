@@ -269,6 +269,7 @@ function ExpenseForm({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
   };
 
   return (
+  <>
     <Modal visible transparent animationType="fade">
       <View style={F.overlay}>
         <TouchableOpacity style={F.backdrop} onPress={onClose} activeOpacity={1} />
@@ -386,6 +387,7 @@ function ExpenseForm({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
     )}
 
     <WatermarkView />
+  </>
   );
 }
 
