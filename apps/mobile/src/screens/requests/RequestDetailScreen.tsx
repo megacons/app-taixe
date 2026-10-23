@@ -102,7 +102,6 @@ export default function RequestDetailScreen() {
         {/* ── Thông tin chung ── */}
         <View style={S.card}>
           <Text style={S.cardTitle}>Thông tin chung</Text>
-          <InfoRow label="Tiêu đề"    value={request.title} />
           <InfoRow label="Người gửi"  value={request.created_by?.name ?? '—'} />
           <InfoRow label="Ngày gửi"   value={fmt(request.created_at)} />
           {request.approved_by && (
@@ -262,7 +261,6 @@ function buildPayloadRows(type: string, p: Record<string, any>): { label: string
       ];
     case 'expense':
       return [
-        { label: 'Loại chi phí', value: p.expense_type ?? '—' },
         { label: 'Số tiền',      value: fmt(p.amount), highlight: true },
         { label: 'Ghi chú',      value: p.note ?? p.detail ?? '—' },
       ];
