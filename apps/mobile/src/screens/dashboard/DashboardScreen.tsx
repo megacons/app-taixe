@@ -13,7 +13,7 @@ import {
   DeviceEventEmitter,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as ImagePicker from 'expo-image-picker';
 import { Camera } from 'expo-camera';
@@ -197,10 +197,17 @@ export default function DashboardScreen() {
 
   const fetchUnreadCount = useCallback(async () => {
     try {
-      const res = await api.get('/notifications', { params: { is_read: false, limit: 1 } });
-      setUnreadCount(res.data.data?.total || 0);
+      const res = await api.get('/notifications', { params: { limit: 1 } });
+      setUnreadCount(res.data.data?.unread ?? 0);
     } catch (_) {}
   }, []);
+
+  // Refresh badge mỗi khi màn hình được focus (quay lại từ NotificationsScreen)
+  useFocusEffect(
+    useCallback(() => {
+      fetchUnreadCount();
+    }, [fetchUnreadCount])
+  );
 
   useEffect(() => {
     fetchDailySummary();
