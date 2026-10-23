@@ -92,8 +92,12 @@ export default function NotificationsScreen() {
         timeout: 8000,
       });
       setNotifs(res.data.data?.notifications || []);
+      // Đánh dấu đọc tất cả khi mở màn hình
+      try {
+        await api.put('/notifications/read-all');
+        DeviceEventEmitter.emit('NOTIF_READ');
+      } catch (_) {}
     } catch (_) {
-      // Giữ data cũ nếu có lỗi
     } finally {
       setLoading(false);
     }
