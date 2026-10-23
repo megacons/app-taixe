@@ -42,6 +42,12 @@ export default function FinanceScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [showForm,  setShowForm]  = useState(false);
 
+  // Watermark ở level này để WatermarkView nằm ngoài Modal
+  const { applyWatermark, WatermarkView } = usePhotoWatermark((uri) => {
+    setWatermarkedImage(uri);
+  });
+  const [watermarkedImage, setWatermarkedImage] = useState<string | null>(null);
+
   const fetchData = useCallback(async () => {
     try {
       const monthStr = `${year}-${String(month).padStart(2, '0')}`;
@@ -176,27 +182,36 @@ export default function FinanceScreen() {
       {/* Form yêu cầu chi */}
       {showForm && (
         <ExpenseForm
-          onClose={() => setShowForm(false)}
-          onSuccess={() => { setShowForm(false); fetchData(); }}
+          onClose={() => { setShowForm(false); setWatermarkedImage(null); }}
+          onSuccess={() => { setShowForm(false); setWatermarkedImage(null); fetchData(); }}
+          applyWatermark={applyWatermark}
+          watermarkedImage={watermarkedImage}
+          setWatermarkedImage={setWatermarkedImage}
         />
       )}
+      <WatermarkView />
     </SafeAreaView>
   );
 }
 
 /* ─── ExpenseForm modal ──────────────────────────────── */
-function ExpenseForm({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+function ExpenseForm({ onClose, onSuccess, applyWatermark, watermarkedImage, setWatermarkedImage }: {
+  onClose: () => void;
+  onSuccess: () => void;
+  applyWatermark: (uri: string) => Promise<void>;
+  watermarkedImage: string | null;
+  setWatermarkedImage: (uri: string | null) => void;
+}) {
   const [date,    setDate]    = useState<Date | null>(null);
   const [amount,  setAmount]  = useState('');
   const [note,    setNote]    = useState('');
-  const [image,   setImage]   = useState<string | null>(null);
   const [lightbox, setLightbox] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors,  setErrors]  = useState<Record<string, string>>({});
 
-  const { applyWatermark, WatermarkView } = usePhotoWatermark((uri) => {
-    setImage(uri);
-  });
+  // image = watermarkedImage từ parent
+  const image = watermarkedImage;
+  const setImage = setWatermarkedImage;
 
   const rawAmount = () => Number(amount.replace(/[^0-9]/g, ''));
 
@@ -385,8 +400,6 @@ function ExpenseForm({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
         </View>
       </Modal>
     )}
-
-    <WatermarkView />
   </>
   );
 }
