@@ -5,6 +5,7 @@ import {
   KeyboardAvoidingView, Platform, Alert, Image,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { usePhotoWatermark } from '@/hooks/usePhotoWatermark';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Colors } from '@/constants/colors';
@@ -189,8 +190,13 @@ function ExpenseForm({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
   const [amount,  setAmount]  = useState('');
   const [note,    setNote]    = useState('');
   const [image,   setImage]   = useState<string | null>(null);
+  const [lightbox, setLightbox] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors,  setErrors]  = useState<Record<string, string>>({});
+
+  const { applyWatermark, WatermarkView } = usePhotoWatermark((uri) => {
+    setImage(uri);
+  });
 
   const rawAmount = () => Number(amount.replace(/[^0-9]/g, ''));
 
@@ -201,8 +207,8 @@ function ExpenseForm({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
         onPress: async () => {
           const perm = await ImagePicker.requestCameraPermissionsAsync();
           if (perm.status !== 'granted') { Alert.alert('Cần quyền camera'); return; }
-          const result = await ImagePicker.launchCameraAsync({ quality: 0.7, allowsEditing: false });
-          if (!result.canceled) setImage(result.assets[0].uri);
+          const result = await ImagePicker.launchCameraAsync({ quality: 0.85, allowsEditing: false });
+          if (!result.canceled) await applyWatermark(result.assets[0].uri);
         },
       },
       {
@@ -210,8 +216,8 @@ function ExpenseForm({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
         onPress: async () => {
           const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
           if (perm.status !== 'granted') { Alert.alert('Cần quyền thư viện ảnh'); return; }
-          const result = await ImagePicker.launchImageLibraryAsync({ quality: 0.7, allowsEditing: false });
-          if (!result.canceled) setImage(result.assets[0].uri);
+          const result = await ImagePicker.launchImageLibraryAsync({ quality: 0.85, allowsEditing: false });
+          if (!result.canceled) await applyWatermark(result.assets[0].uri);
         },
       },
       { text: 'Hủy', style: 'cancel' },
@@ -326,7 +332,9 @@ function ExpenseForm({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
                 <Text style={F.label}>Ảnh đính kèm <Text style={{ fontSize: 11, color: Colors.gray400, fontWeight: '400' }}>(không bắt buộc)</Text></Text>
                 {image ? (
                   <View style={{ position: 'relative' }}>
-                    <Image source={{ uri: image }} style={{ width: '100%', height: 180, borderRadius: 12, resizeMode: 'cover' }} />
+                    <TouchableOpacity onPress={() => setLightbox(true)} activeOpacity={0.9}>
+                      <Image source={{ uri: image }} style={{ width: '100%', height: 180, borderRadius: 12, resizeMode: 'cover' }} />
+                    </TouchableOpacity>
                     <TouchableOpacity
                       style={{ position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 16, width: 32, height: 32, justifyContent: 'center', alignItems: 'center' }}
                       onPress={() => setImage(null)}
@@ -364,6 +372,20 @@ function ExpenseForm({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
         </KeyboardAvoidingView>
       </View>
     </Modal>
+
+    {/* Lightbox xem ảnh fullscreen */}
+    {lightbox && image && (
+      <Modal visible transparent animationType="fade" onRequestClose={() => setLightbox(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center', alignItems: 'center' }}>
+          <TouchableOpacity style={{ position: 'absolute', top: 48, right: 20, zIndex: 10, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 20, width: 40, height: 40, justifyContent: 'center', alignItems: 'center' }} onPress={() => setLightbox(false)}>
+            <Text style={{ color: Colors.white, fontSize: 22, fontWeight: '700' }}>×</Text>
+          </TouchableOpacity>
+          <Image source={{ uri: image }} style={{ width: '100%', height: '80%', resizeMode: 'contain' }} />
+        </View>
+      </Modal>
+    )}
+
+    <WatermarkView />
   );
 }
 

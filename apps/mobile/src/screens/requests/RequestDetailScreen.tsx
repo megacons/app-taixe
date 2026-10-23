@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
-  ActivityIndicator, Alert, Image,
+  ActivityIndicator, Alert, Image, Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -46,6 +46,7 @@ export default function RequestDetailScreen() {
 
   const [request, setRequest] = useState<any>(null);
   const [loading, setLoading]   = useState(true);
+  const [lightboxUri, setLightboxUri] = useState<string | null>(null);
 
   useEffect(() => {
     fetchDetail();
@@ -131,11 +132,29 @@ export default function RequestDetailScreen() {
         {request.payload?.image_url && (
           <View style={S.card}>
             <Text style={S.cardTitle}>Ảnh đính kèm</Text>
-            <Image
-              source={{ uri: request.payload.image_url }}
-              style={{ width: '100%', height: 220, borderRadius: 12, resizeMode: 'cover', marginTop: 8 }}
-            />
+            <TouchableOpacity onPress={() => setLightboxUri(request.payload.image_url)} activeOpacity={0.9}>
+              <Image
+                source={{ uri: request.payload.image_url }}
+                style={{ width: '100%', height: 220, borderRadius: 12, resizeMode: 'cover', marginTop: 8 }}
+              />
+              <Text style={{ fontSize: 11, color: Colors.gray400, textAlign: 'center', marginTop: 4 }}>Nhấn để xem toàn màn hình</Text>
+            </TouchableOpacity>
           </View>
+        )}
+
+        {/* Lightbox */}
+        {lightboxUri && (
+          <Modal visible transparent animationType="fade" onRequestClose={() => setLightboxUri(null)}>
+            <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center', alignItems: 'center' }}>
+              <TouchableOpacity
+                style={{ position: 'absolute', top: 48, right: 20, zIndex: 10, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 20, width: 40, height: 40, justifyContent: 'center', alignItems: 'center' }}
+                onPress={() => setLightboxUri(null)}
+              >
+                <Text style={{ color: '#fff', fontSize: 22, fontWeight: '700' }}>×</Text>
+              </TouchableOpacity>
+              <Image source={{ uri: lightboxUri }} style={{ width: '100%', height: '80%', resizeMode: 'contain' }} />
+            </View>
+          </Modal>
         )}
 
         {/* ── Đính kèm ── */}
