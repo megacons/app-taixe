@@ -256,10 +256,6 @@ export default function AdminRequests() {
       </KeyboardAvoidingView>
     </Modal>
 
-    {/* Lightbox */}
-    {lightboxUri && (
-      <ImageLightbox uri={lightboxUri} onClose={() => setLightboxUri(null)} />
-    )}
     </>
   );
 }
