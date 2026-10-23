@@ -148,9 +148,12 @@ export default function AdminRequests() {
                 <View style={S.cardTop}>
                   <View style={{ flex: 1 }}>
                     <Text style={S.reqTitle} numberOfLines={1}>
-                      {req.created_by?.name ?? '—'} • {req.payload?.date
-                        ? format(parseISO(req.payload.date), 'dd/MM/yyyy', { locale: vi })
-                        : req.created_at ? format(parseISO(req.created_at), 'dd/MM/yyyy', { locale: vi }) : '—'}
+                      {req.created_by?.name ?? '—'} • {(() => {
+                        try {
+                          const d = req.payload?.date ?? req.created_at;
+                          return d ? format(parseISO(d), 'dd/MM/yyyy', { locale: vi }) : '—';
+                        } catch { return '—'; }
+                      })()}
                     </Text>
                     {req.payload?.note ? (
                       <Text style={S.reqMeta} numberOfLines={1}>{req.payload.note}</Text>
