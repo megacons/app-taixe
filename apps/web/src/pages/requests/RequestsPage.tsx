@@ -72,6 +72,7 @@ export default function RequestsPage() {
   const [statusFilter, setStatus] = useState('pending');
   const [detail, setDetail]     = useState<any>(null);
   const [approveTarget, setApproveTarget] = useState<any>(null);
+  const [lightbox, setLightbox] = useState<string | null>(null);
   const [rejectTarget, setRejectTarget]   = useState<any>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -319,9 +320,9 @@ export default function RequestsPage() {
                     return (
                       <div key={k} className="mt-2">
                         <p className="text-xs font-semibold text-gray-400 uppercase mb-1">Ảnh đính kèm</p>
-                        <a href={v} target="_blank" rel="noreferrer">
-                          <img src={v} alt="Ảnh đính kèm" className="w-full max-h-64 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity" />
-                        </a>
+                        <div className="relative group cursor-zoom-in" onClick={() => setLightbox(v)}>
+                          <img src={v} alt="Ảnh đính kèm" className="w-full max-h-60 object-cover rounded-lg border border-gray-200 transition-opacity group-hover:opacity-90" />
+                        </div>
                       </div>
                     );
                   }
@@ -397,6 +398,16 @@ export default function RequestsPage() {
           {errReject.reason && <p className="form-error">{errReject.reason.message}</p>}
         </div>
       </Modal>
+
+      {/* Lightbox */}
+      {lightbox && (
+        <div className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center" onClick={() => setLightbox(null)}>
+          <button className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center" onClick={() => setLightbox(null)}>
+            <XMarkIcon className="w-5 h-5 text-white" />
+          </button>
+          <img src={lightbox} alt="Ảnh đính kèm" className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg shadow-2xl" onClick={e => e.stopPropagation()} />
+        </div>
+      )}
     </div>
   );
 }
