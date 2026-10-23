@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
   RefreshControl, ActivityIndicator, Modal, TextInput,
-  KeyboardAvoidingView, Platform, Alert, Image,
+  KeyboardAvoidingView, Platform, Alert, Image, StatusBar, useWindowDimensions,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { usePhotoWatermark } from '@/hooks/usePhotoWatermark';
@@ -399,19 +399,7 @@ function ExpenseForm({ onClose, onSuccess, applyWatermark, watermarkedImage, set
 
             {/* Lightbox overlay bên trong Modal */}
             {showLightbox && image && (
-              <TouchableOpacity
-                style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center', alignItems: 'center', zIndex: 999 }}
-                activeOpacity={1}
-                onPress={() => setShowLightbox(false)}
-              >
-                <TouchableOpacity
-                  style={{ position: 'absolute', top: 16, right: 16, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 20, width: 36, height: 36, justifyContent: 'center', alignItems: 'center' }}
-                  onPress={() => setShowLightbox(false)}
-                >
-                  <Text style={{ color: '#fff', fontSize: 20, fontWeight: '700' }}>×</Text>
-                </TouchableOpacity>
-                <Image source={{ uri: image }} style={{ width: '100%', height: '80%', resizeMode: 'contain' }} />
-              </TouchableOpacity>
+              <ImageLightbox uri={image} onClose={() => setShowLightbox(false)} />
             )}
 
             <View style={F.footer}>
@@ -509,4 +497,32 @@ const F = StyleSheet.create({
   submitBtn:  { backgroundColor: Colors.primary, borderRadius: 12, height: 54, justifyContent: 'center', alignItems: 'center' },
   submitDisabled: { opacity: 0.55 },
   submitText: { fontSize: 15, fontWeight: '700', color: Colors.white },
+});
+
+/* --- ImageLightbox --- */
+function ImageLightbox({ uri, onClose }: { uri: string; onClose: () => void }) {
+  const { width: SCREEN_W } = useWindowDimensions();
+  return (
+    <Modal visible transparent animationType="fade" onRequestClose={onClose}>
+      <StatusBar hidden />
+      <View style={LB.overlay}>
+        <TouchableOpacity style={LB.closeBtn} onPress={onClose}>
+          <Text style={LB.closeText}>✕</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={{ flex: 1, justifyContent: 'center' }} onPress={onClose} activeOpacity={1}>
+          <Image
+            source={{ uri }}
+            style={{ width: SCREEN_W, height: SCREEN_W * 1.4 }}
+            resizeMode="contain"
+          />
+        </TouchableOpacity>
+      </View>
+    </Modal>
+  );
+}
+
+const LB = StyleSheet.create({
+  overlay:   { flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center' },
+  closeBtn:  { position: 'absolute', top: 48, right: 20, zIndex: 10, width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
+  closeText: { color: '#fff', fontSize: 18, fontWeight: '700' },
 });
