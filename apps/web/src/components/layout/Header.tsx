@@ -15,18 +15,19 @@ export default function Header({ onMenuClick }: HeaderProps) {
   const navigate = useNavigate();
   const [unreadCount, setUnreadCount] = useState(0);
 
-  useEffect(() => {
-    // Fetch unread notification count
-    const fetchNotifications = async () => {
-      try {
-        const res = await api.get('/notifications?is_read=false&limit=1');
-        setUnreadCount(res.data.data?.total || 0);
-      } catch (_) {
-        // Silent fail
-      }
-    };
+  const fetchUnread = async () => {
+    try {
+      const res = await api.get('/notifications?limit=1');
+      setUnreadCount(res.data.data?.unread ?? 0);
+    } catch (_) {}
+  };
 
-    if (user) fetchNotifications();
+  useEffect(() => {
+    if (!user) return;
+    fetchUnread();
+    // Refresh mỗi 30 giây
+    const interval = setInterval(fetchUnread, 30000);
+    return () => clearInterval(interval);
   }, [user]);
 
   return (
@@ -47,7 +48,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
       <div className="flex items-center gap-3 ml-auto">
         {/* Notifications */}
         <button
-          onClick={() => navigate('/profile?tab=notifications')}
+          onClick={() => { navigate('/profile?tab=notifications'); setTimeout(fetchUnread, 2000); }}
           className="relative p-1.5 rounded-lg text-gray-500 hover:bg-gray-100"
         >
           <BellIcon className="w-5 h-5" />

@@ -84,6 +84,8 @@ export default function ProfilePage() {
       } else {
         const res = await api.get('/notifications', { params: { limit: 50 } });
         setNotifications(res.data.data?.notifications ?? []);
+        // Đánh dấu đọc tất cả
+        api.put('/notifications/read-all').catch(() => {});
       }
     } catch (_) {}
     finally { setNotifLoading(false); }
