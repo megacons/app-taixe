@@ -225,6 +225,7 @@ function ExpenseForm({ onClose, onSuccess, applyWatermark, watermarkedImage, set
   const [note,    setNote]    = useState('');
   const [loading, setLoading] = useState(false);
   const [errors,  setErrors]  = useState<Record<string, string>>({});
+  const [showLightbox, setShowLightbox] = useState(false);
 
   const image = watermarkedImage;
   const setImage = setWatermarkedImage;
@@ -366,7 +367,7 @@ function ExpenseForm({ onClose, onSuccess, applyWatermark, watermarkedImage, set
                   <View style={{ position: 'relative' }}>
                     <TouchableOpacity
                       onPress={() => {
-                        if (image) onOpenLightbox(image);
+                        if (image) setShowLightbox(true);
                       }}
                       activeOpacity={0.9}
                       style={{ zIndex: 1 }}
@@ -395,6 +396,23 @@ function ExpenseForm({ onClose, onSuccess, applyWatermark, watermarkedImage, set
                 )}
               </View>
             </ScrollView>
+
+            {/* Lightbox overlay bên trong Modal */}
+            {showLightbox && image && (
+              <TouchableOpacity
+                style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center', alignItems: 'center', zIndex: 999 }}
+                activeOpacity={1}
+                onPress={() => setShowLightbox(false)}
+              >
+                <TouchableOpacity
+                  style={{ position: 'absolute', top: 16, right: 16, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 20, width: 36, height: 36, justifyContent: 'center', alignItems: 'center' }}
+                  onPress={() => setShowLightbox(false)}
+                >
+                  <Text style={{ color: '#fff', fontSize: 20, fontWeight: '700' }}>×</Text>
+                </TouchableOpacity>
+                <Image source={{ uri: image }} style={{ width: '100%', height: '80%', resizeMode: 'contain' }} />
+              </TouchableOpacity>
+            )}
 
             <View style={F.footer}>
               <TouchableOpacity
