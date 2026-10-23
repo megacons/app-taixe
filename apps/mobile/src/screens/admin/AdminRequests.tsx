@@ -3,6 +3,7 @@ import {
   View, Text, FlatList, StyleSheet, TouchableOpacity,
   RefreshControl, ActivityIndicator, Alert, ScrollView,
   DeviceEventEmitter, Modal, TextInput, KeyboardAvoidingView, Platform, Image,
+  StatusBar, useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -43,6 +44,7 @@ export default function AdminRequests() {
   const [rejectTarget, setRejectTarget] = useState<{ id: string; title: string } | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [detailRequest, setDetailRequest] = useState<any | null>(null);
+  const [lightboxUri, setLightboxUri] = useState<string | null>(null);
 
   const fetchRequests = useCallback(async (status = statusFilter) => {
     try {
@@ -238,27 +240,14 @@ export default function AdminRequests() {
                 <View style={{ marginTop: 4 }}>
                   <Text style={{ fontSize: 12, fontWeight: '700', color: Colors.gray400, textTransform: 'uppercase', marginBottom: 8, letterSpacing: 0.5 }}>Nội dung yêu cầu</Text>
                   {Object.entries(detailRequest.payload).map(([k, v]: any) => {
+                    // Ẩn các field không cần hiển thị
+                    if (['date', 'expense_type', 'image_url'].includes(k)) return null;
+
                     const keyLabel: Record<string, string> = {
-                      amount: 'Số tiền', reason: 'Lý do', note: 'Ghi chú', date: 'Ngày',
-                      purpose: 'Mục đích', expense_type: 'Loại chi phí',
-                      check_in_time: 'Giờ vào', check_out_time: 'Giờ ra',
-                      image_url: 'Ảnh đính kèm',
+                      amount: 'Số tiền', reason: 'Lý do', note: 'Ghi chú',
+                      purpose: 'Mục đích', check_in_time: 'Giờ vào', check_out_time: 'Giờ ra',
                     };
                     const label = keyLabel[k] ?? k;
-
-                    // Hiển thị ảnh nếu là image_url
-                    if (k === 'image_url' && v) {
-                      return (
-                        <View key={k} style={{ marginVertical: 8 }}>
-                          <Text style={{ fontSize: 13, color: Colors.gray500, marginBottom: 6 }}>{label}</Text>
-                          <Image
-                            source={{ uri: v }}
-                            style={{ width: '100%', height: 200, borderRadius: 12, resizeMode: 'cover' }}
-                          />
-                        </View>
-                      );
-                    }
-
                     const display = typeof v === 'number' ? new Intl.NumberFormat('vi-VN').format(v) + (k === 'amount' ? 'đ' : '') : String(v);
                     return (
                       <View key={k} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: Colors.gray50 }}>
@@ -267,6 +256,22 @@ export default function AdminRequests() {
                       </View>
                     );
                   })}
+
+                  {/* Ảnh đính kèm */}
+                  {detailRequest.payload?.image_url && (
+                    <View style={{ marginTop: 10 }}>
+                      <Text style={{ fontSize: 12, fontWeight: '700', color: Colors.gray400, textTransform: 'uppercase', marginBottom: 6 }}>Ảnh đính kèm</Text>
+                      <TouchableOpacity onPress={() => setLightboxUri(detailRequest.payload.image_url)} activeOpacity={0.85}>
+                        <Image
+                          source={{ uri: detailRequest.payload.image_url }}
+                          style={{ width: '100%', height: 200, borderRadius: 12, resizeMode: 'cover' }}
+                        />
+                        <View style={{ position: 'absolute', bottom: 8, left: 8, backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
+                          <Text style={{ color: '#fff', fontSize: 11 }}>🔍 Nhấn để xem</Text>
+                        </View>
+                      </TouchableOpacity>
+                    </View>
+                  )}
                 </View>
               )}
             </ScrollView>
@@ -344,6 +349,11 @@ export default function AdminRequests() {
         </View>
       </KeyboardAvoidingView>
     </Modal>
+
+    {/* Lightbox */}
+    {lightboxUri && (
+      <ImageLightbox uri={lightboxUri} onClose={() => setLightboxUri(null)} />
+    )}
     </>
   );
 }
@@ -393,4 +403,27 @@ const M = StyleSheet.create({
   cancelText:{ fontSize: 14, fontWeight: '600', color: Colors.gray600 },
   rejectBtn: { flex: 2, height: 46, borderRadius: 10, backgroundColor: Colors.error, justifyContent: 'center', alignItems: 'center' },
   rejectText:{ fontSize: 14, fontWeight: '700', color: '#fff' },
+});
+
+function ImageLightbox({ uri, onClose }: { uri: string; onClose: () => void }) {
+  const { width: SCREEN_W } = useWindowDimensions();
+  return (
+    <Modal visible transparent animationType="fade" onRequestClose={onClose}>
+      <StatusBar hidden />
+      <View style={LB.overlay}>
+        <TouchableOpacity style={LB.closeBtn} onPress={onClose}>
+          <Text style={LB.closeText}>✕</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={{ flex: 1, justifyContent: 'center' }} onPress={onClose} activeOpacity={1}>
+          <Image source={{ uri }} style={{ width: SCREEN_W, height: SCREEN_W * 1.4 }} resizeMode="contain" />
+        </TouchableOpacity>
+      </View>
+    </Modal>
+  );
+}
+
+const LB = StyleSheet.create({
+  overlay:   { flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center' },
+  closeBtn:  { position: 'absolute', top: 48, right: 20, zIndex: 10, width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
+  closeText: { color: '#fff', fontSize: 18, fontWeight: '700' },
 });
