@@ -311,18 +311,33 @@ export default function RequestsPage() {
             {detail.payload && (
               <div className="mt-3 pt-3 border-t border-gray-100">
                 <p className="text-xs font-semibold text-gray-400 uppercase mb-2">Nội dung yêu cầu</p>
-                {Object.entries(detail.payload).map(([k, v]: any) => (
-                  <div key={k} className="flex justify-between gap-3 border-b border-gray-50 pb-1.5 mb-1.5">
-                    <span className="text-gray-500 flex-shrink-0">{fmtPayloadKey(k)}</span>
-                    <span className="font-medium text-gray-800 text-right break-words min-w-0" style={{ wordBreak: 'break-word' }}>
-                      {typeof v === 'number'
-                        ? new Intl.NumberFormat('vi-VN').format(v) + (
-                            ['amount','penalty','reward_amount','penalty_amount'].includes(k) ? 'đ' : ''
-                          )
-                        : String(v)}
-                    </span>
-                  </div>
-                ))}
+                {Object.entries(detail.payload).map(([k, v]: any) => {
+                  // Ẩn date, expense_type
+                  if (['date', 'expense_type'].includes(k)) return null;
+                  // Hiện ảnh nếu là image_url
+                  if (k === 'image_url' && v) {
+                    return (
+                      <div key={k} className="mt-2">
+                        <p className="text-xs font-semibold text-gray-400 uppercase mb-1">Ảnh đính kèm</p>
+                        <a href={v} target="_blank" rel="noreferrer">
+                          <img src={v} alt="Ảnh đính kèm" className="w-full max-h-64 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity" />
+                        </a>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div key={k} className="flex justify-between gap-3 border-b border-gray-50 pb-1.5 mb-1.5">
+                      <span className="text-gray-500 flex-shrink-0">{fmtPayloadKey(k)}</span>
+                      <span className="font-medium text-gray-800 text-right break-words min-w-0" style={{ wordBreak: 'break-word' }}>
+                        {typeof v === 'number'
+                          ? new Intl.NumberFormat('vi-VN').format(v) + (
+                              ['amount','penalty','reward_amount','penalty_amount'].includes(k) ? 'đ' : ''
+                            )
+                          : String(v)}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             )}
             {detail.rejection_reason && (
