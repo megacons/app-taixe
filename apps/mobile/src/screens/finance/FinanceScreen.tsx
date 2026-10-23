@@ -413,6 +413,7 @@ function ExpenseForm({ onClose, onSuccess, applyWatermark, watermarkedImage, set
         </KeyboardAvoidingView>
       </View>
     </Modal>
+  </>
   );
 }
 
