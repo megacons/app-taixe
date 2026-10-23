@@ -195,8 +195,8 @@ export default function FinanceScreen() {
 
       {/* Lightbox fullscreen — nằm ngoài mọi Modal */}
       {lightboxImage && (
-        <Modal visible transparent animationType="fade" onRequestClose={() => setLightboxImage(null)}>
-          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center', alignItems: 'center' }}>
+        <Modal visible transparent animationType="fade" onRequestClose={() => setLightboxImage(null)} statusBarTranslucent>
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.97)', justifyContent: 'center', alignItems: 'center' }}>
             <TouchableOpacity
               style={{ position: 'absolute', top: 48, right: 20, zIndex: 10, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 20, width: 40, height: 40, justifyContent: 'center', alignItems: 'center' }}
               onPress={() => setLightboxImage(null)}
@@ -364,11 +364,20 @@ function ExpenseForm({ onClose, onSuccess, applyWatermark, watermarkedImage, set
                 <Text style={F.label}>Ảnh đính kèm <Text style={{ fontSize: 11, color: Colors.gray400, fontWeight: '400' }}>(không bắt buộc)</Text></Text>
                 {image ? (
                   <View style={{ position: 'relative' }}>
-                    <TouchableOpacity onPress={() => onOpenLightbox(image)} activeOpacity={0.9}>
+                    <TouchableOpacity
+                      onPress={() => {
+                        if (image) onOpenLightbox(image);
+                      }}
+                      activeOpacity={0.9}
+                      style={{ zIndex: 1 }}
+                    >
                       <Image source={{ uri: image }} style={{ width: '100%', height: 180, borderRadius: 12, resizeMode: 'cover' }} />
+                      <View style={{ position: 'absolute', bottom: 8, left: 8, backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
+                        <Text style={{ color: '#fff', fontSize: 11 }}>🔍 Nhấn để xem</Text>
+                      </View>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      style={{ position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 16, width: 32, height: 32, justifyContent: 'center', alignItems: 'center' }}
+                      style={{ position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 16, width: 32, height: 32, justifyContent: 'center', alignItems: 'center', zIndex: 2 }}
                       onPress={() => setImage(null)}
                     >
                       <Text style={{ color: Colors.white, fontSize: 18, fontWeight: '700' }}>×</Text>
