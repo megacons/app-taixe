@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
   RefreshControl, ActivityIndicator, Modal, TextInput,
@@ -416,7 +416,7 @@ function ExpenseForm({ onClose, onSuccess, applyWatermark, watermarkedImage, set
   );
 }
 
-/* ─── Styles ──────────────────────────────────────────── */
+/* --- Styles --- */
 const S = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: Colors.background },
   header:      { backgroundColor: Colors.primary, paddingHorizontal: 16, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
