@@ -126,7 +126,7 @@ export default function Navigation() {
       notifListener.current?.remove();
       responseListener.current?.remove();
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user?._id]);
 
   return (
     <NavigationContainer ref={navigationRef}>
