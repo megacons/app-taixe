@@ -1,9 +1,8 @@
-import { useEffect, useState, useCallback } from 'react';
+﻿import { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, FlatList, StyleSheet, TouchableOpacity,
   RefreshControl, ActivityIndicator, Alert, ScrollView,
   DeviceEventEmitter, Modal, TextInput, KeyboardAvoidingView, Platform, Image,
-  StatusBar, useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -43,8 +42,6 @@ export default function AdminRequests() {
   const [approving, setApproving] = useState<string | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: string; title: string } | null>(null);
   const [rejectReason, setRejectReason] = useState('');
-  const [detailRequest, setDetailRequest] = useState<any | null>(null);
-  const [lightboxUri, setLightboxUri] = useState<string | null>(null);
 
   const fetchRequests = useCallback(async (status = statusFilter) => {
     try {
@@ -146,7 +143,7 @@ export default function AdminRequests() {
               <TouchableOpacity
                 style={S.card}
                 activeOpacity={0.85}
-                onPress={() => setDetailRequest(req)}
+                onPress={() => navigation.navigate('RequestDetail', { requestId: req._id })}
               >
                 <View style={S.cardTop}>
                   <View style={{ flex: 1 }}>
@@ -206,97 +203,6 @@ export default function AdminRequests() {
         />
       )}
     </SafeAreaView>
-
-    {/* ── Modal chi tiết yêu cầu ── */}
-    <Modal visible={!!detailRequest} transparent animationType="fade" onRequestClose={() => setDetailRequest(null)}>
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 16, backgroundColor: 'rgba(0,0,0,0.55)' }}>
-        <TouchableOpacity style={{ ...StyleSheet.absoluteFillObject }} activeOpacity={1} onPress={() => setDetailRequest(null)} />
-        {detailRequest && (
-          <View style={{ backgroundColor: Colors.white, borderRadius: 20, width: '100%', maxHeight: '85%', overflow: 'hidden' }}>
-            {/* Header */}
-            <View style={{ backgroundColor: Colors.primary, paddingHorizontal: 20, paddingVertical: 14, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text style={{ fontSize: 16, fontWeight: '700', color: Colors.white, flex: 1 }} numberOfLines={1}>{detailRequest.title}</Text>
-              <TouchableOpacity onPress={() => setDetailRequest(null)}>
-                <Text style={{ fontSize: 22, color: Colors.white, fontWeight: '700' }}>×</Text>
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView contentContainerStyle={{ padding: 20, gap: 12 }} showsVerticalScrollIndicator={false}>
-              {/* Info rows */}
-              {[
-                ['Người gửi', detailRequest.created_by?.name ?? '—'],
-                ['Loại', TYPE_LABEL[detailRequest.type] ?? detailRequest.type],
-                ['Trạng thái', STATUS[detailRequest.status as keyof typeof STATUS]?.label ?? detailRequest.status],
-                ['Ngày gửi', detailRequest.created_at ? format(parseISO(detailRequest.created_at), 'dd/MM/yyyy HH:mm', { locale: vi }) : '—'],
-              ].map(([k, v]) => (
-                <View key={k} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: Colors.gray100 }}>
-                  <Text style={{ fontSize: 13, color: Colors.gray500 }}>{k}</Text>
-                  <Text style={{ fontSize: 13, fontWeight: '600', color: Colors.gray900 }}>{v}</Text>
-                </View>
-              ))}
-
-              {/* Payload */}
-              {detailRequest.payload && Object.keys(detailRequest.payload).length > 0 && (
-                <View style={{ marginTop: 4 }}>
-                  <Text style={{ fontSize: 12, fontWeight: '700', color: Colors.gray400, textTransform: 'uppercase', marginBottom: 8, letterSpacing: 0.5 }}>Nội dung yêu cầu</Text>
-                  {Object.entries(detailRequest.payload).map(([k, v]: any) => {
-                    // Ẩn các field không cần hiển thị
-                    if (['date', 'expense_type', 'image_url'].includes(k)) return null;
-
-                    const keyLabel: Record<string, string> = {
-                      amount: 'Số tiền', reason: 'Lý do', note: 'Ghi chú',
-                      purpose: 'Mục đích', check_in_time: 'Giờ vào', check_out_time: 'Giờ ra',
-                    };
-                    const label = keyLabel[k] ?? k;
-                    const display = typeof v === 'number' ? new Intl.NumberFormat('vi-VN').format(v) + (k === 'amount' ? 'đ' : '') : String(v);
-                    return (
-                      <View key={k} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: Colors.gray50 }}>
-                        <Text style={{ fontSize: 13, color: Colors.gray500, flex: 1 }}>{label}</Text>
-                        <Text style={{ fontSize: 13, fontWeight: '600', color: Colors.gray900, flex: 1.5, textAlign: 'right' }}>{display}</Text>
-                      </View>
-                    );
-                  })}
-
-                  {/* Ảnh đính kèm */}
-                  {detailRequest.payload?.image_url && (
-                    <View style={{ marginTop: 10 }}>
-                      <Text style={{ fontSize: 12, fontWeight: '700', color: Colors.gray400, textTransform: 'uppercase', marginBottom: 6 }}>Ảnh đính kèm</Text>
-                      <TouchableOpacity onPress={() => setLightboxUri(detailRequest.payload.image_url)} activeOpacity={0.85}>
-                        <Image
-                          source={{ uri: detailRequest.payload.image_url }}
-                          style={{ width: '100%', height: 200, borderRadius: 12, resizeMode: 'cover' }}
-                        />
-                        <View style={{ position: 'absolute', bottom: 8, left: 8, backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
-                          <Text style={{ color: '#fff', fontSize: 11 }}>🔍 Nhấn để xem</Text>
-                        </View>
-                      </TouchableOpacity>
-                    </View>
-                  )}
-                </View>
-              )}
-            </ScrollView>
-
-            {/* Actions nếu đang chờ duyệt */}
-            {detailRequest.status === 'pending' && (
-              <View style={{ flexDirection: 'row', gap: 12, padding: 16, borderTopWidth: 1, borderTopColor: Colors.border }}>
-                <TouchableOpacity
-                  style={{ flex: 1, backgroundColor: '#fee2e2', borderRadius: 12, height: 48, justifyContent: 'center', alignItems: 'center' }}
-                  onPress={() => { setDetailRequest(null); doReject(detailRequest._id, detailRequest.title); }}
-                >
-                  <Text style={{ fontSize: 15, fontWeight: '700', color: '#991b1b' }}>❌ Từ chối</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={{ flex: 1, backgroundColor: Colors.success, borderRadius: 12, height: 48, justifyContent: 'center', alignItems: 'center' }}
-                  onPress={() => { setDetailRequest(null); doApprove(detailRequest._id, detailRequest.title, detailRequest.type); }}
-                >
-                  <Text style={{ fontSize: 15, fontWeight: '700', color: Colors.white }}>✅ Duyệt</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        )}
-      </View>
-    </Modal>
 
     {/* ── Modal nhập lý do từ chối ── */}
     <Modal
