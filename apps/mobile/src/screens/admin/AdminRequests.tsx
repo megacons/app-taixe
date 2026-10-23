@@ -147,10 +147,14 @@ export default function AdminRequests() {
               >
                 <View style={S.cardTop}>
                   <View style={{ flex: 1 }}>
-                    <Text style={S.reqTitle} numberOfLines={1}>{req.title}</Text>
-                    <Text style={S.reqMeta}>
-                      {req.created_by?.name ?? '—'}  •  {req.created_at ? format(parseISO(req.created_at), 'dd/MM/yyyy', { locale: vi }) : '—'}
+                    <Text style={S.reqTitle} numberOfLines={1}>
+                      {req.created_by?.name ?? '—'} • {req.payload?.date
+                        ? format(parseISO(req.payload.date), 'dd/MM/yyyy', { locale: vi })
+                        : req.created_at ? format(parseISO(req.created_at), 'dd/MM/yyyy', { locale: vi }) : '—'}
                     </Text>
+                    {req.payload?.note ? (
+                      <Text style={S.reqMeta} numberOfLines={1}>{req.payload.note}</Text>
+                    ) : null}
                   </View>
                   <View style={[S.statusBadge, { backgroundColor: st.bg }]}>
                     <Text style={[S.statusText, { color: st.text }]}>{st.label}</Text>
@@ -158,9 +162,6 @@ export default function AdminRequests() {
                 </View>
 
                 <View style={S.tagRow}>
-                  <View style={S.typeBadge}>
-                    <Text style={S.typeBadgeText}>{TYPE_LABEL[req.type] ?? req.type}</Text>
-                  </View>
                   {req.payload?.amount > 0 && (
                     <Text style={S.amount}>💰 {new Intl.NumberFormat('vi-VN').format(req.payload.amount)}đ</Text>
                   )}
