@@ -311,25 +311,3 @@ const M = StyleSheet.create({
   rejectText:{ fontSize: 14, fontWeight: '700', color: '#fff' },
 });
 
-function ImageLightbox({ uri, onClose }: { uri: string; onClose: () => void }) {
-  const { width: SCREEN_W } = useWindowDimensions();
-  return (
-    <Modal visible transparent animationType="fade" onRequestClose={onClose}>
-      <StatusBar hidden />
-      <View style={LB.overlay}>
-        <TouchableOpacity style={LB.closeBtn} onPress={onClose}>
-          <Text style={LB.closeText}>✕</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={{ flex: 1, justifyContent: 'center' }} onPress={onClose} activeOpacity={1}>
-          <Image source={{ uri }} style={{ width: SCREEN_W, height: SCREEN_W * 1.4 }} resizeMode="contain" />
-        </TouchableOpacity>
-      </View>
-    </Modal>
-  );
-}
-
-const LB = StyleSheet.create({
-  overlay:   { flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center' },
-  closeBtn:  { position: 'absolute', top: 48, right: 20, zIndex: 10, width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
-  closeText: { color: '#fff', fontSize: 18, fontWeight: '700' },
-});
