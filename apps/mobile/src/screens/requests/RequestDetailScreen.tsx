@@ -92,11 +92,6 @@ export default function RequestDetailScreen() {
           <Text style={[S.statusBannerText, { color: st.text }]}>
             {TYPE_MAP[request.type] ?? request.type}  •  {st.label}
           </Text>
-          {request.request_number && (
-            <Text style={[S.statusBannerSub, { color: st.text + 'aa' }]}>
-              #{request.request_number}
-            </Text>
-          )}
         </View>
 
         {/* ── Thông tin chung ── */}
