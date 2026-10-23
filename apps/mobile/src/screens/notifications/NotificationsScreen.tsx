@@ -103,6 +103,7 @@ export default function NotificationsScreen() {
     try {
       await api.put(`/notifications/${id}/read`);
       setNotifs(ns => ns.map(n => n._id === id ? { ...n, is_read: true } : n));
+      DeviceEventEmitter.emit('NOTIF_READ');
     } catch (_) {}
   };
 

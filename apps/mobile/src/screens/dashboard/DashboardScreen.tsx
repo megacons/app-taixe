@@ -225,8 +225,14 @@ export default function DashboardScreen() {
       });
     } catch (_) {}
 
+    // Lắng nghe khi user đọc thông báo → giảm badge
+    const notifReadSub = DeviceEventEmitter.addListener('NOTIF_READ', () => {
+      fetchUnreadCount();
+    });
+
     return () => {
       if (socket) socket.disconnect();
+      notifReadSub.remove();
     };
   }, []);
 
