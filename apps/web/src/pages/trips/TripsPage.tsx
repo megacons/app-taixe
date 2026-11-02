@@ -66,6 +66,10 @@ export default function TripsPage() {
   const [editIsOvertime, setEditIsOvertime] = useState(false);
   const [delTarget, setDelTarget] = useState<Trip | null>(null);
   const [delLoading, setDelLoading] = useState(false);
+  // ── Bulk select ──
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDelLoading, setBulkDelLoading] = useState(false);
+  const [showBulkConfirm, setShowBulkConfirm] = useState(false);
   const [lightbox, setLightbox] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
 
@@ -110,7 +114,31 @@ export default function TripsPage() {
   );
   const totalOT = (otData?.trips ?? []).filter((t: Trip) => t.is_overtime).length;
 
-  const clearFilters = () => { setDay(''); setMonth(''); setYear(''); setDriverId(''); setPage(1); };
+  const clearFilters = () => { setDay(''); setMonth(''); setYear(''); setDriverId(''); setPage(1); clearSelection(); };
+
+  const toggleSelect = (id: string) => setSelectedIds(prev => {
+    const next = new Set(prev);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
+  const toggleSelectAll = () => {
+    if (selectedIds.size === trips.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(trips.map(t => t._id)));
+  };
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const handleBulkDelete = async () => {
+    setBulkDelLoading(true);
+    try {
+      await Promise.all(Array.from(selectedIds).map(id => api.delete(`/trips/${id}`)));
+      toast.success(`Đã xóa ${selectedIds.size} chuyến xe`);
+      clearSelection();
+      setShowBulkConfirm(false);
+      refetch();
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message ?? 'Xóa thất bại');
+    } finally { setBulkDelLoading(false); }
+  };
 
   /* ── Xuất Excel ── */
   const exportExcel = async () => {
@@ -274,12 +302,42 @@ export default function TripsPage() {
         </div>
       </div>
 
+      {/* Bulk action bar */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center justify-between bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-3">
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-semibold text-red-700">
+              Đã chọn {selectedIds.size} chuyến
+            </span>
+            <button onClick={clearSelection} className="text-xs text-gray-500 hover:text-gray-700 underline">
+              Bỏ chọn
+            </button>
+          </div>
+          <button
+            onClick={() => setShowBulkConfirm(true)}
+            className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+          >
+            <TrashIcon className="w-4 h-4" />
+            Xóa {selectedIds.size} chuyến
+          </button>
+        </div>
+      )}
+
       {/* Table */}
       <div className="card p-0 overflow-hidden">
         <div className="table-container">
           <table className="table">
             <thead>
               <tr>
+                <th className="w-10 text-center">
+                  <input
+                    type="checkbox"
+                    className="rounded border-gray-300 text-primary cursor-pointer"
+                    checked={trips.length > 0 && selectedIds.size === trips.length}
+                    onChange={toggleSelectAll}
+                    title="Chọn tất cả"
+                  />
+                </th>
                 <th className="w-10 text-center">STT</th>
                 <th>Ngày</th>
                 <th>Tài xế</th>
@@ -293,9 +351,9 @@ export default function TripsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {loading && <tr><td colSpan={9} className="text-center py-10 text-gray-400">Đang tải...</td></tr>}
+              {loading && <tr><td colSpan={10} className="text-center py-10 text-gray-400">Đang tải...</td></tr>}
               {!loading && trips.length === 0 && (
-                <tr><td colSpan={9} className="text-center py-12">
+                <tr><td colSpan={10} className="text-center py-12">
                   <div className="flex flex-col items-center gap-2 text-gray-400">
                     <span className="text-4xl">🚛</span>
                     <p className="text-sm">Không có chuyến nào</p>
@@ -323,7 +381,15 @@ export default function TripsPage() {
                   return dayTotal[dateKey] - dayCounters[dateKey] + 1;
                 });
                 return trips.map((t, idx) => (
-                <tr key={t._id} className={t.is_overtime ? 'bg-orange-50/40' : ''}>
+                <tr key={t._id} className={`cursor-pointer ${selectedIds.has(t._id) ? 'bg-red-50' : t.is_overtime ? 'bg-orange-50/40' : ''}`}>
+                  <td className="text-center" onClick={e => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      className="rounded border-gray-300 text-primary cursor-pointer"
+                      checked={selectedIds.has(t._id)}
+                      onChange={() => toggleSelect(t._id)}
+                    />
+                  </td>
                   <td className="text-center text-xs text-gray-400 font-medium">
                     {sttPerTrip[idx]}
                   </td>
@@ -390,7 +456,7 @@ export default function TripsPage() {
         </div>
         {pagination && (
           <Pagination page={page} totalPages={pagination.totalPages}
-            total={pagination.total} limit={20} onPageChange={setPage} />
+            total={pagination.total} limit={20} onPageChange={p => { setPage(p); clearSelection(); }} />
         )}
       </div>
 
@@ -555,6 +621,17 @@ export default function TripsPage() {
           </div>
         )}
       </Modal>
+
+      {/* Xác nhận xóa nhiều */}
+      <ConfirmDialog
+        open={showBulkConfirm}
+        onClose={() => setShowBulkConfirm(false)}
+        onConfirm={handleBulkDelete}
+        loading={bulkDelLoading}
+        danger
+        title="Xóa nhiều chuyến xe"
+        message={`Xóa ${selectedIds.size} chuyến đã chọn? Thao tác không thể hoàn tác.`}
+      />
 
       {/* Xác nhận xóa */}
       <ConfirmDialog
