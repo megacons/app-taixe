@@ -35,9 +35,9 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 // Buttons cho tài xế (driver)
 const FUNCTIONS_DRIVER = [
   { id: 'add_trip',   label: 'Nhật trình xe', icon: '🚛', route: 'AddTrip',         color: Colors.primary },
+  { id: 'my_trips',   label: 'Số chuyến',      icon: '🚚', route: 'MyTrips',          color: Colors.primary },
   { id: 'finance',    label: 'Quỹ',            icon: '💰', route: 'Finance',          color: Colors.primary },
   { id: 'salary',     label: 'Tạm ứng',        icon: '💵', route: 'SalaryAdvance',    color: Colors.primary },
-  { id: 'reward',     label: 'Khen thưởng',   icon: '🏆', route: 'RewardList',       color: Colors.primary },
   { id: 'discipline', label: 'Kỷ luật',       icon: '⚠️', route: 'DisciplineList',   color: '#c0392b' },
   { id: 'attendance', label: 'Đổi giờ',       icon: '🕐', route: 'AttendanceAdjust', color: Colors.primary },
   { id: 'leave',      label: 'Nghỉ phép',     icon: '🏖️', route: 'LeaveRequest',     color: Colors.primary },
@@ -50,7 +50,7 @@ const FUNCTIONS_EMPLOYEE = [
   { id: 'attendance_checkin', label: 'Chấm công',  icon: '📍', route: 'Attendance',       color: Colors.success },
   { id: 'adj_time',           label: 'Đổi giờ',    icon: '🕐', route: 'AttendanceAdjust', color: Colors.primary },
   { id: 'salary',             label: 'Tạm ứng',    icon: '💵', route: 'SalaryAdvance',    color: Colors.primary },
-  { id: 'reward',             label: 'Khen thưởng', icon: '🏆', route: 'RewardList',      color: Colors.primary },
+  { id: 'my_trips',           label: 'Số chuyến',  icon: '🚚', route: 'MyTrips',          color: Colors.primary },
   { id: 'discipline',         label: 'Kỷ luật',    icon: '⚠️', route: 'DisciplineList',  color: '#c0392b' },
   { id: 'leave',              label: 'Nghỉ phép',  icon: '🏖️', route: 'LeaveRequest',    color: Colors.primary },
   { id: 'history',            label: 'Lịch sử',    icon: '📅', route: 'RequestHistory',  color: Colors.primary },

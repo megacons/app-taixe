@@ -10,6 +10,7 @@ import { useAuthStore } from './src/stores/authStore';
 import ErrorBoundary from './src/components/ErrorBoundary';
 import {
   registerForPushNotifications,
+  showLocalNotification,
 } from './src/lib/notifications';
 
 SplashScreen.preventAutoHideAsync();
@@ -69,8 +70,14 @@ export default function App() {
     // ── ADMIN: nhận yêu cầu mới từ tài xế ──
     socket.on('new:request', (data: any) => {
       if (user.role === 'driver') return;
-      // Expo Push đã gửi notification từ server — socket chỉ update UI
       DeviceEventEmitter.emit('NEW_REQUEST', data);
+      // Hiện local notification kể cả khi app background
+      showLocalNotification(
+        '🔔 Yêu cầu mới',
+        `${data.driver_name ?? 'Tài xế'}: ${data.title ?? 'Có yêu cầu mới cần xử lý'}`,
+        { type: 'new_request', request_id: data._id },
+        'requests'
+      );
     });
 
     socket.on('request:updated', (data: any) => {
@@ -79,19 +86,36 @@ export default function App() {
 
     // ── DRIVER: nhận kết quả duyệt ──
     socket.on('request:approved', (data: any) => {
-      // Expo Push đã gửi notification từ server — socket chỉ update UI
       DeviceEventEmitter.emit('REQUEST_UPDATED', data);
+      showLocalNotification(
+        '✅ Yêu cầu được duyệt',
+        `"${data.title ?? 'Yêu cầu của bạn'}" đã được duyệt`,
+        { type: 'request_approved', request_id: data._id },
+        'requests'
+      );
     });
 
     socket.on('request:rejected', (data: any) => {
-      // Expo Push đã gửi notification từ server — socket chỉ update UI
       DeviceEventEmitter.emit('REQUEST_UPDATED', data);
+      showLocalNotification(
+        '❌ Yêu cầu bị từ chối',
+        `"${data.title ?? 'Yêu cầu của bạn'}" đã bị từ chối`,
+        { type: 'request_rejected', request_id: data._id },
+        'requests'
+      );
     });
 
     // ── TẤT CẢ: nhận thông báo broadcast từ admin ──
     socket.on('notification', (data: any) => {
-      // Expo Push đã gửi notification từ server — socket chỉ update badge/list
       DeviceEventEmitter.emit('REQUEST_UPDATED', {});
+      if (data?.title) {
+        showLocalNotification(
+          data.title,
+          data.message ?? data.body ?? '',
+          { type: data.type ?? 'broadcast' },
+          'default'
+        );
+      }
     });
 
     // Re-join khi app về foreground
