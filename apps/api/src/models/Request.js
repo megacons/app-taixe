@@ -19,6 +19,7 @@ const requestSchema = new mongoose.Schema(
         'expense',
         'purchase',
         'additional_trip',
+        'trip_delete',
       ],
       required: true,
       index: true,

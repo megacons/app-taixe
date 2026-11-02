@@ -56,7 +56,7 @@ async function sendExpoPush(tokens, title, body, data = {}) {
 const REQUEST_TYPES = [
   'salary_advance', 'reward', 'discipline',
   'attendance_adjustment', 'leave', 'expense',
-  'purchase', 'additional_trip',
+  'purchase', 'additional_trip', 'trip_delete',
 ];
 
 /**
@@ -300,6 +300,7 @@ router.post(
           salary_advance: 'Tạm ứng lương', expense: 'Chi phí',
           leave: 'Nghỉ phép', purchase: 'Mua hàng',
           additional_trip: 'Thêm chuyến', attendance_adjustment: 'Điều chỉnh công',
+          trip_delete: 'Xóa chuyến',
         }[request.type] ?? 'Yêu cầu';
         await sendExpoPush(
           tokens,
@@ -348,7 +349,7 @@ router.put(
 
       // Kiểm tra phân quyền theo loại yêu cầu
       const FINANCIAL_TYPES = ['salary_advance', 'expense', 'purchase', 'reward', 'discipline'];
-      const OPERATIONAL_TYPES = ['attendance_adjustment', 'leave', 'additional_trip'];
+      const OPERATIONAL_TYPES = ['attendance_adjustment', 'leave', 'additional_trip', 'trip_delete'];
 
       if (req.user.role === 'coordinator' && FINANCIAL_TYPES.includes(request.type)) {
         return res.status(403).json({
@@ -376,6 +377,24 @@ router.put(
       });
 
       await request.save();
+
+      // ── Khi duyệt yêu cầu xóa chuyến (trip_delete) → soft delete các trip ──
+      if (request.type === 'trip_delete') {
+        try {
+          const { Trip } = require('../models');
+          const tripIds = request.payload?.trip_ids ?? [];
+          if (tripIds.length > 0) {
+            await Trip.updateMany(
+              { _id: { $in: tripIds } },
+              { $set: { deleted_at: new Date(), status: 'cancelled' } }
+            );
+            console.info(`[trip_delete] Soft-deleted ${tripIds.length} trips on approve`);
+          }
+        } catch (delErr) {
+          console.warn('[trip_delete] Error deleting trips:', delErr.message);
+        }
+      }
+      // ────────────────────────────────────────────────────────────────────────
 
       // ── Khi duyệt yêu cầu chi (expense) → check balance + tự động tạo FundEntry ──
       if (request.type === 'expense' && request.driver_id) {
