@@ -81,15 +81,8 @@ export async function registerForPushNotifications(): Promise<string | null> {
   try {
     const projectId =
       Constants.expoConfig?.extra?.eas?.projectId ??
-      Constants.easConfig?.projectId;
-
-    console.log('[Notif] ProjectId:', projectId);
-    console.log('[Notif] expoConfig extra:', JSON.stringify(Constants.expoConfig?.extra));
-
-    if (!projectId) {
-      console.warn('[Notif] No projectId found in app config');
-      return null;
-    }
+      Constants.easConfig?.projectId ??
+      '4a584b3d-14c5-467e-a3fd-cc520daf5eee'; // fallback hardcode cho standalone build
 
     const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
     const token = tokenData.data;

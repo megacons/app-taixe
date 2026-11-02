@@ -19,6 +19,7 @@ import AddTripScreen from '@/screens/trips/AddTripScreen';
 import AttendanceScreen from '@/screens/employee/AttendanceScreen';
 import TripDetailScreen from '@/screens/trips/TripDetailScreen';
 import TodayTripsScreen from '@/screens/trips/TodayTripsScreen';
+import MyTripsScreen from '@/screens/trips/MyTripsScreen';
 import PersonalInfoScreen from '@/screens/profile/PersonalInfoScreen';
 import VehicleInfoScreen  from '@/screens/profile/VehicleInfoScreen';
 import PayslipScreen      from '@/screens/profile/PayslipScreen';
@@ -71,6 +72,7 @@ export type RootStackParamList = {
   VehicleInfo:  undefined;
   Payslip:      undefined;
   TodayTrips: { date?: string; month?: number; year?: number } | undefined;
+  MyTrips: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -92,12 +94,11 @@ export default function Navigation() {
     (async () => {
       try {
         const token = await registerForPushNotifications();
-        console.log('[Notif] Token result:', token ? token.slice(0, 40) + '...' : 'NULL');
         if (token) {
-          const res = await api.post('/notifications/push-token', { token });
-          console.log('[Notif] Token registered on server:', res.data?.message);
+          await api.post('/notifications/push-token', { token });
+          console.log('[Notif] Token registered');
         } else {
-          console.warn('[Notif] No token — push notifications will not work');
+          console.warn('[Notif] No push token');
         }
       } catch (err) {
         console.warn('[Notif] Token registration failed:', err);
@@ -159,6 +160,7 @@ export default function Navigation() {
             <Stack.Screen name="Finance" component={FinanceScreen} />
             <Stack.Screen name="Notifications" component={NotificationsScreen} />
             <Stack.Screen name="TodayTrips" component={TodayTripsScreen} />
+            <Stack.Screen name="MyTrips" component={MyTripsScreen} />
             <Stack.Screen name="PersonalInfo"  component={PersonalInfoScreen} />
             <Stack.Screen name="VehicleInfo"   component={VehicleInfoScreen} />
             <Stack.Screen name="Payslip"       component={PayslipScreen} />
