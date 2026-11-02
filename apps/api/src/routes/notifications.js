@@ -28,7 +28,20 @@ async function sendExpoPush(tokens, title, body, data = {}) {
     const req = https.request(options, res => {
       let d = '';
       res.on('data', chunk => { d += chunk; });
-      res.on('end', () => { try { resolve(JSON.parse(d)); } catch { resolve(d); } });
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(d);
+          const tickets = parsed?.data ?? [];
+          tickets.forEach((t, i) => {
+            if (t.status === 'error') {
+              console.warn(`[Expo Push] ❌ Ticket ${i} error: ${t.message} (${t.details?.error})`);
+            } else {
+              console.info(`[Expo Push] ✅ Ticket ${i}: ${t.id}`);
+            }
+          });
+          resolve(parsed);
+        } catch { resolve(d); }
+      });
     });
     req.on('error', err => { console.warn('[Expo Push] Error:', err.message); resolve(null); });
     req.write(payload);
@@ -437,6 +450,57 @@ router.delete('/broadcast/recall', authenticate, async (req, res, next) => {
     });
 
     res.json({ success: true, message: `Đã thu hồi ${result.deletedCount} thông báo` });
+  } catch (err) { next(err); }
+});
+
+/**
+ * GET /notifications/debug-tokens
+ * Debug: xem token của tất cả admin (chỉ manager mới xem được)
+ */
+router.get('/debug-tokens', authenticate, async (req, res, next) => {
+  try {
+    if (req.user.role !== 'manager') {
+      return res.status(403).json({ success: false, message: 'Chỉ manager mới xem được' });
+    }
+    const { User } = require('../models');
+    const admins = await User.find({
+      role: { $in: ['manager', 'coordinator', 'accountant'] },
+    }).select('name role fcm_token').lean();
+
+    res.json({
+      success: true,
+      data: admins.map(a => ({
+        name:      a.name,
+        role:      a.role,
+        has_token: !!a.fcm_token,
+        token_preview: a.fcm_token ? a.fcm_token.slice(0, 40) + '...' : null,
+        is_expo_token: a.fcm_token?.startsWith('ExponentPushToken') ?? false,
+      })),
+    });
+  } catch (err) { next(err); }
+});
+
+/**
+ * POST /notifications/test-push
+ * Test gửi push đến chính user đang đăng nhập
+ */
+router.post('/test-push', authenticate, async (req, res, next) => {
+  try {
+    const { User } = require('../models');
+    const user = await User.findById(req.user._id).select('fcm_token name').lean();
+
+    if (!user?.fcm_token) {
+      return res.json({ success: false, message: 'Tài khoản này chưa có push token. Hãy mở app và đăng nhập lại.' });
+    }
+
+    const result = await sendExpoPush(
+      [user.fcm_token],
+      '🔔 Test thông báo',
+      `Xin chào ${user.name}! Push notification đang hoạt động.`,
+      { type: 'test' }
+    );
+
+    res.json({ success: true, message: 'Đã gửi test push', token_preview: user.fcm_token.slice(0, 40), result });
   } catch (err) { next(err); }
 });
 

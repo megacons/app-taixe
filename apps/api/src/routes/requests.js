@@ -40,8 +40,19 @@ async function sendExpoPush(tokens, title, body, data = {}) {
       let d = '';
       res.on('data', chunk => { d += chunk; });
       res.on('end', () => {
-        console.info('[Expo Push] Sent to', valid.length, 'devices');
-        try { resolve(JSON.parse(d)); } catch { resolve(d); }
+        try {
+          const parsed = JSON.parse(d);
+          // Log từng ticket để phát hiện lỗi
+          const tickets = parsed?.data ?? [];
+          tickets.forEach((t, i) => {
+            if (t.status === 'error') {
+              console.warn(`[Expo Push] ❌ Ticket ${i} error: ${t.message} (${t.details?.error})`);
+            } else {
+              console.info(`[Expo Push] ✅ Ticket ${i}: ${t.id}`);
+            }
+          });
+          resolve(parsed);
+        } catch { resolve(d); }
       });
     });
     req.on('error', err => {
@@ -290,24 +301,34 @@ router.post(
       try {
         const { User } = require('../models');
         const admins = await User.find({
-          role:       { $in: ['manager', 'coordinator', 'accountant'] },
-          fcm_token:  { $ne: null },
-        }).select('fcm_token').lean();
-        const tokens = admins.map(a => a.fcm_token).filter(Boolean);
-        console.info(`[Push] Found ${admins.length} admins, ${tokens.length} with tokens`);
-        tokens.forEach((t, i) => console.info(`[Push] Token ${i+1}: ${String(t).slice(0,40)}...`));
-        const typeName = {
-          salary_advance: 'Tạm ứng lương', expense: 'Chi phí',
-          leave: 'Nghỉ phép', purchase: 'Mua hàng',
-          additional_trip: 'Thêm chuyến', attendance_adjustment: 'Điều chỉnh công',
-          trip_delete: 'Xóa chuyến',
-        }[request.type] ?? 'Yêu cầu';
-        await sendExpoPush(
-          tokens,
-          `🔔 Yêu cầu mới — ${typeName}`,
-          `${driver?.full_name ?? 'Tài xế'}: ${request.title}`,
-          { type: 'new_request', request_id: String(request._id) }
-        );
+          role:      { $in: ['manager', 'coordinator', 'accountant'] },
+          fcm_token: { $ne: null },
+        }).select('name role fcm_token').lean();
+
+        const tokens = admins
+          .map(a => a.fcm_token)
+          .filter(t => t && String(t).startsWith('ExponentPushToken'));
+
+        console.info(`[Push] Admin tokens: ${admins.length} users found, ${tokens.length} valid Expo tokens`);
+        admins.forEach(a => {
+          const valid = a.fcm_token?.startsWith('ExponentPushToken');
+          console.info(`  - ${a.name} (${a.role}): ${valid ? '✅' : '❌'} ${a.fcm_token?.slice(0, 40) ?? 'NO TOKEN'}`);
+        });
+
+        if (tokens.length > 0) {
+          const typeName = {
+            salary_advance: 'Tạm ứng lương', expense: 'Chi phí',
+            leave: 'Nghỉ phép', purchase: 'Mua hàng',
+            additional_trip: 'Thêm chuyến', attendance_adjustment: 'Điều chỉnh công',
+            trip_delete: 'Xóa chuyến',
+          }[request.type] ?? 'Yêu cầu';
+          await sendExpoPush(
+            tokens,
+            `🔔 Yêu cầu mới — ${typeName}`,
+            `${driver?.full_name ?? 'Tài xế'}: ${request.title}`,
+            { type: 'new_request', request_id: String(request._id) }
+          );
+        }
       } catch (pushErr) {
         console.warn('[Push] Failed:', pushErr.message);
       }
