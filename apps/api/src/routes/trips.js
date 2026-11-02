@@ -92,13 +92,20 @@ router.get('/', authenticate, async (req, res, next) => {
 
     // Filter by date — dùng timezone Việt Nam (UTC+7)
     if (date) {
-      const dayStart = new Date(date + 'T00:00:00+07:00');
-      const dayEnd   = new Date(date + 'T23:59:59+07:00');
+      const VN_OFFSET = 7 * 60 * 60 * 1000;
+      const [dy, dm, dd] = date.split('-').map(Number);
+      const dayStart = new Date(Date.UTC(dy, dm - 1, dd, 0, 0, 0) - VN_OFFSET);
+      const dayEnd   = new Date(Date.UTC(dy, dm - 1, dd, 23, 59, 59) - VN_OFFSET);
       filter.trip_date = { $gte: dayStart, $lte: dayEnd };
     } else if (month && year) {
-      const from = new Date(year + '-' + String(month).padStart(2, '0') + '-01T00:00:00+07:00');
-      const to   = new Date(from);
-      to.setMonth(to.getMonth() + 1);
+      // Dùng UTC offset thủ công: VN = UTC+7 = +7*60*60*1000 ms
+      const VN_OFFSET = 7 * 60 * 60 * 1000;
+      const fromUtc = Date.UTC(parseInt(year), parseInt(month) - 1, 1, 0, 0, 0) - VN_OFFSET;
+      const nextM = parseInt(month) === 12 ? 1 : parseInt(month) + 1;
+      const nextY = parseInt(month) === 12 ? parseInt(year) + 1 : parseInt(year);
+      const toUtc = Date.UTC(nextY, nextM - 1, 1, 0, 0, 0) - VN_OFFSET;
+      const from = new Date(fromUtc);
+      const to   = new Date(toUtc);
       filter.trip_date = { $gte: from, $lt: to };
     }
 

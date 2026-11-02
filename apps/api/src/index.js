@@ -139,18 +139,29 @@ app.get('/api/debug-tz', (req, res) => {
   const now = new Date();
   const utcDate = now.toISOString().slice(0, 10);
   const vnDate = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
-  const testDate = '2026-09-01';
-  const dayStartOld = new Date(testDate + 'T00:00:00.000Z');
-  const dayStartNew = new Date(testDate + 'T00:00:00+07:00');
+  const testDate = '2026-10-01';
+  const VN_OFFSET = 7 * 60 * 60 * 1000;
+  const [dy, dm, dd] = testDate.split('-').map(Number);
+  const fromUtc = Date.UTC(dy, dm - 1, dd, 0, 0, 0) - VN_OFFSET;
+  const nextM = dm === 12 ? 1 : dm + 1;
+  const nextY = dm === 12 ? dy + 1 : dy;
+  const toUtc = Date.UTC(nextY, nextM - 1, 1, 0, 0, 0) - VN_OFFSET;
+  const from = new Date(fromUtc);
+  const to   = new Date(toUtc);
   res.json({
     success: true,
     data: {
       utc_date: utcDate,
       vn_date: vnDate,
-      test_date: testDate,
-      old_filter_utc: dayStartOld.toISOString(),
-      new_filter_vn: dayStartNew.toISOString(),
-      using_vn_timezone: utcDate !== vnDate,
+      month_filter: {
+        from: from.toISOString(),
+        to: to.toISOString(),
+        from_expected: '2026-09-30T17:00:00.000Z',
+        to_expected: '2026-10-31T17:00:00.000Z',
+        from_ok: from.toISOString() === '2026-09-30T17:00:00.000Z',
+        to_ok: to.toISOString() === '2026-10-31T17:00:00.000Z',
+      },
+      version: 'Date.UTC-fix-v3',
     },
   });
 });
