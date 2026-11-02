@@ -56,8 +56,11 @@ router.get('/me/entries', authenticate, authorize('driver'), async (req, res, ne
     const totalExpense = entries.reduce((s, e) => s + (e.expense || 0), 0);
 
     // Lấy trips tháng này
-    const from = new Date(`${monthStr}-01T00:00:00.000Z`);
-    const to   = new Date(from); to.setMonth(to.getMonth() + 1);
+    const [fy, fm] = monthStr.split('-').map(Number);
+    const nm = fm === 12 ? 1 : fm + 1;
+    const ny = fm === 12 ? fy + 1 : fy;
+    const from = new Date(`${monthStr}-01T00:00:00+07:00`);
+    const to   = new Date(`${ny}-${String(nm).padStart(2,'0')}-01T00:00:00+07:00`);
     const trips = await Trip.countDocuments({
       driver_id: driver._id,
       trip_date: { $gte: from, $lt: to },
@@ -104,8 +107,11 @@ router.get('/drivers', authenticate, authorize('coordinator', 'accountant', 'man
       .lean();
 
     const result = await Promise.all(drivers.map(async d => {
-      const from = new Date(`${monthStr}-01T00:00:00.000Z`);
-      const to   = new Date(from); to.setMonth(to.getMonth() + 1);
+      const [fy2, fm2] = monthStr.split('-').map(Number);
+      const nm2 = fm2 === 12 ? 1 : fm2 + 1;
+      const ny2 = fm2 === 12 ? fy2 + 1 : fy2;
+      const from = new Date(`${monthStr}-01T00:00:00+07:00`);
+      const to   = new Date(`${ny2}-${String(nm2).padStart(2,'0')}-01T00:00:00+07:00`);
       const dateFrom = `${monthStr}-01`;
       const dateTo   = `${monthStr}-31`;
 
@@ -180,8 +186,11 @@ router.get('/:driverId/entries', authenticate, async (req, res, next) => {
     }).sort('date').lean();
 
     // Lấy trips theo ngày để fill vào bảng
-    const from = new Date(`${monthStr}-01T00:00:00.000Z`);
-    const to   = new Date(from); to.setMonth(to.getMonth() + 1);
+    const [fy3, fm3] = monthStr.split('-').map(Number);
+    const nm3 = fm3 === 12 ? 1 : fm3 + 1;
+    const ny3 = fm3 === 12 ? fy3 + 1 : fy3;
+    const from = new Date(`${monthStr}-01T00:00:00+07:00`);
+    const to   = new Date(`${ny3}-${String(nm3).padStart(2,'0')}-01T00:00:00+07:00`);
     const trips = await Trip.find({
       driver_id: req.params.driverId,
       trip_date: { $gte: from, $lt: to },
@@ -448,8 +457,11 @@ router.get('/:driverId/export', authenticate, authorize('coordinator', 'accounta
     const entries = await FundEntry.find({ driver_id: driver._id, month: monthStr }).sort('date').lean();
 
     // Lấy trips theo ngày
-    const from = new Date(`${monthStr}-01T00:00:00.000Z`);
-    const to   = new Date(from); to.setMonth(to.getMonth() + 1);
+    const [fy4, fm4] = monthStr.split('-').map(Number);
+    const nm4 = fm4 === 12 ? 1 : fm4 + 1;
+    const ny4 = fm4 === 12 ? fy4 + 1 : fy4;
+    const from = new Date(`${monthStr}-01T00:00:00+07:00`);
+    const to   = new Date(`${ny4}-${String(nm4).padStart(2,'0')}-01T00:00:00+07:00`);
     const trips = await Trip.find({
       driver_id: driver._id,
       trip_date: { $gte: from, $lt: to },

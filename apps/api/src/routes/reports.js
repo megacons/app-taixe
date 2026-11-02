@@ -40,9 +40,10 @@ router.get(
       const driver = await Driver.findById(driverId).populate('vehicle_id', 'license_plate');
       if (!driver) return res.status(404).json({ success: false, message: 'Không tìm thấy tài xế' });
 
-      const from = new Date(`${year}-${String(month).padStart(2, '0')}-01T00:00:00.000Z`);
-      const to   = new Date(from);
-      to.setMonth(to.getMonth() + 1);
+      const nm_r = parseInt(month) === 12 ? 1 : parseInt(month) + 1;
+      const ny_r  = parseInt(month) === 12 ? parseInt(year) + 1 : parseInt(year);
+      const from = new Date(`${year}-${String(month).padStart(2, '0')}-01T00:00:00+07:00`);
+      const to   = new Date(`${ny_r}-${String(nm_r).padStart(2, '0')}-01T00:00:00+07:00`);
 
       const trips = await Trip.find({
         driver_id: driverId,
@@ -383,9 +384,10 @@ router.get(
         return res.status(400).json({ success: false, message: 'Cần truyền month, year' });
       }
 
-      const from = new Date(`${year}-${String(month).padStart(2, '0')}-01T00:00:00.000Z`);
-      const to   = new Date(from);
-      to.setMonth(to.getMonth() + 1);
+      const nm_r2 = parseInt(month) === 12 ? 1 : parseInt(month) + 1;
+      const ny_r2  = parseInt(month) === 12 ? parseInt(year) + 1 : parseInt(year);
+      const from = new Date(`${year}-${String(month).padStart(2, '0')}-01T00:00:00+07:00`);
+      const to   = new Date(`${ny_r2}-${String(nm_r2).padStart(2, '0')}-01T00:00:00+07:00`);
 
       const drivers = await Driver.find({ status: 'active' }).populate('vehicle_id', 'license_plate').lean();
       const config  = await getOvertimeConfig();

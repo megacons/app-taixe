@@ -486,9 +486,10 @@ router.get('/salary/list', authenticate, authorize('coordinator', 'accountant', 
 
     const { Trip, SystemConfig, Request } = require('../models');
 
-    const from = new Date(`${year}-${String(month).padStart(2, '0')}-01T00:00:00.000Z`);
-    const to   = new Date(from);
-    to.setMonth(to.getMonth() + 1);
+    const nextMonth1 = parseInt(month) === 12 ? 1 : parseInt(month) + 1;
+    const nextYear1  = parseInt(month) === 12 ? parseInt(year) + 1 : parseInt(year);
+    const from = new Date(`${year}-${String(month).padStart(2, '0')}-01T00:00:00+07:00`);
+    const to   = new Date(`${nextYear1}-${String(nextMonth1).padStart(2, '0')}-01T00:00:00+07:00`);
 
     // Aggregate: group by (driver_id, ngày) → tính số chuyến tăng ca mỗi ngày
     const tripAgg = await Trip.aggregate([
