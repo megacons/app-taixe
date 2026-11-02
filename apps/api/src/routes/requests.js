@@ -386,7 +386,7 @@ router.put(
           if (tripIds.length > 0) {
             await Trip.updateMany(
               { _id: { $in: tripIds } },
-              { $set: { deleted_at: new Date(), status: 'cancelled' } }
+              { $set: { deleted_at: new Date(), is_deleted: true, status: 'cancelled' } }
             );
             console.info(`[trip_delete] Soft-deleted ${tripIds.length} trips on approve`);
           }
