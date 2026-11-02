@@ -1,14 +1,14 @@
 ﻿{
   "expo": {
     "sdkVersion": "58.0.0",
-    "name": "Nam Thành Driver",
+    "name": "Nam Thanh Driver",
     "slug": "namthanh-driver",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/icon.jpg",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/splash.jpg",
       "resizeMode": "contain",
       "backgroundColor": "#163797"
     },
@@ -20,6 +20,7 @@
       "bundleIdentifier": "com.namthanh.driver",
       "buildNumber": "12",
       "infoPlist": {
+        "CFBundleDisplayName": "Nam Thành Driver",
         "NSLocationWhenInUseUsageDescription": "Ứng dụng cần truy cập vị trí để ghi nhận địa điểm chuyến hàng",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Ứng dụng cần truy cập vị trí nền để theo dõi GPS",
         "NSCameraUsageDescription": "Ứng dụng cần truy cập camera để chụp ảnh biên nhận",
@@ -34,7 +35,7 @@
     "android": {
       "package": "com.namthanh.driver",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/adaptive-icon.jpg",
         "backgroundColor": "#163797"
       },
       "config": {
@@ -65,7 +66,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/icon.png",
+          "icon": "./assets/icon.jpg",
           "color": "#163797",
           "defaultChannel": "default",
           "sounds": [],
