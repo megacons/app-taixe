@@ -82,6 +82,15 @@ export default function TripsPage() {
     ...(driverId ? { driverId } : {}),
   });
 
+  // Query riêng lấy tổng tăng ca (không phân trang)
+  const { data: otData } = useApi<any>('/trips', {
+    limit: 2000, sort: '-trip_date',
+    ...(dateParam ? { date: dateParam } : {}),
+    ...(!dateParam && month ? { month } : {}),
+    ...(!dateParam && year  ? { year  } : {}),
+    ...(driverId ? { driverId } : {}),
+  });
+
   const { data: driverData } = useApi<any>('/drivers', { limit: 200 });
   const { data: materialData } = useApi<any>('/materials', { limit: 200 });
   const { data: oldestTrip } = useApi<any>('/trips', { limit: 1, sort: 'trip_date' });
@@ -99,7 +108,7 @@ export default function TripsPage() {
     { length: now.getFullYear() - oldestYear + 1 },
     (_, i) => now.getFullYear() - i
   );
-  const totalOT       = trips.filter(t => t.is_overtime).length;
+  const totalOT = (otData?.trips ?? []).filter((t: Trip) => t.is_overtime).length;
 
   const clearFilters = () => { setDay(''); setMonth(''); setYear(''); setDriverId(''); setPage(1); };
 
