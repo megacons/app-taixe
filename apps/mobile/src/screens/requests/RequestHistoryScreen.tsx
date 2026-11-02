@@ -35,6 +35,7 @@ const TYPE: Record<string, { label: string; icon: string }> = {
   additional_trip:        { label: 'Thêm số chuyến',    icon: '🚛' },
   attendance_adjustment:  { label: 'Đổi giờ',           icon: '🕐' },
   reward:                 { label: 'Khen thưởng',       icon: '🏆' },
+  trip_delete:            { label: 'Xóa chuyến',        icon: '🗑️' },
   discipline:             { label: 'Kỷ luật',           icon: '⚠️' },
 };
 
@@ -79,6 +80,11 @@ function getBodyLines(type: string, payload: any): { icon?: string; text: string
       return [
         { text: payload.reason ?? '—' },
         { icon: '🕐', text: `${payload.check_in_time ?? '?'} – ${payload.check_out_time ?? '?'}` },
+      ];
+    case 'trip_delete':
+      return [
+        { icon: '🗑️', text: `Xóa ${payload.trip_count ?? payload.trip_ids?.length ?? '?'} chuyến`, highlight: true },
+        { text: payload.reason ?? '—' },
       ];
     default:
       return payload.reason ? [{ text: payload.reason }] : [];

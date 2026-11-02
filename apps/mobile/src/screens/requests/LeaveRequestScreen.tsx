@@ -8,7 +8,7 @@ import {
   Alert,
   ActivityIndicator,
   TextInput,
-  KeyboardAvoidingView,
+  KeyboardAvoidingView, Keyboard,
   Platform,
   Image,
 } from 'react-native';
@@ -167,6 +167,7 @@ export default function LeaveRequestScreen() {
           contentContainerStyle={S.content}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          onScrollBeginDrag={Keyboard.dismiss}
         >
           {/* ── Section 1: Thời gian nghỉ ── */}
           <View style={S.section}>

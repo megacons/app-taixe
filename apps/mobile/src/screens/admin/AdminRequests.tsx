@@ -24,6 +24,7 @@ const TYPE_LABEL: Record<string, string> = {
   expense: 'Chi phí', purchase: 'Mua hàng',
   additional_trip: 'Thêm chuyến', attendance_adjustment: 'Đổi giờ',
   reward: 'Khen thưởng', discipline: 'Kỷ luật',
+  trip_delete: 'Xóa chuyến',
 };
 
 const FILTERS = [

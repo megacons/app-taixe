@@ -119,7 +119,11 @@ export default function DatePickerField({ label, value, onChange, required, erro
           <View style={S.calendar}>
             {/* Selected date bar */}
             <View style={S.selectedBar}>
+              <View style={{ width: 48 }} />
               <Text style={S.selectedValue}>{displayValue ?? (placeholder ?? 'Chọn ngày')}</Text>
+              <TouchableOpacity onPress={closePicker} style={S.cancelBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Text style={S.cancelTxt}>Hủy</Text>
+              </TouchableOpacity>
             </View>
 
             {/* ── YEAR picker ── */}
@@ -272,8 +276,10 @@ const S = StyleSheet.create({
 
   calendar: { backgroundColor: Colors.white, borderRadius: 16, width: 308, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.15, shadowRadius: 16, elevation: 10 },
 
-  selectedBar:   { backgroundColor: Colors.primary, paddingVertical: 12, alignItems: 'center' },
+  selectedBar:   { backgroundColor: Colors.primary, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14 },
   selectedValue: { fontSize: 18, fontWeight: '700', color: Colors.white, letterSpacing: 1 },
+  cancelBtn:     { paddingHorizontal: 4, paddingVertical: 2 },
+  cancelTxt:     { fontSize: 14, color: 'rgba(255,255,255,0.85)', fontWeight: '600' },
 
   /* Mode header */
   modeHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: Colors.gray100 },

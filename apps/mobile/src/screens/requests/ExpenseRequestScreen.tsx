@@ -8,7 +8,7 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
-  KeyboardAvoidingView,
+  KeyboardAvoidingView, Keyboard,
   Platform,
   Image,
 } from 'react-native';
@@ -136,6 +136,7 @@ export default function ExpenseRequestScreen() {
           contentContainerStyle={S.content}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          onScrollBeginDrag={Keyboard.dismiss}
         >
 
           {/* ══ Section 1: Thông tin chung ══ */}

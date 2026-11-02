@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
   RefreshControl, ActivityIndicator, Modal, TextInput,
-  KeyboardAvoidingView, Platform, Alert, Image, StatusBar, useWindowDimensions,
+  KeyboardAvoidingView, Keyboard, Platform, Alert, Image, StatusBar, useWindowDimensions,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { usePhotoWatermark } from '@/hooks/usePhotoWatermark';
@@ -318,7 +318,7 @@ function ExpenseForm({ onClose, onSuccess, applyWatermark, watermarkedImage, set
               <View style={{ width: 40 }} />
             </View>
 
-            <ScrollView contentContainerStyle={F.content} keyboardShouldPersistTaps="handled">
+            <ScrollView contentContainerStyle={F.content} keyboardShouldPersistTaps="handled" onScrollBeginDrag={Keyboard.dismiss}>
               <DatePickerField label="Ngày" value={date} onChange={(d) => { setDate(d); setErrors(e => ({ ...e, date: '' })); }} required error={errors.date} />
 
               <View style={F.fieldGroup}>

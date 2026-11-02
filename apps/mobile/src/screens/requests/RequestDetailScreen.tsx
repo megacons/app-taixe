@@ -26,6 +26,7 @@ const TYPE_MAP: Record<string, string> = {
   additional_trip:        'Thêm số chuyến',
   attendance_adjustment:  'Điều chỉnh giờ',
   reward:                 'Khen thưởng',
+  trip_delete:            'Xóa chuyến',
   discipline:             'Kỷ luật',
 };
 
@@ -294,6 +295,12 @@ function buildPayloadRows(type: string, p: Record<string, any>): { label: string
         { label: 'Loại',       value: p.type ?? '—' },
         { label: 'Tiền phạt', value: fmt(p.amount), highlight: true },
         { label: 'Lý do',     value: p.reason ?? '—' },
+      ];
+    case 'trip_delete':
+      return [
+        { label: 'Số chuyến xóa', value: String(p.trip_count ?? p.trip_ids?.length ?? '—'), highlight: true },
+        { label: 'Lý do',         value: p.reason ?? '—' },
+        { label: 'Chi tiết',      value: p.trip_summary ?? '—' },
       ];
     default:
       return Object.entries(p).slice(0, 8).map(([k, v]) => ({

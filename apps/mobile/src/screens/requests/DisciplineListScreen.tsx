@@ -3,6 +3,7 @@ import {
   View, Text, FlatList, StyleSheet, TouchableOpacity,
   ActivityIndicator, RefreshControl, TextInput,
   Image, Platform, Modal, ScrollView, Linking, useWindowDimensions,
+  Keyboard, TouchableWithoutFeedback,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -336,7 +337,7 @@ function DisciplineForm({
   return (
     <View style={F.overlay}>
       <TouchableOpacity style={F.backdrop} onPress={onClose} activeOpacity={1} />
-
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={F.sheet}>
         {/* Sheet header — deep navy */}
         <View style={F.sheetHeader}>
@@ -464,6 +465,7 @@ function DisciplineForm({
           </TouchableOpacity>
         </View>
       </View>
+      </TouchableWithoutFeedback>
     </View>
   );
 }

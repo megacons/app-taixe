@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import {
   View, Text, FlatList, StyleSheet, TouchableOpacity,
   ActivityIndicator, RefreshControl, TextInput, Platform,
+  Keyboard, TouchableWithoutFeedback,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -207,6 +208,7 @@ function RewardForm({
   return (
     <View style={F.overlay}>
       <TouchableOpacity style={F.backdrop} onPress={onClose} activeOpacity={1} />
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={F.sheet}>
         {/* Sheet header */}
         <View style={F.sheetHeader}>
@@ -328,6 +330,7 @@ function RewardForm({
           </TouchableOpacity>
         </View>
       </View>
+      </TouchableWithoutFeedback>
     </View>
   );
 }

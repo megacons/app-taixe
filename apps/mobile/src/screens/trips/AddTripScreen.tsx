@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
   Image,
   Platform,
-  KeyboardAvoidingView,
+  KeyboardAvoidingView, Keyboard,
   Modal,
   StatusBar,
   Linking,
@@ -483,6 +483,7 @@ export default function AddTripScreen() {
           contentContainerStyle={S.content}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          onScrollBeginDrag={Keyboard.dismiss}
         >
           {/* ── Ngày — hiện sẵn hôm nay, user có thể đổi ── */}
           <DatePickerField

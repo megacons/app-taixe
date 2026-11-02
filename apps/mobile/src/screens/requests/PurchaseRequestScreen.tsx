@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
-  StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView,
+  StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Keyboard,
   Platform, Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -137,6 +137,7 @@ export default function PurchaseRequestScreen() {
           contentContainerStyle={S.content}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          onScrollBeginDrag={Keyboard.dismiss}
         >
 
           {/* ══ Card 1: Thông tin mua hàng ══ */}
