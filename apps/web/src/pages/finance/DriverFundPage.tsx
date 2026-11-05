@@ -33,7 +33,9 @@ async function exportFundExcel(params: {
 
   type ExcelRow = { date: string; expense: number; note: string };
   const allRows: ExcelRow[] = [];
-  requests.forEach(r => {
+  requests
+    .filter((r: any) => r.status === 'approved')  // chỉ xuất đã duyệt
+    .forEach(r => {
     const date   = r.payload?.date ?? r.date ?? r.created_at?.slice(0, 10) ?? '';
     const amount = r.payload?.amount ?? r.amount ?? r.expense ?? 0;
     const note   = r.payload?.note ?? r.note ?? r.title ?? '';
@@ -423,7 +425,7 @@ export default function DriverFundPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {reqList.filter((r: any) => r.status === 'approved').map((r: any, idx: number) => {
+                      {reqList.map((r: any, idx: number) => {
                         const ST: Record<string, { bg: string; text: string; label: string }> = {
                           approved: { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Đã duyệt' },
                           pending:  { bg: 'bg-yellow-100',  text: 'text-yellow-700',  label: 'Chờ duyệt' },
@@ -431,13 +433,15 @@ export default function DriverFundPage() {
                         };
                         const st = ST[r.status] ?? ST.pending;
                         return (
-                          <tr key={r._id} className={`border-b border-gray-100 hover:bg-gray-50/60 ${idx % 2 !== 0 ? 'bg-gray-50/40' : ''}`}>
+                          <tr key={r._id} className={`border-b border-gray-100 hover:bg-gray-50/60 ${r.status === 'rejected' ? 'bg-red-50/60 opacity-75' : idx % 2 !== 0 ? 'bg-gray-50/40' : ''}`}>
                             <td className="px-4 py-2.5 border-r border-gray-100 text-gray-400 w-10 text-center">{idx + 1}</td>
                             <td className="px-4 py-2.5 border-r border-gray-100 text-gray-700 whitespace-nowrap">
                               {r.date ? format(new Date(r.date + 'T00:00:00'), 'EEE dd/MM/yyyy', { locale: vi }) : '—'}
                             </td>
-                            <td className="px-4 py-2.5 border-r border-gray-100 text-right font-semibold text-red-600 whitespace-nowrap">
-                              {r.amount > 0 ? `${new Intl.NumberFormat('vi-VN').format(r.amount)}đ` : '—'}
+                            <td className="px-4 py-2.5 border-r border-gray-100 text-right font-semibold whitespace-nowrap">
+                              <span className={r.status === 'rejected' ? 'line-through text-gray-400' : 'text-red-600'}>
+                                {r.amount > 0 ? `${new Intl.NumberFormat('vi-VN').format(r.amount)}đ` : '—'}
+                              </span>
                             </td>
                             <td className="px-4 py-2.5 border-r border-gray-100 text-gray-700 break-words" style={{ wordBreak: 'break-word', maxWidth: '300px' }}>
                               {r.note || r.title || '—'}
@@ -486,15 +490,16 @@ export default function DriverFundPage() {
                     </tbody>
                     <tfoot>
                       <tr className="bg-primary text-white font-bold text-xs">
-                        <td colSpan={2} className="px-4 py-2.5">TỔNG ({reqList.filter((r: any) => r.status === 'approved').length} yêu cầu đã duyệt)</td>
+                        <td colSpan={2} className="px-4 py-2.5">TỔNG ĐÃ DUYỆT ({reqList.filter((r: any) => r.status === 'approved').length} yêu cầu)</td>
                         <td className="px-4 py-2.5 text-right">
                           {new Intl.NumberFormat('vi-VN').format(
                             reqList.filter((r: any) => r.status === 'approved').reduce((s: number, r: any) => s + r.amount, 0)
                           )}đ
                         </td>
                         <td className="px-4 py-2.5 opacity-75 text-[10px]">
-                          {reqList.filter((r: any) => r.status === 'pending').length} chờ duyệt · {reqList.filter((r: any) => r.status === 'rejected').length} từ chối
+                          {reqList.filter((r: any) => r.status === 'pending').length} chờ duyệt · {reqList.filter((r: any) => r.status === 'rejected').length} từ chối (không tính vào tổng)
                         </td>
+                        <td colSpan={2}></td>
                       </tr>
                     </tfoot>
                   </table>
