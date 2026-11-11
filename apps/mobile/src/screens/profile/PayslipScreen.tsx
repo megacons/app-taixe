@@ -57,6 +57,44 @@ export default function PayslipScreen() {
       });
       const totalExpense = monthExpenses.reduce((s, r) => s + (r.payload?.amount ?? 0), 0);
 
+      // Lấy leave requests đã duyệt trong tháng để tính ngày nghỉ
+      const leaveRes = await api.get('/requests', { params: { type: 'leave', status: 'approved', limit: 100 } });
+      const allLeaveReqs: any[] = leaveRes.data.data?.requests ?? [];
+
+      // Parse dd/MM/yyyy thủ công
+      const parseVNDate = (s: string): Date | null => {
+        if (!s) return null;
+        const parts = s.split('/');
+        if (parts.length !== 3) return null;
+        const [dd, mm, yyyy] = parts.map(Number);
+        if (!dd || !mm || !yyyy) return null;
+        return new Date(yyyy, mm - 1, dd);
+      };
+
+      const monthLeaves = allLeaveReqs.filter(r => {
+        const sd = r.payload?.start_date;
+        if (!sd) return false;
+        const d = parseVNDate(sd);
+        if (!d) return false;
+        const ms = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        return ms === monthStr;
+      });
+
+      // Tính tổng ngày nghỉ
+      let leaveDays = 0;
+      monthLeaves.forEach(r => {
+        const dur = r.payload?.duration ?? 'Trong ngày';
+        if (dur === 'Nhiều ngày' && r.payload?.end_date) {
+          const sd = parseVNDate(r.payload.start_date);
+          const ed = parseVNDate(r.payload.end_date);
+          if (sd && ed) leaveDays += Math.round((ed.getTime() - sd.getTime()) / 86400000) + 1;
+          else leaveDays += 1;
+        } else if (dur === '1/2 ngày') leaveDays += 0.5;
+        else if (dur === '1/4 ngày')   leaveDays += 0.25;
+        else if (dur === '3/4 ngày')   leaveDays += 0.75;
+        else leaveDays += 1;
+      });
+
       // Tính tăng ca theo ngày (mỗi ngày > 4 chuyến)
       const dayMap: Record<string, number> = {};
       trips.forEach((t: any) => {
@@ -73,7 +111,14 @@ export default function PayslipScreen() {
       const overtimeRate      = driver.overtime_rate ?? 0;
       const overtimePay       = otTrips * overtimeRate;
       const totalIncome       = baseSalary + positionAllowance + fuelAllowance + overtimePay;
-      const netSalary         = totalIncome + totalExpense - totalAdvance;
+
+      // Tiền trừ nghỉ phép = lương cơ bản / số ngày tháng * số ngày nghỉ
+      const daysInMonth   = new Date(year, month, 0).getDate();
+      const leaveDeduction = leaveDays > 0
+        ? Math.round(baseSalary / daysInMonth * leaveDays)
+        : 0;
+
+      const netSalary = totalIncome + totalExpense - leaveDeduction - totalAdvance;
 
       setAdvances(monthAdvances);
       setData({
@@ -89,6 +134,9 @@ export default function PayslipScreen() {
         totalIncome,
         totalAdvance,
         totalExpense,
+        leaveDays,
+        leaveDeduction,
+        daysInMonth,
         netSalary,
       });
     } catch (_) {}
@@ -153,7 +201,17 @@ export default function PayslipScreen() {
             {/* Chi phí đã chi — hoàn trả */}
             {data.totalExpense > 0 && (
               <Row icon="💸" label="Chi phí đã chi (hoàn trả)"
-                value={`+ ${fmtVND(data.totalExpense)}`} color={Colors.success} />
+                value={`+${fmtVND(data.totalExpense)}`} color={Colors.success} />
+            )}
+
+            {/* Nghỉ phép — trừ vào lương */}
+            {data.leaveDays > 0 && (
+              <Row
+                icon="🏖️"
+                label={`Nghỉ phép (${data.leaveDays} ngày)`}
+                value={`-${fmtVND(data.leaveDeduction)}`}
+                color={Colors.error}
+              />
             )}
 
             {/* Tiền ứng — nhấn để xem chi tiết */}
@@ -171,7 +229,7 @@ export default function PayslipScreen() {
                   )}
                 </View>
                 <Text style={[R.value, { color: Colors.error }]}>
-                  {data.totalAdvance > 0 ? `- ${fmtVND(data.totalAdvance)}` : fmtVND(0)}
+                  {data.totalAdvance > 0 ? `-${fmtVND(data.totalAdvance)}` : fmtVND(0)}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -195,6 +253,7 @@ export default function PayslipScreen() {
           <Text style={S.note}>
             * Tăng ca: mỗi ngày chạy trên 4 chuyến, số chuyến dư tính tăng ca{'\n'}
             * Chi phí hoàn trả: các yêu cầu chi đã được duyệt trong tháng, cộng vào lương{'\n'}
+            * Nghỉ phép: trừ = Lương cơ bản ÷ Số ngày tháng × Số ngày nghỉ{'\n'}
             * Tiền ứng: chỉ tính các yêu cầu đã được duyệt
           </Text>
 
