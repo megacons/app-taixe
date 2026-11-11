@@ -512,14 +512,11 @@ export default function SalaryPage() {
                       <td className="px-4 py-3.5 text-center">
                         {(d.leave_days_month ?? 0) > 0 ? (
                           <div className="flex flex-col items-center gap-0.5">
-                            <span className="text-xs font-semibold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">
-                              🏖️ {d.leave_days_month} ngày
+                            <span className="text-sm font-semibold text-orange-600">
+                              {d.leave_days_month} ngày
                             </span>
                             <span className="text-xs font-semibold text-red-500">
                               -{fmtVND(d.leave_deduction ?? 0)}đ
-                            </span>
-                            <span className="text-[10px] text-gray-400">
-                              {fmtVND(d.base_salary ?? 0)}/{d.days_in_month ?? 30}×{(d.days_in_month ?? 30) - (d.leave_days_month ?? 0)}
                             </span>
                           </div>
                         ) : (
