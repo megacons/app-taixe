@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   PlusIcon, MagnifyingGlassIcon, PencilIcon,
   TrashIcon, TruckIcon,
@@ -58,6 +58,25 @@ export default function DriversPage() {
   const [assignVehicle, setAssignVehicle] = useState('');
   const [assignLoading, setAssignLoading] = useState(false);
   const [saving, setSaving]     = useState(false);
+
+  // Ngày nghỉ tháng hiện tại — map driverId → số ngày nghỉ
+  const [leaveMap, setLeaveMap] = useState<Record<string, number>>({});
+  const now = new Date();
+  const curMonth = now.getMonth() + 1;
+  const curYear  = now.getFullYear();
+
+  useEffect(() => {
+    // Lấy leave requests approved tháng hiện tại để hiển thị ngày nghỉ
+    api.get('/drivers/salary/list', { params: { month: curMonth, year: curYear } })
+      .then(res => {
+        const map: Record<string, number> = {};
+        (res.data.data?.drivers ?? []).forEach((d: any) => {
+          if (d.leave_days_month > 0) map[d._id] = d.leave_days_month;
+        });
+        setLeaveMap(map);
+      })
+      .catch(() => {});
+  }, []);
 
   const { data, loading, refetch } = useApi<any>('/drivers', {
     page, limit: 15, search, status: statusFilter,
@@ -207,6 +226,7 @@ export default function DriversPage() {
                 <th>Mã NV</th>
                 <th>Xe được gán</th>
                 <th>Ngày vào</th>
+                <th>Ngày nghỉ T{curMonth}/{curYear}</th>
                 <th>Trạng thái</th>
                 <th className="text-right">Thao tác</th>
               </tr>
@@ -214,14 +234,14 @@ export default function DriversPage() {
             <tbody className="divide-y divide-gray-100">
               {loading && (
                 <tr>
-                  <td colSpan={6} className="text-center py-10 text-gray-400">
+                  <td colSpan={7} className="text-center py-10 text-gray-400">
                     Đang tải...
                   </td>
                 </tr>
               )}
               {!loading && drivers.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="text-center py-12">
+                  <td colSpan={7} className="text-center py-12">
                     <div className="flex flex-col items-center gap-2 text-gray-400">
                       <span className="text-4xl">👤</span>
                       <p className="text-sm">Chưa có tài xế nào</p>
@@ -252,6 +272,15 @@ export default function DriversPage() {
                   </td>
                   <td className="text-sm text-gray-600">
                     {d.join_date ? format(parseISO(d.join_date), 'dd/MM/yyyy', { locale: vi }) : '—'}
+                  </td>
+                  <td className="text-center">
+                    {leaveMap[d._id] ? (
+                      <span className="inline-flex items-center gap-1 text-sm font-semibold text-orange-600 bg-orange-50 border border-orange-200 rounded-lg px-2.5 py-1">
+                        🏖️ {leaveMap[d._id]} ngày
+                      </span>
+                    ) : (
+                      <span className="text-xs text-gray-300">—</span>
+                    )}
                   </td>
                   <td><StatusBadge status={d.status} /></td>
                   <td>

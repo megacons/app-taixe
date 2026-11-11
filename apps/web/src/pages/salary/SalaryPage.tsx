@@ -56,6 +56,9 @@ interface Driver {
   overtime_pay_month: number;
   advance_month: number;
   expense_month: number;
+  leave_days_month: number;
+  leave_deduction: number;
+  days_in_month: number;
   bank_account?: string;
   bank_name?: string;
 }
@@ -207,19 +210,21 @@ export default function SalaryPage() {
     const ws = wb.addWorksheet(`Lương T${month}-${year}`);
 
     ws.columns = [
-      { key: 'name',     width: 22 },
-      { key: 'base',     width: 20 },
-      { key: 'ot_pay',   width: 20 },
-      { key: 'ot_trips', width: 14 },
-      { key: 'expense',  width: 20 },
-      { key: 'advance',  width: 20 },
-      { key: 'total',    width: 20 },
-      { key: 'stk',      width: 20 },
-      { key: 'bank',     width: 18 },
+      { key: 'name',      width: 22 },
+      { key: 'base',      width: 20 },
+      { key: 'ot_pay',    width: 20 },
+      { key: 'ot_trips',  width: 14 },
+      { key: 'expense',   width: 20 },
+      { key: 'leave_days',width: 14 },
+      { key: 'leave_ded', width: 20 },
+      { key: 'advance',   width: 20 },
+      { key: 'total',     width: 20 },
+      { key: 'stk',       width: 20 },
+      { key: 'bank',      width: 18 },
     ];
 
     // Header
-    const hRow = ws.addRow(['Tên tài xế', 'Lương cơ bản (đ)', 'Lương tăng ca (đ)', 'Số chuyến TC', 'Tiền đã chi (đ)', 'Tiền ứng (đ)', 'Tổng lương (đ)', 'STK', 'Ngân hàng']);
+    const hRow = ws.addRow(['Tên tài xế', 'Lương cơ bản (đ)', 'Lương tăng ca (đ)', 'Số chuyến TC', 'Tiền đã chi (đ)', 'Ngày nghỉ', 'Trừ nghỉ phép (đ)', 'Tiền ứng (đ)', 'Tổng lương (đ)', 'STK', 'Ngân hàng']);
     hRow.height = 20;
     hRow.eachCell(cell => {
       cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F3864' } };
@@ -231,7 +236,7 @@ export default function SalaryPage() {
     // Data rows
     filtered.forEach((d, i) => {
       const basePlusAllowance = (d.base_salary ?? 0) + (d.position_allowance ?? 0) + (d.fuel_allowance ?? 0);
-      const totalSalary = basePlusAllowance + (d.overtime_pay_month ?? 0) + (d.expense_month ?? 0) - (d.advance_month ?? 0);
+      const totalSalary = basePlusAllowance + (d.overtime_pay_month ?? 0) + (d.expense_month ?? 0) - (d.leave_deduction ?? 0) - (d.advance_month ?? 0);
       const bgColor = i % 2 === 0 ? 'FFFFFFFF' : 'FFF0F4FF';
 
       const row = ws.addRow([
@@ -240,6 +245,8 @@ export default function SalaryPage() {
         d.overtime_pay_month ?? 0,
         d.overtime_trips_month ?? 0,
         d.expense_month ?? 0,
+        d.leave_days_month ?? 0,
+        d.leave_deduction ?? 0,
         d.advance_month ?? 0,
         totalSalary,
         d.bank_account ?? '',
@@ -253,8 +260,10 @@ export default function SalaryPage() {
         if (col === 3) { cell.numFmt = '#,##0'; cell.font = { color: { argb: (d.overtime_pay_month ?? 0) > 0 ? 'FFB45309' : 'FF666666' } }; cell.alignment = { horizontal: 'right' }; }
         if (col === 4) { cell.alignment = { horizontal: 'center' }; }
         if (col === 5) { cell.numFmt = '#,##0'; cell.font = { color: { argb: 'FF006600' } }; cell.alignment = { horizontal: 'right' }; }
-        if (col === 6) { cell.numFmt = '#,##0'; cell.font = { color: { argb: 'FFCC0000' } }; cell.alignment = { horizontal: 'right' }; }
-        if (col === 7) { cell.numFmt = '#,##0'; cell.font = { bold: true, color: { argb: 'FF006600' } }; cell.alignment = { horizontal: 'right' }; }
+        if (col === 6) { cell.alignment = { horizontal: 'center' }; cell.font = { color: { argb: (d.leave_days_month ?? 0) > 0 ? 'FFE67E22' : 'FF999999' } }; }
+        if (col === 7) { cell.numFmt = '#,##0'; cell.font = { color: { argb: (d.leave_deduction ?? 0) > 0 ? 'FFCC0000' : 'FF999999' } }; cell.alignment = { horizontal: 'right' }; }
+        if (col === 8) { cell.numFmt = '#,##0'; cell.font = { color: { argb: 'FFCC0000' } }; cell.alignment = { horizontal: 'right' }; }
+        if (col === 9) { cell.numFmt = '#,##0'; cell.font = { bold: true, color: { argb: 'FF006600' } }; cell.alignment = { horizontal: 'right' }; }
       });
     });
 
@@ -265,6 +274,8 @@ export default function SalaryPage() {
       filtered.reduce((s, d) => s + (d.overtime_pay_month ?? 0), 0),
       filtered.reduce((s, d) => s + (d.overtime_trips_month ?? 0), 0),
       filtered.reduce((s, d) => s + (d.expense_month ?? 0), 0),
+      filtered.reduce((s, d) => s + (d.leave_days_month ?? 0), 0),
+      filtered.reduce((s, d) => s + (d.leave_deduction ?? 0), 0),
       filtered.reduce((s, d) => s + (d.advance_month ?? 0), 0),
       totalGrand,
       '', '',
@@ -274,8 +285,8 @@ export default function SalaryPage() {
       cell.fill   = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFE599' } };
       cell.font   = { bold: true, size: 11 };
       cell.border = { top: { style: 'medium' }, bottom: { style: 'medium' }, left: { style: 'thin' }, right: { style: 'thin' } };
-      if (col === 2 || col === 3 || col === 5 || col === 6 || col === 7) { cell.numFmt = '#,##0'; cell.alignment = { horizontal: 'right' }; }
-      if (col === 4) { cell.alignment = { horizontal: 'center' }; }
+      if ([2, 3, 5, 7, 8, 9].includes(col)) { cell.numFmt = '#,##0'; cell.alignment = { horizontal: 'right' }; }
+      if (col === 4 || col === 6) { cell.alignment = { horizontal: 'center' }; }
     });
 
     await saveWorkbook(wb, `Luong_TaiXe_T${month}_${year}.xlsx`);
@@ -294,7 +305,8 @@ export default function SalaryPage() {
   const totalOvertimePay = filtered.reduce((s, d) => s + (d.overtime_pay_month ?? 0), 0);
   const totalAdvance     = filtered.reduce((s, d) => s + (d.advance_month ?? 0), 0);
   const totalExpense     = filtered.reduce((s, d) => s + (d.expense_month ?? 0), 0);
-  const totalGrand       = totalBase + totalOvertimePay + totalExpense - totalAdvance;
+  const totalLeaveDeduction = filtered.reduce((s, d) => s + (d.leave_deduction ?? 0), 0);
+  const totalGrand       = totalBase + totalOvertimePay + totalExpense - totalLeaveDeduction - totalAdvance;
 
   return (
     <>
@@ -380,6 +392,7 @@ export default function SalaryPage() {
                 <th className="px-4 py-3 text-right  text-xs font-semibold text-gray-500   uppercase tracking-wide">Đơn giá TC</th>
                 <th className="px-4 py-3 text-right  text-xs font-semibold text-amber-600 uppercase tracking-wide">Tiền TC</th>
                 <th className="px-4 py-3 text-right  text-xs font-semibold text-emerald-600 uppercase tracking-wide">Tiền đã chi</th>
+                <th className="px-4 py-3 text-center text-xs font-semibold text-orange-500 uppercase tracking-wide">Nghỉ phép</th>
                 <th className="px-4 py-3 text-right  text-xs font-semibold text-red-500   uppercase tracking-wide">Tiền ứng</th>
                 <th className="px-4 py-3 text-right  text-xs font-semibold text-primary  uppercase tracking-wide">Tổng lương</th>
                 {canEdit && <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide w-20">Sửa</th>}
@@ -408,9 +421,9 @@ export default function SalaryPage() {
                 filtered.map(d => {
                   const isEditing   = editId === d._id;
                   const basePlusAllowance = (d.base_salary ?? 0) + (d.position_allowance ?? 0) + (d.fuel_allowance ?? 0);
-                  const totalSalary = basePlusAllowance + (d.overtime_pay_month ?? 0) + (d.expense_month ?? 0) - (d.advance_month ?? 0);
+                  const totalSalary = basePlusAllowance + (d.overtime_pay_month ?? 0) + (d.expense_month ?? 0) - (d.advance_month ?? 0) - (d.leave_deduction ?? 0);
                   const liveOvertimePay = toNumber(form.overtime_rate) * (d.overtime_trips_month ?? 0);
-                  const liveTotal   = liveBase + liveOvertimePay + (d.expense_month ?? 0) - (d.advance_month ?? 0);
+                  const liveTotal   = liveBase + liveOvertimePay + (d.expense_month ?? 0) - (d.advance_month ?? 0) - (d.leave_deduction ?? 0);
 
                   return (
                     <tr key={d._id} className={`hover:bg-gray-50 transition-colors ${isEditing ? 'bg-blue-50/40' : ''}`}>
@@ -492,6 +505,25 @@ export default function SalaryPage() {
                           </span>
                         ) : (
                           <span className="text-gray-300">0đ</span>
+                        )}
+                      </td>
+
+                      {/* Nghỉ phép — trừ vào lương */}
+                      <td className="px-4 py-3.5 text-center">
+                        {(d.leave_days_month ?? 0) > 0 ? (
+                          <div className="flex flex-col items-center gap-0.5">
+                            <span className="text-xs font-semibold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">
+                              🏖️ {d.leave_days_month} ngày
+                            </span>
+                            <span className="text-xs font-semibold text-red-500">
+                              -{fmtVND(d.leave_deduction ?? 0)}đ
+                            </span>
+                            <span className="text-[10px] text-gray-400">
+                              {fmtVND(d.base_salary ?? 0)}/{d.days_in_month ?? 30}×{(d.days_in_month ?? 30) - (d.leave_days_month ?? 0)}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-gray-300">—</span>
                         )}
                       </td>
 
@@ -581,6 +613,7 @@ export default function SalaryPage() {
       <div className="text-xs text-gray-400 space-y-0.5">
         <p>* <span className="font-semibold text-amber-600">Chuyến tăng ca</span>: mỗi ngày tài xế chạy trên 4 chuyến, mỗi chuyến dư tính là 1 chuyến TC.</p>
         <p>* <span className="font-semibold">Tiền TC</span> = Số chuyến TC trong tháng × Đơn giá TC của tài xế.</p>
+        <p>* <span className="font-semibold text-orange-500">Nghỉ phép</span>: Trừ nghỉ phép = Lương cơ bản ÷ Số ngày trong tháng × Số ngày nghỉ. VD: 17tr ÷ 30 × 1 = 566.667đ/ngày.</p>
         <p>* Đơn giá TC mặc định 0đ — admin đặt riêng cho từng tài xế.</p>
       </div>
     </div>

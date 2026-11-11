@@ -573,13 +573,62 @@ router.get('/salary/list', authenticate, authorize('coordinator', 'accountant', 
       }
     });
 
+    // Lấy tất cả leave requests approved để tính ngày nghỉ trong tháng
+    const { parse: dateParse } = require('date-fns');
+    const leaveReqs = await Request.find({
+      type:   'leave',
+      status: 'approved',
+    }).lean();
+
+    // Map driverId → số ngày nghỉ trong tháng (theo payload.start_date)
+    const leaveMap = {}; // driverId → số ngày nghỉ
+    leaveReqs.forEach(r => {
+      const dId = r.driver_id?.toString();
+      if (!dId) return;
+      const sd = r.payload?.start_date; // dd/MM/yyyy
+      if (!sd) return;
+      try {
+        const startDate = dateParse(sd, 'dd/MM/yyyy', new Date());
+        // Kiểm tra thuộc tháng/năm đang xem
+        const startMonthStr = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}`;
+        if (startMonthStr !== monthStr) return;
+        // Tính số ngày nghỉ
+        const dur = r.payload?.duration ?? 'Trong ngày';
+        let days = 1;
+        if (dur === 'Nhiều ngày' && r.payload?.end_date) {
+          try {
+            const endDate = dateParse(r.payload.end_date, 'dd/MM/yyyy', new Date());
+            days = Math.round((endDate.getTime() - startDate.getTime()) / 86400000) + 1;
+          } catch { days = 1; }
+        } else if (dur === '1/2 ngày') {
+          days = 0.5;
+        } else if (dur === '1/4 ngày') {
+          days = 0.25;
+        } else if (dur === '3/4 ngày') {
+          days = 0.75;
+        }
+        leaveMap[dId] = (leaveMap[dId] ?? 0) + days;
+      } catch (_) {}
+    });
+
     const result = drivers.map(d => {
       const dId          = d._id.toString();
       const ot           = overtimeMap[dId] ?? { overtime_trips: 0, overtime_pay: 0 };
       const total_trips  = tripCountMap[dId] ?? 0;
       const uid          = d.user_id?._id?.toString() ?? d.user_id?.toString();
-      const advance_month = advanceMap[uid] ?? 0;
-      const expense_month = expenseMap[uid] ?? 0;
+      const advance_month  = advanceMap[uid] ?? 0;
+      const expense_month  = expenseMap[uid] ?? 0;
+      const leave_days_month = leaveMap[dId] ?? 0;
+
+      // Tính tiền trừ nghỉ phép:
+      // Số ngày công trong tháng = số ngày thực của tháng (28/29/30/31)
+      const daysInMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
+      // Lương sau nghỉ = base_salary / daysInMonth * (daysInMonth - leave_days)
+      const base = d.base_salary ?? 0;
+      const leave_deduction = leave_days_month > 0
+        ? Math.round(base / daysInMonth * leave_days_month)
+        : 0;
+
       return {
         ...d,
         total_trips_month:    total_trips,
@@ -587,6 +636,9 @@ router.get('/salary/list', authenticate, authorize('coordinator', 'accountant', 
         overtime_pay_month:   ot.overtime_pay,
         advance_month,
         expense_month,
+        leave_days_month,
+        leave_deduction,
+        days_in_month: daysInMonth,
       };
     });
 
