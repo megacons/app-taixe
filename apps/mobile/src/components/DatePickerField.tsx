@@ -19,6 +19,7 @@ interface Props {
   compact?:     boolean;
   monthOnly?:   boolean;
   placeholder?: string;
+  minDate?:     Date;
 }
 
 const DOW       = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
@@ -34,7 +35,7 @@ const YEARS      = Array.from({ length: END_YEAR - START_YEAR + 1 }, (_, i) => S
 
 type PickMode = 'day' | 'year' | 'month';
 
-export default function DatePickerField({ label, value, onChange, required, error, compact, monthOnly, placeholder }: Props) {
+export default function DatePickerField({ label, value, onChange, required, error, compact, monthOnly, placeholder, minDate }: Props) {
   const effectiveValue = value ?? new Date();
   const [show,     setShow]     = useState(false);
   const [viewDate, setViewDate] = useState(effectiveValue);
@@ -222,12 +223,22 @@ export default function DatePickerField({ label, value, onChange, required, erro
                     const selected = value ? isSameDay(day, value) : false;
                     const today    = isToday(day);
                     const isSun    = day.getDay() === 0;
+                    // Disable nếu trước minDate
+                    const isDisabled = minDate
+                      ? day < new Date(minDate.getFullYear(), minDate.getMonth(), minDate.getDate())
+                      : false;
                     return (
                       <TouchableOpacity
                         key={idx}
-                        style={[S.dayCell, selected && S.dayCellSelected, today && !selected && S.dayCellToday]}
-                        onPress={() => handleSelectDay(day)}
-                        activeOpacity={0.7}
+                        style={[
+                          S.dayCell,
+                          selected && S.dayCellSelected,
+                          today && !selected && S.dayCellToday,
+                          isDisabled && { opacity: 0.25 },
+                        ]}
+                        onPress={() => !isDisabled && handleSelectDay(day)}
+                        activeOpacity={isDisabled ? 1 : 0.7}
+                        disabled={isDisabled}
                       >
                         <Text style={[
                           S.dayText,

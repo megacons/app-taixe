@@ -65,8 +65,13 @@ export default function LeaveRequestScreen() {
   /* ─── Validation ─── */
   const validate = () => {
     const e: Record<string, string> = {};
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     if (!startDate)                          e.startDate  = 'Vui lòng nhập ngày bắt đầu';
+    if (startDate && startDate < today)      e.startDate  = 'Không thể xin nghỉ ngày đã qua';
     if (showEndDate && !endDate)             e.endDate    = 'Vui lòng nhập ngày kết thúc';
+    if (showEndDate && endDate && endDate < today) e.endDate = 'Không thể xin nghỉ ngày đã qua';
     if (showTimePick && !startTime.trim())   e.startTime  = 'Vui lòng nhập giờ bắt đầu';
     if (showTimePick && !endTime.trim())     e.endTime    = 'Vui lòng nhập giờ kết thúc';
     if (!reason.trim())                      e.reason     = 'Vui lòng nhập lý do';
@@ -212,6 +217,7 @@ export default function LeaveRequestScreen() {
                 error={errors.startDate}
                 compact
                 placeholder="Chọn ngày"
+                minDate={new Date()}
               />
               {showEndDate && (
                 <DatePickerField
@@ -222,6 +228,7 @@ export default function LeaveRequestScreen() {
                   error={errors.endDate}
                   compact
                   placeholder="Chọn ngày"
+                  minDate={startDate ?? new Date()}
                 />
               )}
             </View>
