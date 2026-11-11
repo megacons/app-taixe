@@ -226,8 +226,8 @@ export default function DriversPage() {
                 <th>Mã NV</th>
                 <th>Xe được gán</th>
                 <th>Ngày vào</th>
-                <th>Ngày nghỉ T{curMonth}/{curYear}</th>
                 <th>Trạng thái</th>
+                <th className="text-center">Nghỉ T{curMonth}/{curYear}</th>
                 <th className="text-right">Thao tác</th>
               </tr>
             </thead>
@@ -273,6 +273,7 @@ export default function DriversPage() {
                   <td className="text-sm text-gray-600">
                     {d.join_date ? format(parseISO(d.join_date), 'dd/MM/yyyy', { locale: vi }) : '—'}
                   </td>
+                  <td><StatusBadge status={d.status} /></td>
                   <td className="text-center">
                     {leaveMap[d._id] ? (
                       <span className="inline-flex items-center gap-1 text-sm font-semibold text-orange-600 bg-orange-50 border border-orange-200 rounded-lg px-2.5 py-1">
@@ -282,7 +283,6 @@ export default function DriversPage() {
                       <span className="text-xs text-gray-300">—</span>
                     )}
                   </td>
-                  <td><StatusBadge status={d.status} /></td>
                   <td>
                     <div className="flex items-center justify-end gap-1">
                       <button
