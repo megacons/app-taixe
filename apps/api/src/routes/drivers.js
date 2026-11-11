@@ -574,11 +574,20 @@ router.get('/salary/list', authenticate, authorize('coordinator', 'accountant', 
     });
 
     // Lấy tất cả leave requests approved để tính ngày nghỉ trong tháng
-    const { parse: dateParse } = require('date-fns');
     const leaveReqs = await Request.find({
       type:   'leave',
       status: 'approved',
     }).lean();
+
+    // Parse dd/MM/yyyy → Date (không dùng date-fns để tránh dependency)
+    const parseVNDate = (s) => {
+      if (!s) return null;
+      const parts = s.split('/');
+      if (parts.length !== 3) return null;
+      const [dd, mm, yyyy] = parts.map(Number);
+      if (!dd || !mm || !yyyy) return null;
+      return new Date(yyyy, mm - 1, dd);
+    };
 
     // Map driverId → số ngày nghỉ trong tháng (theo payload.start_date)
     const leaveMap = {}; // driverId → số ngày nghỉ
@@ -588,7 +597,8 @@ router.get('/salary/list', authenticate, authorize('coordinator', 'accountant', 
       const sd = r.payload?.start_date; // dd/MM/yyyy
       if (!sd) return;
       try {
-        const startDate = dateParse(sd, 'dd/MM/yyyy', new Date());
+        const startDate = parseVNDate(sd);
+        if (!startDate) return;
         // Kiểm tra thuộc tháng/năm đang xem
         const startMonthStr = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}`;
         if (startMonthStr !== monthStr) return;
@@ -597,8 +607,8 @@ router.get('/salary/list', authenticate, authorize('coordinator', 'accountant', 
         let days = 1;
         if (dur === 'Nhiều ngày' && r.payload?.end_date) {
           try {
-            const endDate = dateParse(r.payload.end_date, 'dd/MM/yyyy', new Date());
-            days = Math.round((endDate.getTime() - startDate.getTime()) / 86400000) + 1;
+            const endDate = parseVNDate(r.payload.end_date);
+            if (endDate) days = Math.round((endDate.getTime() - startDate.getTime()) / 86400000) + 1;
           } catch { days = 1; }
         } else if (dur === '1/2 ngày') {
           days = 0.5;
